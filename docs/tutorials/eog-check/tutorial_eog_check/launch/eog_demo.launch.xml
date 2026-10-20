@@ -1,0 +1,17 @@
+<launch>
+    <!-- Demo without hardware: a blink simulator and the blink detector.
+
+         ros2 launch tutorial_eog_check eog_demo.launch.xml
+
+         Watch the events with:   ros2 topic echo /neuroevent
+    -->
+    <let name="config" value="$(find-pkg-share tutorial_eog_check)/config/eog_blink.yaml"/>
+
+    <node pkg="tutorial_eog_check" exec="fake_eog_node" name="fake_eog" output="screen">
+        <param from="$(var config)"/>
+    </node>
+
+    <node pkg="tutorial_eog_check" exec="eog_blink_node" name="eog_blink" output="screen">
+        <param from="$(var config)"/>
+    </node>
+</launch>

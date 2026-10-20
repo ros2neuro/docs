@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560" font-family="Helvetica, Arial, sans-serif" role="img" aria-labelledby="t d">
+  <title id="t">ros2neuro architecture</title>
+  <desc id="d">Data flows from the hardware or a GDF file through acquisition, filters, spectral processing, decoder and integrator, then through the manager to the feedback. The manager emits events to the recorder and resets the integrator through a service.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4a5568"/>
+    </marker>
+    <style>
+      .box { stroke-width: 1.6; rx: 8; }
+      .proc { fill: #dbe7fb; stroke: #3b5ba9; }
+      .dec  { fill: #dff3e3; stroke: #2f7d45; }
+      .prot { fill: #fde8cf; stroke: #b9741d; }
+      .side { fill: #eceff3; stroke: #667085; }
+      .hw   { fill: #f4f4f4; stroke: #667085; stroke-dasharray: 5 3; }
+      .name { font-size: 15px; font-weight: 700; fill: #1b2330; text-anchor: middle; }
+      .pkg  { font-size: 10.5px; fill: #3b4658; text-anchor: middle; }
+      .msg  { font-size: 10.5px; fill: #1b2330; text-anchor: middle; font-family: "Courier New", monospace; }
+      .pill { fill: #ffffff; stroke: #c9d0da; stroke-width: 1; rx: 8; }
+      .line { stroke: #4a5568; stroke-width: 1.6; fill: none; }
+      .dash { stroke: #4a5568; stroke-width: 1.4; fill: none; stroke-dasharray: 6 4; }
+      .title { font-size: 20px; font-weight: 700; fill: #1b2330; }
+      .sub   { font-size: 12px; fill: #3b4658; }
+      .key   { font-size: 11px; fill: #3b4658; }
+    </style>
+  </defs>
+
+  <rect width="1000" height="560" fill="#ffffff"/>
+  <text class="title" x="20" y="30">ros2neuro</text>
+  <text class="sub" x="20" y="48">signal flow: first row left to right, then the second row from the decoder to the feedback</text>
+
+  <!-- Row 1 -->
+  <rect class="box hw" x="20" y="70" width="170" height="64"/>
+  <text class="name" x="105" y="98">Hardware / GDF</text>
+  <text class="pkg" x="105" y="116">amplifier, LSL stream, file</text>
+
+  <rect class="box proc" x="280" y="70" width="170" height="64"/>
+  <text class="name" x="365" y="98">Acquisition</text>
+  <text class="pkg" x="365" y="116">ros2neuro_acquisition_*</text>
+
+  <rect class="box proc" x="540" y="70" width="170" height="64"/>
+  <text class="name" x="625" y="98">Filters</text>
+  <text class="pkg" x="625" y="116">ros2neuro_filters_*</text>
+
+  <rect class="box proc" x="800" y="70" width="170" height="64"/>
+  <text class="name" x="885" y="98">Spectral processing</text>
+  <text class="pkg" x="885" y="116">ros2neuro_processing_*</text>
+
+  <path class="line" d="M190,102 H278" marker-end="url(#arrow)"/>
+  <path class="line" d="M450,102 H538" marker-end="url(#arrow)"/>
+  <path class="line" d="M710,102 H798" marker-end="url(#arrow)"/>
+  <rect class="pill" x="212" y="74" width="46" height="18"/><text class="msg" x="235" y="87">driver</text>
+  <rect class="pill" x="470" y="74" width="48" height="18"/><text class="msg" x="494" y="87">Frame</text>
+  <rect class="pill" x="728" y="74" width="48" height="18"/><text class="msg" x="752" y="87">Frame</text>
+
+  <!-- Row 1 -> Row 2 -->
+  <path class="line" d="M885,134 V182 H105 V228" marker-end="url(#arrow)"/>
+  <rect class="pill" x="440" y="173" width="90" height="18"/><text class="msg" x="485" y="186">NeuroFeature</text>
+
+  <!-- Row 2 -->
+  <rect class="box dec" x="20" y="230" width="170" height="64"/>
+  <text class="name" x="105" y="258">Decoder</text>
+  <text class="pkg" x="105" y="276">ros2neuro_decoder_*</text>
+
+  <rect class="box dec" x="280" y="230" width="170" height="64"/>
+  <text class="name" x="365" y="258">Integrator</text>
+  <text class="pkg" x="365" y="276">ros2neuro_integrator_*</text>
+
+  <rect class="box prot" x="540" y="230" width="170" height="64"/>
+  <text class="name" x="625" y="258">Manager</text>
+  <text class="pkg" x="625" y="276">ros2neuro_manager_*</text>
+
+  <rect class="box prot" x="800" y="230" width="170" height="64"/>
+  <text class="name" x="885" y="258">Feedback</text>
+  <text class="pkg" x="885" y="276">ros2neuro_feedback_*</text>
+
+  <path class="line" d="M190,262 H278" marker-end="url(#arrow)"/>
+  <path class="line" d="M450,262 H538" marker-end="url(#arrow)"/>
+  <path class="line" d="M710,262 H798" marker-end="url(#arrow)"/>
+  <rect class="pill" x="192" y="234" width="84" height="18"/><text class="msg" x="234" y="247">Prediction</text>
+  <rect class="pill" x="462" y="234" width="64" height="18"/><text class="msg" x="494" y="247">Control</text>
+  <rect class="pill" x="722" y="234" width="64" height="18"/><text class="msg" x="754" y="247">Control</text>
+
+  <!-- Reset service -->
+  <path class="dash" d="M590,294 V330 H365 V296" marker-end="url(#arrow)"/>
+  <rect class="pill" x="410" y="321" width="130" height="18"/><text class="msg" x="475" y="334">/reset (service)</text>
+
+  <!-- Events to recorder -->
+  <path class="dash" d="M680,294 V388" marker-end="url(#arrow)"/>
+  <rect class="pill" x="690" y="330" width="110" height="18"/><text class="msg" x="745" y="343">/neuroevent</text>
+
+  <!-- Row 3 -->
+  <rect class="box side" x="540" y="390" width="170" height="64"/>
+  <text class="name" x="625" y="418">Recorder</text>
+  <text class="pkg" x="625" y="436">ros2neuro_recorder_*</text>
+  <text class="pkg" x="625" y="448">writes GDF / BDF</text>
+
+  <rect class="box side" x="280" y="390" width="170" height="64"/>
+  <text class="name" x="365" y="418">Visualizer</text>
+  <text class="pkg" x="365" y="436">ros2neuro_visualizer</text>
+  <text class="pkg" x="365" y="448">scope of the signals</text>
+
+  <!-- Legend -->
+  <text class="key" x="20" y="494">Recorder inputs: NeuroFrame and NeuroFrameInfo (from the acquisition), NeuroEvent (from the manager).</text>
+  <text class="key" x="20" y="512">Visualizer input: NeuroFrame (raw from the acquisition or filtered). Both are optional and sit beside the main chain.</text>
+  <rect x="20" y="526" width="14" height="14" class="box proc"/><text class="key" x="40" y="537">signal chain</text>
+  <rect x="140" y="526" width="14" height="14" class="box dec"/><text class="key" x="160" y="537">decoding</text>
+  <rect x="240" y="526" width="14" height="14" class="box prot"/><text class="key" x="260" y="537">protocol and feedback</text>
+  <rect x="410" y="526" width="14" height="14" class="box side"/><text class="key" x="430" y="537">side nodes</text>
+  <path class="dash" d="M520,533 H560"/><text class="key" x="568" y="537">service or event path</text>
+</svg>

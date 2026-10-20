@@ -1,0 +1,15 @@
+# Parameters of the tutorial node.
+#   ros2 run tutorial_power_threshold power_threshold_node --ros-args --params-file power_threshold.yaml
+power_threshold:
+  ros__parameters:
+    input_topic: /neurodata          # NeuroFrame to analyse (remap it to your acquisition or filter output)
+    output_topic: /neuroevent        # where the events are published (the recorder reads this topic)
+
+    sensor: "EEG"                    # name of the NeuroSensor block; empty = the first one
+    channels: ["C3", "C4"]           # labels of the channels to monitor; empty = all of them
+
+    threshold: 5000.0                # power (variance, unit^2) that raises the event; read the log to choose it
+    hysteresis: 0.8                  # falls back below threshold * hysteresis
+    event_id: 2001                   # id of the event; the end is published as 2001 + 32768
+    emit_off: true                   # publish the "Off" event when the power goes back down
+    log_period_s: 2.0                # print the strongest power every N seconds (0 = never)

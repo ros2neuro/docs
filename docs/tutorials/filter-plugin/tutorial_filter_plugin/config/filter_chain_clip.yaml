@@ -1,0 +1,16 @@
+# Loads the tutorial filter in the ros2neuro filter chain.
+# Run with:
+#   ros2 run ros2neuro_filters filter_chain_node --ros-args --params-file filter_chain_clip.yaml
+filter_chain:
+  ros__parameters:
+    configname: clipchain
+
+    # the filters run in this order
+    clipchain.filters:
+      - dc
+      - clip
+
+    clipchain.dc.class: ros2neuro_filters_dc/DcFloat
+
+    clipchain.clip.class: tutorial_filter_plugin/ClipFloat
+    clipchain.clip.limit: 50.0

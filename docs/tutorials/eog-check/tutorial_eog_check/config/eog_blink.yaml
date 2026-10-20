@@ -1,0 +1,25 @@
+# Parameters of the tutorial nodes.
+#   ros2 launch tutorial_eog_check eog_demo.launch.xml
+
+# The blink detector
+eog_blink:
+  ros__parameters:
+    input_topic: /neurodata          # NeuroFrame to analyse (remap it to your acquisition output)
+    output_topic: /neuroevent        # where Blink (1024) and Blink+Off (1024 + 32768) are published
+
+    sensor: "EEG"                    # name of the NeuroSensor block
+    channels: ["Fp1", "Fp2"]         # frontal channels: their mean is the signal to analyse
+
+    threshold: 80.0                  # deflection (unit of the signal, uV) that starts a blink
+    hysteresis: 0.5                  # the blink ends when the deflection stays under threshold * hysteresis...
+    release_s: 0.15                  # ...for this long (seconds)
+    baseline_tau_s: 2.0              # time constant of the slow baseline that follows the signal (seconds)
+
+# The simulator (only for the demo, replace it with your acquisition)
+fake_eog:
+  ros__parameters:
+    output_topic: /neurodata
+    samplerate: 512.0
+    framerate: 16.0
+    period_s: 4.0                    # one blink every 4 seconds
+    amplitude_uv: 150.0              # amplitude of the blink on Fp1 and Fp2

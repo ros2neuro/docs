@@ -1,0 +1,8 @@
+<library path="tutorial_integrator_plugin">
+  <class
+      name="tutorial::integrator::MovingAverage"
+      type="tutorial::integrator::MovingAverage"
+      base_class_type="ros2neuro::integrator::Integrator">
+    <description>Averages the last N predictions.</description>
+  </class>
+</library>

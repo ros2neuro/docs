@@ -1,0 +1,121 @@
+site_name: ros2neuro
+site_description: Documentation of ros2neuro, a modular ROS 2 framework for neurophysiological signal acquisition, processing, decoding and closed-loop BCI.
+site_url: https://ros2neuro.github.io/docs/
+repo_url: https://github.com/ros2neuro/docs
+
+# Tutorial packages live next to their page in docs/tutorials/<name>/tutorial_*/: keep their sources out of the site
+exclude_docs: |
+  /tutorials/*/tutorial_*/
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - navigation.footer
+    - content.code.copy
+    - search.highlight
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets:
+      base_path: docs/tutorials
+      check_paths: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+
+nav:
+  - Home: index.md
+  - Concepts:
+      - concepts/architecture.md
+      - concepts/messages.md
+      - concepts/topics.md
+      - concepts/plugins.md
+      - concepts/protocols.md
+  - Packages:
+      - packages/index.md
+      - packages/msgs-data.md
+      - Acquisition:
+          - packages/acquisition/index.md
+          - packages/acquisition/dummy.md
+          - packages/acquisition/lsl.md
+          - packages/acquisition/eegdev.md
+          - packages/acquisition/antneuro.md
+          - packages/acquisition/gusbamp.md
+          - packages/acquisition/xdf.md
+      - Filters:
+          - packages/filters/index.md
+          - packages/filters/dc.md
+          - packages/filters/butterworth.md
+          - packages/filters/car.md
+          - packages/filters/laplacian.md
+          - packages/filters/hann.md
+          - packages/filters/hamming.md
+          - packages/filters/blackman.md
+          - packages/filters/flattop.md
+      - Processing:
+          - packages/processing/buffer.md
+          - packages/processing/spectral.md
+      - Decoder:
+          - packages/decoder/index.md
+          - packages/decoder/lda.md
+          - packages/decoder/qda.md
+          - packages/decoder/svm.md
+          - packages/decoder/gaussian.md
+          - packages/decoder/python.md
+          - packages/decoder/converters.md
+      - Integrator:
+          - packages/integrator/index.md
+          - packages/integrator/exponential.md
+          - packages/integrator/buffer.md
+      - Recorder:
+          - packages/recorder/index.md
+          - packages/recorder/xdf.md
+      - Manager:
+          - packages/manager/index.md
+          - packages/manager/synchronous.md
+          - packages/manager/asynchronous.md
+      - Feedback:
+          - packages/feedback/index.md
+          - packages/feedback/wheel.md
+          - packages/feedback/bar.md
+      - packages/neurodraw.md
+      - packages/visualizer.md
+      - packages/devel-test.md
+  - Tutorials:
+      - tutorials/index.md
+      - tutorials/hardware-free-pipeline/index.md
+      - tutorials/filter-plugin/index.md
+      - tutorials/integrator-plugin/index.md
+      - tutorials/power-threshold-event/index.md
+      - tutorials/eog-check/index.md

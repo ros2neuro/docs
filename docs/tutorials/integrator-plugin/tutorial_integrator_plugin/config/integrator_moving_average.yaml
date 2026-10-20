@@ -1,0 +1,17 @@
+# Loads the tutorial integrator in the ros2neuro integrator node.
+#   ros2 run ros2neuro_integrator integrator_node --ros-args --params-file integrator_moving_average.yaml
+integrator:
+  ros__parameters:
+    input_topic: /prediction
+    output_topic: /integrated/raw
+    event_topic: /neuroevent
+
+    integrator.name: tutorial_moving_average
+    integrator.type: tutorial::integrator::MovingAverage
+
+    # parameters of the plugin live under integrator.params.*
+    integrator.params.window: 4
+
+    # node-level options, they work with any integrator plugin
+    integrator.rejection: -1.0      # -1 disables the rejection of low-confidence predictions
+    integrator.reset_event: 781     # reset when this event arrives on event_topic

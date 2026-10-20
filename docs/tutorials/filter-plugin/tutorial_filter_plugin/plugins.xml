@@ -1,0 +1,8 @@
+<library path="tutorial_filter_plugin">
+  <class
+      name="tutorial_filter_plugin/ClipFloat"
+      type="ros2neuro::filters::ClipFloat"
+      base_class_type="ros2neuro::filters::Filter&lt;float&gt;">
+    <description>Clips every sample to the range [-limit, +limit].</description>
+  </class>
+</library>
