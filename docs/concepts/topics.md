@@ -5,7 +5,7 @@ node name you give: a node called `acquisition` publishes `~/neurodata` as `/acq
 
 ![Topics and message types: the nodes of the chain, with the topic and the message type of every arrow](../assets/topics.svg)
 
-The diagram uses the topic names of the `ros2neuro_devel_test` launchers. Click a message type in the tables below to read its description.
+The diagram uses the topic names of the [`ros2neuro_devel_test`](../packages/devel-test.md) launchers. Click a message type in the tables below to read its description.
 
 ## Topics
 
@@ -15,11 +15,13 @@ The diagram uses the topic names of the `ros2neuro_devel_test` launchers. Click 
 | acquisition | publishes | `~/neurodata_info` | [`NeuroFrameInfo`](messages.md#neuroframeinfo) | stream metadata (`transient_local`) |
 | filter chain | subscribes | `/neurodata` | [`NeuroFrame`](messages.md#neuroframe) | signal to filter |
 | filter chain | publishes | `~/filtered` | [`NeuroFrame`](messages.md#neuroframe) | filtered signal |
-| FFT / Welch / spectrogram | subscribes | `/neurodata` | [`NeuroFrame`](messages.md#neuroframe) | signal to analyse |
+| spectral nodes (FFT, Welch, spectrogram) | subscribes | `/neurodata` | [`NeuroFrame`](messages.md#neuroframe) | signal to analyse (classic decoders) |
 | FFT | publishes | `~/fft` | [`NeuroFeature`](messages.md#neurofeature) | spectrum |
 | Welch | publishes | `~/psd` | [`NeuroFeature`](messages.md#neurofeature) | power spectral density |
 | spectrogram | publishes | `~/spectrogram` | [`NeuroFeature`](messages.md#neurofeature) | time-frequency map |
-| decoder | subscribes | `/features` | [`NeuroFeature`](messages.md#neurofeature) | feature to classify |
+| buffer | subscribes | `neurodata_filtered` | [`NeuroFrame`](messages.md#neuroframe) | signal to buffer (deep-learning decoders) |
+| buffer | publishes | `features` | [`NeuroFeature`](messages.md#neurofeature) | sliding window of the signal |
+| decoder | subscribes | `/features` | [`NeuroFeature`](messages.md#neurofeature) | feature to classify: a PSD (classic decoders) or a window (deep learning) |
 | decoder | publishes | `~/prediction` | [`NeuroPrediction`](messages.md#neuroprediction) | class values |
 | integrator | subscribes | `/prediction` (`input_topic`) | [`NeuroPrediction`](messages.md#neuroprediction) | decoder output |
 | integrator | publishes | `~/control` (`output_topic`) | [`NeuroControl`](messages.md#neurocontrol) | integrated values |
@@ -32,6 +34,10 @@ The diagram uses the topic names of the `ros2neuro_devel_test` launchers. Click 
 | feedback | publishes | `/neuroevent` | [`NeuroEvent`](messages.md#neuroevent) | display events, only with `publish_display_events` |
 | recorder | subscribes | `/neurodata`, `/neurodata_info`, `/neuroevent` | [`NeuroFrame`](messages.md#neuroframe), [`NeuroFrameInfo`](messages.md#neuroframeinfo), [`NeuroEvent`](messages.md#neuroevent) | what to write |
 | visualizer | subscribes | `/acquisition/neurodata` (selectable) | [`NeuroFrame`](messages.md#neuroframe) | scope |
+
+!!! note "Which processing node runs depends on the decoder"
+    The Welch node feeds the classic decoders and the buffer node feeds the deep-learning ones: a pipeline uses one of
+    them between the filters and the decoder, not both. See [Processing](../packages/processing/index.md).
 
 !!! note "Defaults vs launch files"
     The integrator defaults (`/prediction`, `~/control`) differ from the topics used in the test launchers

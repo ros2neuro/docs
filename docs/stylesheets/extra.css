@@ -1,14 +1,13 @@
-/* The logo is dark navy: keep it readable on the coloured header and in dark mode. */
+/* The header icon is a navy PNG with a transparent background. It is shown as a white silhouette, so it is
+   readable on the coloured header in both the light and the dark scheme (the filter keeps the transparency). */
 .md-header__button.md-logo {
   padding: 0.2rem;
 }
 
 .md-header__button.md-logo img {
-  height: 1.9rem;
+  height: 2.1rem;
   width: auto;
-  padding: 0.15rem 0.35rem;
-  background: #ffffff;
-  border-radius: 0.4rem;
+  filter: brightness(0) invert(1);
 }
 
 /* Full logo on the home page, on a white card so it also works in dark mode. */
@@ -38,7 +37,7 @@
   color: var(--md-default-fg-color--light);
 }
 
-/* Names of messages and classes in the first column of a table must not break in the middle */
-.md-typeset td:first-child code {
+/* Names of packages, classes and messages in a table must not break in the middle (the table scrolls instead) */
+.md-typeset td code {
   white-space: nowrap;
 }

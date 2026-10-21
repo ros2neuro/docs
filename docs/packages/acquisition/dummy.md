@@ -4,7 +4,7 @@
     Package: [`ros2neuro_acquisition_dummy`](https://github.com/ros2neuro/ros2neuro_acquisition_dummy) · pluginlib class: `ros2neuro::acquisition::DummyDevice` · part of [Acquisition](index.md)
 
 `ros2neuro_acquisition_dummy` is a reference acquisition plugin for the ROS2neuro stack.
-It implements the `ros2neuro::acquisition::NeuroDevice` interface with a synthetic device
+It implements the [`ros2neuro::acquisition::NeuroDevice`](index.md) interface with a synthetic device
 that generates deterministic EEG-, EMG-, and trigger-like data.
 
 The package is intended for:
@@ -90,7 +90,7 @@ The package installs a ready-to-use launch file:
 
 - `dummy_acquisition.launch.py`
 
-It starts the generic `acquisition` executable from `ros2neuro_acquisition` and configures it
+It starts the generic `acquisition` executable from [`ros2neuro_acquisition`](index.md) and configures it
 to load the dummy plugin.
 
 Run it with:
@@ -117,9 +117,9 @@ Current direct dependencies:
 - `ament_cmake`
 - `rclcpp`
 - `pluginlib`
-- `ros2neuro_acquisition`
-- `ros2neuro_data`
-- `ros2neuro_msgs`
+- [`ros2neuro_acquisition`](index.md)
+- [`ros2neuro_data`](../msgs-data.md#ros2neuro_data)
+- [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs)
 - `launch`
 - `launch_ros`
 

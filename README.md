@@ -69,5 +69,9 @@ colcon test  --packages-select tutorial_filter_plugin
 - Take names, topics and parameters from the code and the package READMEs of the workspace, and check them on a
   running system with `ros2 node info`, `ros2 topic list -t` and `ros2 param list`.
 - In a tutorial, build and test the code first, run it, and only then write the page around the real output.
+- Names of packages and plugin classes written in inline code (`ros2neuro_recorder`, `ros2neuro::acquisition::XDFDevice`) must
+  lead to their page. After writing or editing pages, run `python3 tools/link_names.py` to see which names are not yet links,
+  and `python3 tools/link_names.py --apply` to make them links. When you add a package or a plugin page, add its name to the
+  tables at the top of the script.
 - Use `--8<-- "<tutorial>/<package>/<file>"` to include a code file in a page (paths are relative to
   `docs/tutorials`).

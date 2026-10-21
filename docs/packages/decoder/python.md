@@ -5,6 +5,11 @@
 
 Python implementation of the EEG decoder for ROS2neuro.
 
+!!! note "Which processing feeds it"
+    A deep-learning model (the EEGNet example uses `braindecode`) takes a window of the filtered signal, so this decoder is
+    fed by the [buffer node](../processing/buffer.md), not by the Welch node of the classic decoders. See
+    [Processing](../processing/index.md).
+
 This package allows the integration of machine learning and deep learning algorithms (using libraries such as `braindecode`, `skops`, `torch`, etc.) for EEG decoding directly into the ROS2neuro framework.
 
 ## Setup Instructions

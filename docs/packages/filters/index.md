@@ -11,14 +11,14 @@ chain is described entirely in YAML.
 
 | Kind | Plugin | pluginlib class |
 |---|---|---|
-| Temporal | [DC](dc.md) | `ros2neuro_filters_dc/DcFloat` |
-| Temporal | [Butterworth](butterworth.md) | `ros2neuro_filters_butterworth/ButterworthFloat` |
-| Spatial | [CAR](car.md) | `ros2neuro_filters_car/CarFloat` |
-| Spatial | [Laplacian](laplacian.md) | `ros2neuro_filters_laplacian/LaplacianFloat` |
-| Window | [Hann](hann.md) | `ros2neuro_filters_hann/HannFloat` |
-| Window | [Hamming](hamming.md) | `ros2neuro_filters_hamming/HammingFloat` |
-| Window | [Blackman](blackman.md) | `ros2neuro_filters_blackman/BlackmanFloat` |
-| Window | [Flattop](flattop.md) | `ros2neuro_filters_flattop/FlattopFloat` |
+| Temporal | [DC](dc.md) | [`ros2neuro_filters_dc/DcFloat`](dc.md) |
+| Temporal | [Butterworth](butterworth.md) | [`ros2neuro_filters_butterworth/ButterworthFloat`](butterworth.md) |
+| Spatial | [CAR](car.md) | [`ros2neuro_filters_car/CarFloat`](car.md) |
+| Spatial | [Laplacian](laplacian.md) | [`ros2neuro_filters_laplacian/LaplacianFloat`](laplacian.md) |
+| Window | [Hann](hann.md) | [`ros2neuro_filters_hann/HannFloat`](hann.md) |
+| Window | [Hamming](hamming.md) | [`ros2neuro_filters_hamming/HammingFloat`](hamming.md) |
+| Window | [Blackman](blackman.md) | [`ros2neuro_filters_blackman/BlackmanFloat`](blackman.md) |
+| Window | [Flattop](flattop.md) | [`ros2neuro_filters_flattop/FlattopFloat`](flattop.md) |
 
 Filters never change the dimensionality of the data.
 
@@ -61,7 +61,7 @@ ros2 run ros2neuro_filters filter_chain_node --ros-args --params-file my_chain.y
 
 The list of filters is read from `<configname>.filters` (the key `<configname>.chain` is accepted as well), and
 each filter `<name>` is configured by the parameters under `<configname>.<name>.*`. When `configname` is not
-given the node uses `filters`, which is why the launch files of `ros2neuro_devel_test` write `filters.chain` and
+given the node uses `filters`, which is why the launch files of [`ros2neuro_devel_test`](../devel-test.md) write `filters.chain` and
 `filters.laplacian.class`.
 
 ## Writing a new filter
@@ -94,20 +94,20 @@ The design keeps the original ROS1 philosophy:
 
 Temporal filters:
 
-- `ros2neuro_filters_dc`
-- `ros2neuro_filters_butterworth`
+- [`ros2neuro_filters_dc`](dc.md)
+- [`ros2neuro_filters_butterworth`](butterworth.md)
 
 Spatial filters:
 
-- `ros2neuro_filters_car`
-- `ros2neuro_filters_laplacian`
+- [`ros2neuro_filters_car`](car.md)
+- [`ros2neuro_filters_laplacian`](laplacian.md)
 
 Windows:
 
-- `ros2neuro_filters_blackman`
-- `ros2neuro_filters_flattop`
-- `ros2neuro_filters_hamming`
-- `ros2neuro_filters_hann`
+- [`ros2neuro_filters_blackman`](blackman.md)
+- [`ros2neuro_filters_flattop`](flattop.md)
+- [`ros2neuro_filters_hamming`](hamming.md)
+- [`ros2neuro_filters_hann`](hann.md)
 
 ## Node Interface
 
@@ -331,8 +331,8 @@ mirroring the per-filter round-trip tests:
    and compares the result sample-by-sample with `output_data.csv`.
 
 This test requires the plugin packages used by the chain to be built in the same
-workspace: `ros2neuro_filters_dc`, `ros2neuro_filters_butterworth`,
-`ros2neuro_filters_car`, `ros2neuro_filters_hann`.
+workspace: [`ros2neuro_filters_dc`](dc.md), [`ros2neuro_filters_butterworth`](butterworth.md),
+[`ros2neuro_filters_car`](car.md), [`ros2neuro_filters_hann`](hann.md).
 
 ROS and MATLAB are run separately (e.g. ROS inside the dev container, MATLAB on the
 host where the license and a display are available):

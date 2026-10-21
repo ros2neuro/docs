@@ -3,14 +3,14 @@
 !!! info ""
     Package: [`ros2neuro_recorder_xdf`](https://github.com/ros2neuro/ros2neuro_recorder_xdf) · pluginlib class: `ros2neuro::recorder::XDFRecorder` · part of [Recorder](index.md)
 
-`pluginlib` recorder plugin for `ros2neuro_recorder` based on `xdffileio`.
+`pluginlib` recorder plugin for [`ros2neuro_recorder`](index.md) based on `xdffileio`.
 
 The plugin supports:
 - `gdf` output
 - `bdf` output
 - event export through the recorder event stream
 - subject/session metadata through `xdf.*` parameters
-- end-to-end round-trip validation against `ros2neuro_acquisition_eegdev` fixtures
+- end-to-end round-trip validation against [`ros2neuro_acquisition_eegdev`](../acquisition/eegdev.md) fixtures
 
 The test suite is split between:
 - focused plugin/unit coverage in `test_xdf_recorder`
@@ -18,13 +18,13 @@ The test suite is split between:
 
 ## Plugin Class
 
-Use the following plugin name in `ros2neuro_recorder`:
+Use the following plugin name in [`ros2neuro_recorder`](index.md):
 
 `ros2neuro::recorder::XDFRecorder`
 
 ## Parameters
 
-Recorder-level parameters are declared by `ros2neuro_recorder`. This package adds:
+Recorder-level parameters are declared by [`ros2neuro_recorder`](index.md). This package adds:
 
 - `xdf.file_type`: output format, currently `gdf` or `bdf`
 - `xdf.session_id`: session metadata stored in the file header

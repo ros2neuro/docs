@@ -14,8 +14,8 @@ single wrong prediction does not move the feedback. The package provides the `In
 
 | Plugin | pluginlib class | Behaviour |
 |---|---|---|
-| [Exponential](exponential.md) | `ros2neuro::integrator::Exponential` | exponential moving average of the probabilities (`alpha`) |
-| [Buffer](buffer.md) | `ros2neuro::integrator::Buffer` | one accumulator per class, the winner goes up and the others down |
+| [Exponential](exponential.md) | [`ros2neuro::integrator::Exponential`](exponential.md) | exponential moving average of the probabilities (`alpha`) |
+| [Buffer](buffer.md) | [`ros2neuro::integrator::Buffer`](buffer.md) | one accumulator per class, the winner goes up and the others down |
 
 ## Node behaviour
 

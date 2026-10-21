@@ -13,12 +13,12 @@ replay a GDF file (described in the next section, and the ones to use for the tu
 
 The pipeline uses:
 
-- acquisition from an ANT Neuro eego amplifier, through `ros2neuro_acquisition_antneuro`;
+- acquisition from an ANT Neuro eego amplifier, through [`ros2neuro_acquisition_antneuro`](acquisition/antneuro.md);
 - a file recorder, `XDFRecorder`;
-- live visualisation with `ros2neuro_visualizer`;
+- live visualisation with [`ros2neuro_visualizer`](visualizer.md);
 - a Laplacian filter;
 - a PSD computed with Welch;
-- a Gaussian decoder, `ros2neuro_decoder_gaussian`;
+- a Gaussian decoder, [`ros2neuro_decoder_gaussian`](decoder/gaussian.md);
 - an exponential integrator with `alpha = 0.98` and `rejection = 0.55`.
 
 Main launch file: `launch/mi_loop.launch.xml`. Configuration: `config/mi_loop_configuration.yaml`. Example decoder:

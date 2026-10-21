@@ -27,13 +27,18 @@ Adding a backend never requires changing the generic node.
 
 | Base package | Base class | How to select it | Plugin packages |
 |---|---|---|---|
-| `ros2neuro_acquisition` | `ros2neuro::acquisition::NeuroDevice` | `acquisition.plugin` | `acquisition_dummy`, `acquisition_lsl`, `acquisition_eegdev`, `acquisition_antneuro`, `acquisition_gusbamp`, `acquisition_xdf` |
-| `ros2neuro_filters` | `ros2neuro::filters::Filter<float>` | `filters.chain` list, `filters.<name>.class` | `filters_dc`, `filters_butterworth`, `filters_car`, `filters_laplacian`, `filters_hann`, `filters_hamming`, `filters_blackman`, `filters_flattop` |
-| `ros2neuro_decoder` | `ros2neuro::decoder::Decoder` | `type` field of the model `manifest.yaml` | `decoder_lda`, `decoder_qda`, `decoder_svm`, `decoder_gaussian` |
-| `ros2neuro_integrator` | `ros2neuro::integrator::Integrator` | `integrator.type` | `integrator_exponential`, `integrator_buffer` |
-| `ros2neuro_recorder` | `ros2neuro::recorder::NeuroRecorder` | `plugin` | `recorder_xdf` |
-| `ros2neuro_manager` | `ros2neuro::manager::ManagerPlugin` | `plugin` | `manager_synchronous` (`Training`), `manager_asynchronous` (`Control`) |
-| `ros2neuro_feedback` | `ros2neuro::feedback::FeedbackPlugin` | `plugin` | `feedback_wheel` (`Wheel`), `feedback_bar` (`Bar`) |
+| [`ros2neuro_acquisition`](../packages/acquisition/index.md) | [`ros2neuro::acquisition::NeuroDevice`](../packages/acquisition/index.md) | `acquisition.plugin` | [`acquisition_dummy`](../packages/acquisition/dummy.md), [`acquisition_lsl`](../packages/acquisition/lsl.md), [`acquisition_eegdev`](../packages/acquisition/eegdev.md), [`acquisition_antneuro`](../packages/acquisition/antneuro.md), [`acquisition_gusbamp`](../packages/acquisition/gusbamp.md), [`acquisition_xdf`](../packages/acquisition/xdf.md) |
+| [`ros2neuro_filters`](../packages/filters/index.md) | [`ros2neuro::filters::Filter<float>`](../packages/filters/index.md) | `filters.chain` list, `filters.<name>.class` | [`filters_dc`](../packages/filters/dc.md), [`filters_butterworth`](../packages/filters/butterworth.md), [`filters_car`](../packages/filters/car.md), [`filters_laplacian`](../packages/filters/laplacian.md), [`filters_hann`](../packages/filters/hann.md), [`filters_hamming`](../packages/filters/hamming.md), [`filters_blackman`](../packages/filters/blackman.md), [`filters_flattop`](../packages/filters/flattop.md) |
+| [`ros2neuro_decoder`](../packages/decoder/index.md) | [`ros2neuro::decoder::Decoder`](../packages/decoder/index.md) | `type` field of the model `manifest.yaml` | [`decoder_lda`](../packages/decoder/lda.md), [`decoder_qda`](../packages/decoder/qda.md), [`decoder_svm`](../packages/decoder/svm.md), [`decoder_gaussian`](../packages/decoder/gaussian.md) |
+| [`ros2neuro_integrator`](../packages/integrator/index.md) | [`ros2neuro::integrator::Integrator`](../packages/integrator/index.md) | `integrator.type` | [`integrator_exponential`](../packages/integrator/exponential.md), [`integrator_buffer`](../packages/integrator/buffer.md) |
+| [`ros2neuro_recorder`](../packages/recorder/index.md) | [`ros2neuro::recorder::NeuroRecorder`](../packages/recorder/index.md) | `plugin` | [`recorder_xdf`](../packages/recorder/xdf.md) |
+| [`ros2neuro_manager`](../packages/manager/index.md) | [`ros2neuro::manager::ManagerPlugin`](../packages/manager/index.md) | `plugin` | [`manager_synchronous`](../packages/manager/synchronous.md) (`Training`), [`manager_asynchronous`](../packages/manager/asynchronous.md) (`Control`) |
+| [`ros2neuro_feedback`](../packages/feedback/index.md) | [`ros2neuro::feedback::FeedbackPlugin`](../packages/feedback/index.md) | `plugin` | [`feedback_wheel`](../packages/feedback/wheel.md) (`Wheel`), [`feedback_bar`](../packages/feedback/bar.md) (`Bar`) |
+
+!!! note "Not everything is a plugin"
+    The **processing** stage has no plugin family and no base class: the Welch node and the buffer node are ordinary
+    nodes, and you choose one by starting it in the launch file. A new processing is a new node that publishes a
+    `NeuroFeature`. See [Processing](../packages/processing/index.md).
 
 Selecting a plugin in a launch parameter file:
 
@@ -97,8 +102,8 @@ The library is built as a shared library, and the description file is exported t
 pluginlib_export_plugin_description_file(ros2neuro_filters plugins.xml)
 ```
 
-Each family uses its own base package name in this call (`ros2neuro_acquisition`, `ros2neuro_decoder`,
-`ros2neuro_integrator`, `ros2neuro_recorder`, `ros2neuro_manager`, `ros2neuro_feedback`).
+Each family uses its own base package name in this call ([`ros2neuro_acquisition`](../packages/acquisition/index.md), [`ros2neuro_decoder`](../packages/decoder/index.md),
+[`ros2neuro_integrator`](../packages/integrator/index.md), [`ros2neuro_recorder`](../packages/recorder/index.md), [`ros2neuro_manager`](../packages/manager/index.md), [`ros2neuro_feedback`](../packages/feedback/index.md)).
 
 ## Practical notes
 
@@ -106,7 +111,7 @@ Each family uses its own base package name in this call (`ros2neuro_acquisition`
   loader prints a warning. The manager and feedback nodes call `release_plugin()` for this.
 - If a plugin class is not found, check that its package is installed, that the workspace is sourced
   (`source install/setup.bash`) and that the class name in the parameter matches `plugins.xml` exactly.
-- `ros2neuro_devel_test` shows complete parameter files that select a plugin for every node.
+- [`ros2neuro_devel_test`](../packages/devel-test.md) shows complete parameter files that select a plugin for every node.
 
 See the tutorials [Writing a filter plugin](../tutorials/filter-plugin/index.md) and
 [Writing an integrator plugin](../tutorials/integrator-plugin/index.md) for a complete, compilable example.

@@ -14,12 +14,12 @@ nothing about a specific amplifier: the device driver is a **plugin that you mus
 
 | Plugin | pluginlib class | Use it to |
 |---|---|---|
-| [Dummy](dummy.md) | `ros2neuro::acquisition::DummyDevice` | generate synthetic EEG/EMG/trigger data, no hardware |
-| [XDF / GDF replay](xdf.md) | `ros2neuro::acquisition::XDFDevice` | replay a recorded file as if it were live |
-| [LSL](lsl.md) | `ros2neuro::acquisition::LSLDevice` | read a Lab Streaming Layer stream |
-| [eegdev](eegdev.md) | `ros2neuro::acquisition::EGDDevice` | read a device supported by the eegdev library |
-| [ANT Neuro](antneuro.md) | `ros2neuro::acquisition::EEGODevice` | ANT Neuro amplifiers (hardware required) |
-| [g.USBamp](gusbamp.md) | `ros2neuro::acquisition::GUSBampDevice` | g.tec g.USBamp (hardware required) |
+| [Dummy](dummy.md) | [`ros2neuro::acquisition::DummyDevice`](dummy.md) | generate synthetic EEG/EMG/trigger data, no hardware |
+| [XDF / GDF replay](xdf.md) | [`ros2neuro::acquisition::XDFDevice`](xdf.md) | replay a recorded file as if it were live |
+| [LSL](lsl.md) | [`ros2neuro::acquisition::LSLDevice`](lsl.md) | read a Lab Streaming Layer stream |
+| [eegdev](eegdev.md) | [`ros2neuro::acquisition::EGDDevice`](eegdev.md) | read a device supported by the eegdev library |
+| [ANT Neuro](antneuro.md) | [`ros2neuro::acquisition::EEGODevice`](antneuro.md) | ANT Neuro amplifiers (hardware required) |
+| [g.USBamp](gusbamp.md) | [`ros2neuro::acquisition::GUSBampDevice`](gusbamp.md) | g.tec g.USBamp (hardware required) |
 
 ## Topics and services
 
@@ -74,8 +74,8 @@ the state machine that turns a device implementation into ROS 2 topics and servi
 The package is meant to sit between:
 
 - concrete hardware drivers or acquisition plugins
-- the `ros2neuro_data` runtime data structures
-- the `ros2neuro_msgs` transport interfaces published on the ROS graph
+- the [`ros2neuro_data`](../msgs-data.md#ros2neuro_data) runtime data structures
+- the [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs) transport interfaces published on the ROS graph
 
 ## Purpose
 
@@ -194,8 +194,8 @@ Current direct dependencies:
 - `rclcpp`
 - `std_srvs`
 - `pluginlib`
-- `ros2neuro_data`
-- `ros2neuro_msgs`
+- [`ros2neuro_data`](../msgs-data.md#ros2neuro_data)
+- [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs)
 
 ## Build
 
@@ -236,7 +236,7 @@ ros2 run ros2neuro_acquisition acquisition --ros-args \
 ```
 
 The concrete plugin must be provided by another package, such as
-`ros2neuro_acquisition_dummy`.
+[`ros2neuro_acquisition_dummy`](dummy.md).
 
 The same generic runtime is available through:
 
@@ -249,4 +249,4 @@ ros2 launch ros2neuro_acquisition acquisition.launch.xml \
 
 - This package defines the acquisition framework, not a concrete device.
 - The actual hardware or simulated backends are expected to live in separate plugin packages.
-- Plugins exchange runtime data using `ros2neuro_data` and publish transport messages through `ros2neuro_msgs`.
+- Plugins exchange runtime data using [`ros2neuro_data`](../msgs-data.md#ros2neuro_data) and publish transport messages through [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs).

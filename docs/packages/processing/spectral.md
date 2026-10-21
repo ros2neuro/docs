@@ -3,6 +3,12 @@
 !!! info ""
     Package: [`ros2neuro_processing_spectral`](https://github.com/ros2neuro/ros2neuro_processing_spectral) · part of [Packages](../index.md)
 
+!!! note "Where it fits"
+    This is the processing stage for the **classic decoders** (LDA, QDA, SVM, Gaussian): `welch_node` sits between the
+    filters and the decoder and publishes the PSD they read. The same processors are also used **inside the
+    [visualizer](../visualizer.md)** (its *Spectrum* tab), without running a node. The deep-learning decoders use the
+    [buffer](buffer.md) instead. See [Processing](index.md) for the whole picture.
+
 ROS 2 spectral processing package for `ros2neuro`.
 
 This package implements frequency-domain and time-frequency processing on top of
@@ -168,10 +174,10 @@ ros2 launch ros2neuro_processing_spectral spectral_processing.launch.py \
 The package does not maintain its own runtime implementation of Hann, Hamming, Blackman and flattop
 windows. Instead, it reuses the existing window classes from:
 
-- `ros2neuro_filters_hann`
-- `ros2neuro_filters_hamming`
-- `ros2neuro_filters_blackman`
-- `ros2neuro_filters_flattop`
+- [`ros2neuro_filters_hann`](../filters/hann.md)
+- [`ros2neuro_filters_hamming`](../filters/hamming.md)
+- [`ros2neuro_filters_blackman`](../filters/blackman.md)
+- [`ros2neuro_filters_flattop`](../filters/flattop.md)
 
 Those window packages now expose reusable C++ APIs for:
 

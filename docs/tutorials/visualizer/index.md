@@ -14,7 +14,7 @@ channels, add a **Welch power spectrum** with the `+` button, and put the signal
 - how to add the Spectrum tab and read the Welch spectrum;
 - how to arrange several tabs, and how to look at the trigger lines.
 
-**You need** a built ROS2neuro workspace (with `ros2neuro_visualizer` and `ros2neuro_devel_test`) and a display.
+**You need** a built ROS2neuro workspace (with [`ros2neuro_visualizer`](../../packages/visualizer.md) and [`ros2neuro_devel_test`](../../packages/devel-test.md)) and a display.
 No hardware: the EEG comes from a recorded GDF file. About 15 minutes.
 
 ## 1. Start a data source
@@ -27,7 +27,7 @@ file as if it were a live amplifier: 16 EEG channels at 512 Hz, sent 16 times pe
 ```
 
 The file `acquisition_gdf.yaml` is in this tutorial's folder. Start the acquisition node with it, giving the GDF that
-comes with `ros2neuro_devel_test`:
+comes with [`ros2neuro_devel_test`](../../packages/devel-test.md):
 
 ```bash
 ros2 run ros2neuro_acquisition acquisition --ros-args \
@@ -124,7 +124,8 @@ Choose **Spectrum**. A new tab appears and the right sidebar shows its controls.
 ![The Spectrum tab with the default range](img/06-spectrum-default.png){ .screenshot }
 
 The tab computes the power spectral density (PSD) of the EEG itself, with the Welch method, from the frames it
-receives: there is no extra node to start. The vertical axis is the PSD in dB/Hz and each colour is a channel.
+receives: there is no extra node to start (it is the same code as the Welch node used in the BCI loop, see
+[Processing](../../packages/processing/index.md)). The vertical axis is the PSD in dB/Hz and each colour is a channel.
 The spectrum falls with the frequency, as the spectrum of the EEG does. The narrow dip at 50 Hz is typical of a notch
 filter on the power line applied to this recording (with other data, a peak at 50 Hz would be line noise).
 

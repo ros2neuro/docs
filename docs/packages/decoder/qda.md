@@ -3,8 +3,8 @@
 !!! info ""
     Package: [`ros2neuro_decoder_qda`](https://github.com/ros2neuro/ros2neuro_decoder_qda) · pluginlib class: `ros2neuro::decoder::QDA` · part of [Decoder](index.md)
 
-`ros2neuro_decoder_qda` provides a QDA decoder plugin for `ros2neuro_decoder` with the
-same runtime structure used by `ros2neuro_decoder_lda`.
+`ros2neuro_decoder_qda` provides a QDA decoder plugin for [`ros2neuro_decoder`](index.md) with the
+same runtime structure used by [`ros2neuro_decoder_lda`](lda.md).
 
 ## Runtime configuration
 

@@ -3,7 +3,7 @@
 !!! info ""
     Package: [`ros2neuro_acquisition_lsl`](https://github.com/ros2neuro/ros2neuro_acquisition_lsl) · pluginlib class: `ros2neuro::acquisition::LSLDevice` · part of [Acquisition](index.md)
 
-`ros2neuro_acquisition_lsl` is a plugin for the `ros2neuro_acquisition` framework. It implements the `ros2neuro::acquisition::NeuroDevice` interface and allows the acquisition node to connect to and stream data from any active **Lab Streaming Layer (LSL)** Outlet present on the network, bridging external software (e.g., OpenViBE, EEGLAB, BrainProducts, g.tec) directly into the `ros2neuro` ROS2 ecosystem.
+`ros2neuro_acquisition_lsl` is a plugin for the [`ros2neuro_acquisition`](index.md) framework. It implements the [`ros2neuro::acquisition::NeuroDevice`](index.md) interface and allows the acquisition node to connect to and stream data from any active **Lab Streaming Layer (LSL)** Outlet present on the network, bridging external software (e.g., OpenViBE, EEGLAB, BrainProducts, g.tec) directly into the `ros2neuro` ROS2 ecosystem.
 
 The plugin class exported via `pluginlib` is:
 
@@ -139,9 +139,9 @@ acquisition:
 | `liblsl` | ≥ 1.16 | LabStreamingLayer C++ library — stream discovery, `stream_inlet`, sample pull |
 | `rclcpp` | ROS2 (Humble+) | ROS2 C++ client library |
 | `pluginlib` | ROS2 | Plugin loading and class registration macros |
-| `ros2neuro_acquisition` | — | `NeuroDevice` base class and `NeuroAcquisitionNode` |
-| `ros2neuro_data` | — | `NeuroFrame`, `NeuroSensor`, `NeuroTrigger` data structures |
-| `ros2neuro_msgs` | — | `NeuroFrame`, `NeuroSensorInfo` ROS2 message definitions |
+| [`ros2neuro_acquisition`](index.md) | — | `NeuroDevice` base class and `NeuroAcquisitionNode` |
+| [`ros2neuro_data`](../msgs-data.md#ros2neuro_data) | — | `NeuroFrame`, `NeuroSensor`, `NeuroTrigger` data structures |
+| [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs) | — | `NeuroFrame`, `NeuroSensorInfo` ROS2 message definitions |
 
 ### Build
 

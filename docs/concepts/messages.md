@@ -1,6 +1,6 @@
 # Messages and data types
 
-All messages live in the `ros2neuro_msgs` package. They are the contract between every node of the stack.
+All messages live in the [`ros2neuro_msgs`](../packages/msgs-data.md#ros2neuro_msgs) package. They are the contract between every node of the stack.
 
 ```mermaid
 flowchart LR
@@ -20,7 +20,7 @@ Click a message name to jump to its description.
 |---|---|---|---|
 | [`NeuroFrame`](#neuroframe) | one synchronous chunk of analog and trigger samples | acquisition, filters | filters, processing, recorder, visualizer |
 | [`NeuroFrameInfo`](#neuroframeinfo) | static description of the stream (rate, channels, labels) | acquisition | recorder, visualizer |
-| [`NeuroFeature`](#neurofeature) | processed data of any dimensionality (PSD, spectrogram...) | processing | decoder |
+| [`NeuroFeature`](#neurofeature) | processed data of any dimensionality (PSD, spectrogram, a window of the signal...) | processing (spectral or buffer, see [Processing](../packages/processing/index.md)) | decoder |
 | [`NeuroPrediction`](#neuroprediction) | decoder output, one value per class | decoder | integrator |
 | [`NeuroControl`](#neurocontrol) | integrated or normalised control values plus discrete actions | integrator, manager | manager, feedback |
 | [`NeuroEvent`](#neuroevent) | sparse marker (trial start, cue, outcome...) | manager, feedback | recorder, integrator |
@@ -121,7 +121,10 @@ NeuroTriggerInfo[]  triggers
 
 ## NeuroFeature
 
-**`NeuroFeature`** is a generic N-dimensional tensor, the output of every processing node.
+**`NeuroFeature`** is a generic N-dimensional tensor, the output of every processing node. It is the only contract between
+the [processing](../packages/processing/index.md) stage and the decoder: there is no base class for processing, so a new
+processing (a Hilbert envelope, a covariance matrix...) just publishes a `NeuroFeature` with the type, `shape` and `axes` that
+the decoder expects.
 
 ```text
 std_msgs/Header header      # stamp = END of the analysis window
@@ -137,7 +140,7 @@ string          description
 
 | Type constant | Value | Typical content |
 |---|---|---|
-| `TYPE_TIME_SERIES` | 1 | power trajectory |
+| `TYPE_TIME_SERIES` | 1 | a window of the signal (the buffer node), a power trajectory |
 | `TYPE_SPECTRUM` | 2 | PSD (FFT, Welch) |
 | `TYPE_TIME_FREQUENCY` | 3 | spectrogram |
 | `TYPE_CONNECTIVITY` | 4 | coherence, PLV |
@@ -228,7 +231,7 @@ recording. The recorder keys event types on the pair (`event_id`, `family_id`).
 
 ## In-memory types: ros2neuro_data
 
-Plugins do not build ROS messages by hand. The `ros2neuro_data` library provides C++ structs that mirror the
+Plugins do not build ROS messages by hand. The [`ros2neuro_data`](../packages/msgs-data.md#ros2neuro_data) library provides C++ structs that mirror the
 messages (`NeuroFrame`, `NeuroSensor`, `NeuroTrigger`, `NeuroFeature`, `NeuroAxis`, and the template
 `NeuroSignal<T>` shared by sensors and triggers), plus validation (`NeuroDataValidate.h`) and conversion
 (`NeuroDataConvert.h`) helpers. A device fills a `ros2neuro::data::NeuroFrame`, the frame is validated and

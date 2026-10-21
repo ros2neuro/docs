@@ -125,7 +125,7 @@ fall back, and that the threshold can change.
 --8<-- "power-threshold-event/tutorial_power_threshold/CMakeLists.txt"
 ```
 
-The package depends only on `rclcpp` and `ros2neuro_msgs`. The executable is installed in `lib/<package>`, which
+The package depends only on `rclcpp` and [`ros2neuro_msgs`](../../packages/msgs-data.md#ros2neuro_msgs). The executable is installed in `lib/<package>`, which
 is where `ros2 run` looks for it.
 
 ## 7. Build and test

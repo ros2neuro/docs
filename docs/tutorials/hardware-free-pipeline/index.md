@@ -7,7 +7,7 @@ live. You will run a calibration, look at what each node publishes, and see wher
 
 It takes about 10 minutes and needs no code. It is also the quickest way to check that your installation works.
 
-**You need** a built ROS2neuro workspace with the package `ros2neuro_devel_test`, and a display for the
+**You need** a built ROS2neuro workspace with the package [`ros2neuro_devel_test`](../../packages/devel-test.md), and a display for the
 feedback window.
 
 ## 1. What will run
@@ -27,14 +27,19 @@ flowchart LR
 
 | Node | Package | Plugin or model |
 |---|---|---|
-| `acquisition` | `ros2neuro_acquisition` | `ros2neuro::acquisition::XDFDevice`, replays `test.gdf` in a loop at 16 frames per second |
-| `filters` | `ros2neuro_filters` | Laplacian spatial filter |
-| `welch` | `ros2neuro_processing_spectral` | power spectral density, 4 to 48 Hz in steps of 2 |
-| `decoder` | `ros2neuro_decoder` | `ros2neuro::decoder::Gaussian`, model `b4_bhbf_20230706.smr` (both hands / both feet) |
-| `integrator` | `ros2neuro_integrator` | `ros2neuro::integrator::Exponential`, `alpha 0.98` |
-| `manager` | `ros2neuro_manager` | `ros2neuro::manager::Training` |
-| `feedback` | `ros2neuro_feedback` | `ros2neuro::feedback::Bar`, one bar per class |
-| `recorder` | `ros2neuro_recorder` | `ros2neuro::recorder::XDFRecorder`, writes GDF (skipped with `record:=false`) |
+| `acquisition` | [`ros2neuro_acquisition`](../../packages/acquisition/index.md) | [`ros2neuro::acquisition::XDFDevice`](../../packages/acquisition/xdf.md), replays `test.gdf` in a loop at 16 frames per second |
+| `filters` | [`ros2neuro_filters`](../../packages/filters/index.md) | Laplacian spatial filter |
+| `welch` | [`ros2neuro_processing_spectral`](../../packages/processing/spectral.md) | power spectral density, 4 to 48 Hz in steps of 2 |
+| `decoder` | [`ros2neuro_decoder`](../../packages/decoder/index.md) | [`ros2neuro::decoder::Gaussian`](../../packages/decoder/gaussian.md), model `b4_bhbf_20230706.smr` (both hands / both feet) |
+| `integrator` | [`ros2neuro_integrator`](../../packages/integrator/index.md) | [`ros2neuro::integrator::Exponential`](../../packages/integrator/exponential.md), `alpha 0.98` |
+| `manager` | [`ros2neuro_manager`](../../packages/manager/index.md) | [`ros2neuro::manager::Training`](../../packages/manager/synchronous.md) |
+| `feedback` | [`ros2neuro_feedback`](../../packages/feedback/index.md) | [`ros2neuro::feedback::Bar`](../../packages/feedback/bar.md), one bar per class |
+| `recorder` | [`ros2neuro_recorder`](../../packages/recorder/index.md) | [`ros2neuro::recorder::XDFRecorder`](../../packages/recorder/xdf.md), writes GDF (skipped with `record:=false`) |
+
+!!! note "The `welch` node depends on the decoder"
+    This pipeline uses a classic decoder (Gaussian), which reads a power spectrum, so a Welch node sits between the filters and
+    the decoder. The launchers `eegnet_bars` and `eegnet_wheel` use a deep-learning decoder instead, which reads a window of
+    the signal: there the `welch` node is replaced by a `buffer` node. See [Processing](../../packages/processing/index.md).
 
 ## 2. Launch it
 

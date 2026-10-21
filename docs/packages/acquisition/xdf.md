@@ -4,7 +4,7 @@
     Package: [`ros2neuro_acquisition_xdf`](https://github.com/ros2neuro/ros2neuro_acquisition_xdf) · pluginlib class: `ros2neuro::acquisition::XDFDevice` · part of [Acquisition](index.md)
 
 `ros2neuro_acquisition_xdf` provides a file acquisition backend for
-`ros2neuro_acquisition` using `xdffileio` directly.
+[`ros2neuro_acquisition`](index.md) using `xdffileio` directly.
 
 Plugin:
 

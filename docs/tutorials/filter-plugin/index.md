@@ -22,7 +22,7 @@ compiled by the CI of the repository, so the code below is the code that builds.
 ## 1. How a filter works
 
 The chain gives every `NeuroFrame` to each filter as a matrix of floats shaped `[samples x channels]`, and the
-filter returns a matrix of the same shape. A filter derives from `ros2neuro::filters::Filter<float>` and
+filter returns a matrix of the same shape. A filter derives from [`ros2neuro::filters::Filter<float>`](../../packages/filters/index.md) and
 implements two methods:
 
 | Method | Called | Job |
@@ -72,7 +72,7 @@ Things to notice:
 ```
 
 `PLUGINLIB_EXPORT_CLASS(Derived, Base)` makes the class creatable by the class loader. The base class must be
-exactly the one the chain loads, `ros2neuro::filters::Filter<float>`.
+exactly the one the chain loads, [`ros2neuro::filters::Filter<float>`](../../packages/filters/index.md).
 
 ```xml title="plugins.xml"
 --8<-- "filter-plugin/tutorial_filter_plugin/plugins.xml"
@@ -94,7 +94,7 @@ exactly the one the chain loads, `ros2neuro::filters::Filter<float>`.
 
 The two lines that make this a plugin are the shared `add_library` and
 `pluginlib_export_plugin_description_file(ros2neuro_filters plugins.xml)`: the second one tells
-`ros2neuro_filters` where to find your `plugins.xml`.
+[`ros2neuro_filters`](../../packages/filters/index.md) where to find your `plugins.xml`.
 
 ## 6. Test it
 

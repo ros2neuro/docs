@@ -3,7 +3,7 @@
 !!! info ""
     Package: [`ros2neuro_manager_synchronous`](https://github.com/ros2neuro/ros2neuro_manager_synchronous) · pluginlib class: `ros2neuro::manager::Training` · part of [Manager](index.md)
 
-Plugin `ros2neuro::manager::Training` of `ros2neuro_manager`: calibration and evaluation
+Plugin `ros2neuro::manager::Training` of [`ros2neuro_manager`](index.md): calibration and evaluation
 protocol. It ports the logic of `game_controller`'s `training_controller` (trial sequence,
 phases, blink handling, `protocol_ended`, summary) to the normalized per-class values of the
 manager. The whole protocol runs on a thread of the plugin.

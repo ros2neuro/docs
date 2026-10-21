@@ -3,7 +3,7 @@
 !!! info ""
     Package: [`ros2neuro_manager_asynchronous`](https://github.com/ros2neuro/ros2neuro_manager_asynchronous) · pluginlib class: `ros2neuro::manager::Control` · part of [Manager](index.md)
 
-Plugin `ros2neuro::manager::Control` of `ros2neuro_manager`: continuous control. It does **not** run the
+Plugin `ros2neuro::manager::Control` of [`ros2neuro_manager`](index.md): continuous control. It does **not** run the
 game: no `/game/command`, no command map, no cooldown, no dead zone, no trial events.
 
 * The core publishes every valid normalized vector on the flow (`/manager_control/probabilities`), so the feedback moves.

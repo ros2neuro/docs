@@ -7,18 +7,18 @@ The decoder package turns a `NeuroFeature` (for example a PSD) into a `NeuroPred
 `Decoder` plugin interface and `decoder_node`, which loads **one** decoder plugin.
 
 !!! important "Select one plugin"
-    The decoder is chosen by its type, for example `ros2neuro::decoder::Gaussian`. When you pass a model with
+    The decoder is chosen by its type, for example [`ros2neuro::decoder::Gaussian`](gaussian.md). When you pass a model with
     `decoder.manifest`, the node reads the type from the `manifest.yaml`; otherwise set `decoder.type`.
 
 ## Available plugins
 
 | Plugin | pluginlib class / type | Model |
 |---|---|---|
-| [LDA](lda.md) | `ros2neuro::decoder::LDA` | linear discriminant analysis |
-| [QDA](qda.md) | `ros2neuro::decoder::QDA` | quadratic discriminant analysis |
-| [SVM](svm.md) | `ros2neuro::decoder::SVM` | support vector machine |
-| [Gaussian](gaussian.md) | `ros2neuro::decoder::Gaussian` | Gaussian classifier (ported from Matlab SMR) |
-| [Python](python.md) | `ros2neuro_decoder_py` | deep-learning models (braindecode, torch) |
+| [LDA](lda.md) | [`ros2neuro::decoder::LDA`](lda.md) | linear discriminant analysis |
+| [QDA](qda.md) | [`ros2neuro::decoder::QDA`](qda.md) | quadratic discriminant analysis |
+| [SVM](svm.md) | [`ros2neuro::decoder::SVM`](svm.md) | support vector machine |
+| [Gaussian](gaussian.md) | [`ros2neuro::decoder::Gaussian`](gaussian.md) | Gaussian classifier (ported from Matlab SMR) |
+| [Python](python.md) | [`ros2neuro_decoder_py`](python.md) | deep-learning models (braindecode, torch) |
 
 The [converters](converters.md) turn a Matlab SMR `.mat` decoder into the `.r2nd` + `manifest.yaml` format.
 
@@ -28,6 +28,13 @@ The [converters](converters.md) turn a Matlab SMR `.mat` decoder into the `.r2nd
 |---|---|---|
 | subscribes | `/features` (`input_topic`) | `NeuroFeature` |
 | publishes | `~/prediction` (`output_topic`) | `NeuroPrediction` |
+
+## Which processing feeds the decoder
+
+The decoder reads a `NeuroFeature` that the [processing](../processing/index.md) stage publishes, and its model declares which one
+(name, type and axes, in the manifest). The classic decoders (LDA, QDA, SVM, Gaussian) read a **PSD**, so they follow the
+[Welch node](../processing/spectral.md); a deep-learning model in the [Python decoder](python.md) reads a **window of the
+signal**, so it follows the [buffer node](../processing/buffer.md).
 
 ## Minimal example
 
@@ -224,7 +231,7 @@ output:
   type: NeuroPrediction::TYPE_PROBABILITIES       # Semantic meaning of the output vector
 ```
 
-The manifest can use semantic type names such as `ros2neuro::decoder::LDA`.
+The manifest can use semantic type names such as [`ros2neuro::decoder::LDA`](lda.md).
 The current runtime ROS parameter `decoder.type` uses the same pluginlib lookup key, for example
 `ros2neuro::decoder::LDA` for the LDA decoder plugin.
 
@@ -243,7 +250,7 @@ and implements:
 
 ### `LDA` v1 Contract
 
-For a first concrete implementation, `ros2neuro::decoder::LDA` can target the
+For a first concrete implementation, [`ros2neuro::decoder::LDA`](lda.md) can target the
 manifest convention above and support one well-defined input layout:
 
 - `input.type = NeuroFeature::TYPE_SPECTRUM`

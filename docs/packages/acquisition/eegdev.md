@@ -4,10 +4,10 @@
     Package: [`ros2neuro_acquisition_eegdev`](https://github.com/ros2neuro/ros2neuro_acquisition_eegdev) · pluginlib class: `ros2neuro::acquisition::EGDDevice` · part of [Acquisition](index.md)
 
 `ros2neuro_acquisition_eegdev` is a `libeegdev`-based plugin for the
-`ros2neuro_acquisition` framework.
+[`ros2neuro_acquisition`](index.md) framework.
 
 Its role is to adapt devices and files supported by `libeegdev` to the common
-`ros2neuro::acquisition::NeuroDevice` interface, so they can be loaded by the
+[`ros2neuro::acquisition::NeuroDevice`](index.md) interface, so they can be loaded by the
 generic acquisition node and published as `NeuroFrame` / `NeuroFrameInfo`.
 
 ## Purpose
@@ -20,8 +20,8 @@ In practice, it:
 1. reads device-specific parameters from the acquisition node
 2. opens either a live `libeegdev` driver or a `.gdf` / `.bdf` file
 3. queries device identity and channel layout
-4. maps eegdev groups into `ros2neuro_data` sensors and triggers
-5. streams synchronized runtime frames through `ros2neuro_acquisition`
+4. maps eegdev groups into [`ros2neuro_data`](../msgs-data.md#ros2neuro_data) sensors and triggers
+5. streams synchronized runtime frames through [`ros2neuro_acquisition`](index.md)
 
 ## Main components
 
@@ -151,8 +151,8 @@ gtec|notch|60|lowpass|none|highpass|none|deviceid|any+any
 ### ANT Neuro eego
 
 Use ANT Neuro eego hardware through the dedicated
-`ros2neuro_acquisition_antneuro` package and plugin
-`ros2neuro::acquisition::EEGODevice`. This `eegdev` plugin intentionally keeps
+[`ros2neuro_acquisition_antneuro`](antneuro.md) package and plugin
+[`ros2neuro::acquisition::EEGODevice`](antneuro.md). This `eegdev` plugin intentionally keeps
 no eego-specific setup path.
 
 ### `barv`
@@ -253,9 +253,9 @@ Current direct dependencies:
 - `ament_cmake`
 - `rclcpp`
 - `pluginlib`
-- `ros2neuro_acquisition`
-- `ros2neuro_data`
-- `ros2neuro_msgs`
+- [`ros2neuro_acquisition`](index.md)
+- [`ros2neuro_data`](../msgs-data.md#ros2neuro_data)
+- [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs)
 - `libeegdev`
 
 ## Build
@@ -286,7 +286,7 @@ The automated `.gdf` integration tests use the 60-second fixture
 manual and exploratory checks.
 
 The end-to-end round-trip test that validates `eegdev -> recorder_xdf -> gdf`
-lives in the `ros2neuro_recorder_xdf` package, because it exercises recorder
+lives in the [`ros2neuro_recorder_xdf`](../recorder/xdf.md) package, because it exercises recorder
 behavior in addition to acquisition.
 
 The `.gdf` integration tests use a short temporary path under `/tmp` before
@@ -294,9 +294,9 @@ opening the file, because some `libeegdev` setups are sensitive to long file pat
 
 ## Notes
 
-- `libeegdev` can expose richer metadata than the current `ros2neuro_data`
+- `libeegdev` can expose richer metadata than the current [`ros2neuro_data`](../msgs-data.md#ros2neuro_data)
   containers store.
 - Transducer details, hardware filters, and min/max ranges are queried internally
   where possible, but are not yet fully persisted in the published metadata model.
 - If you want those fields to reach `NeuroFrameInfo`, the next clean step is
-  extending `ros2neuro_data` to carry them explicitly.
+  extending [`ros2neuro_data`](../msgs-data.md#ros2neuro_data) to carry them explicitly.

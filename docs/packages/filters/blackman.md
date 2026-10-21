@@ -7,7 +7,7 @@ Blackman window filter package for `ros2neuro`.
 
 This package serves two related purposes:
 
-- it exports a `ros2neuro_filters` plugin that applies a Blackman window to an input matrix
+- it exports a [`ros2neuro_filters`](index.md) plugin that applies a Blackman window to an input matrix
 - it exposes a small reusable C++ API that can be used by other packages needing Blackman
   coefficients and normalization terms, such as spectral estimators
 

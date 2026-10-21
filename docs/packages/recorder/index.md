@@ -9,7 +9,7 @@ format belongs to the plugin.
 
 !!! important "Select one plugin"
     Set the parameter `plugin`. Today the only backend is [XDF / GDF](xdf.md),
-    `ros2neuro::recorder::XDFRecorder`, which writes GDF or BDF through `xdffileio`.
+    [`ros2neuro::recorder::XDFRecorder`](xdf.md), which writes GDF or BDF through `xdffileio`.
 
 ## Topics
 
@@ -59,7 +59,7 @@ output extension and recorder-specific parameters.
 - builds the output filename when one is not explicitly provided
 
 The package does not implement a storage backend by itself. Actual file writing is
-delegated to plugins such as `ros2neuro_recorder_xdf`.
+delegated to plugins such as [`ros2neuro_recorder_xdf`](xdf.md).
 
 ## Main Parameters
 
@@ -91,4 +91,4 @@ ros2 run ros2neuro_recorder recorder --ros-args \
   -p task:=rest
 ```
 
-For a ready-to-use launch file with the XDF backend, see `ros2neuro_recorder_xdf`.
+For a ready-to-use launch file with the XDF backend, see [`ros2neuro_recorder_xdf`](xdf.md).

@@ -4,7 +4,7 @@
     Package: [`ros2neuro_acquisition_gusbamp`](https://github.com/ros2neuro/ros2neuro_acquisition_gusbamp) · pluginlib class: `ros2neuro::acquisition::GUSBampDevice` · part of [Acquisition](index.md)
 
 `ros2neuro_acquisition_gusbamp` provides the direct g.tec g.USBamp backend for
-`ros2neuro_acquisition`.
+[`ros2neuro_acquisition`](index.md).
 
 Use g.USBamp hardware through this package and plugin:
 
@@ -19,7 +19,7 @@ ros2 run ros2neuro_acquisition_gusbamp acquisition_gusbamp
 ```
 
 The package also installs a convenience launch file that uses the generic
-`ros2neuro_acquisition` runtime:
+[`ros2neuro_acquisition`](index.md) runtime:
 
 ```bash
 ros2 launch ros2neuro_acquisition_gusbamp gusbamp_acquisition.launch.xml

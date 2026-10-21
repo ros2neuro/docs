@@ -3,7 +3,7 @@
 !!! info ""
     Package: [`ros2neuro_decoder_lda`](https://github.com/ros2neuro/ros2neuro_decoder_lda) · pluginlib class: `ros2neuro::decoder::LDA` · part of [Decoder](index.md)
 
-`ros2neuro_decoder_lda` provides a first concrete decoder plugin for `ros2neuro_decoder`.
+`ros2neuro_decoder_lda` provides a first concrete decoder plugin for [`ros2neuro_decoder`](index.md).
 
 ## Runtime configuration
 

@@ -14,8 +14,8 @@ declare them once and load them in both nodes (see [Protocols](../../concepts/pr
 
 | Plugin | pluginlib class | Drawing |
 |---|---|---|
-| [Wheel](wheel.md) | `ros2neuro::feedback::Wheel` | a ring with a moving line, for exactly two classes |
-| [Bar](bar.md) | `ros2neuro::feedback::Bar` | one bar per classifier output (any number of classes), each with its own threshold line |
+| [Wheel](wheel.md) | [`ros2neuro::feedback::Wheel`](wheel.md) | a ring with a moving line, for exactly two classes |
+| [Bar](bar.md) | [`ros2neuro::feedback::Bar`](bar.md) | one bar per classifier output (any number of classes), each with its own threshold line |
 
 | Wheel (two classes) | Bars (here four classes) |
 |---|---|
@@ -24,7 +24,7 @@ declare them once and load them in both nodes (see [Protocols](../../concepts/pr
 ## neurodraw: the drawing library (required)
 
 !!! important "A required dependency"
-    Both plugins, `ros2neuro_feedback_wheel` and `ros2neuro_feedback_bar`, are built **on top of
+    Both plugins, [`ros2neuro_feedback_wheel`](wheel.md) and [`ros2neuro_feedback_bar`](bar.md), are built **on top of
     [neurodraw](neurodraw.md)**. Without it they do not compile, and without them there is no feedback window. It is
     the only part of the stack that needs SDL2 and OpenGL.
 
@@ -51,7 +51,7 @@ sudo cmake --install build              # or: cmake --install build --prefix $HO
 With a custom prefix, tell CMake where to find it when you build the workspace:
 `colcon build --cmake-args -DCMAKE_PREFIX_PATH=$HOME/Local`.
 
-**Alternative, inside the workspace.** Put the `neurodraw` folder in the `src/` of your ROS2neuro workspace: `colcon`
+**Alternative, inside the workspace.** Put the [`neurodraw`](neurodraw.md) folder in the `src/` of your ROS2neuro workspace: `colcon`
 builds it as a CMake package and installs it before the feedback plugins, which declare it in their `package.xml`
 (`<depend>neurodraw</depend>`). Only the three SDL2 libraries of step 1 are needed.
 
@@ -68,7 +68,7 @@ loads the plugin and runs the drawing loop at `fps` frames per second.
 
 | Parameter | Default | Meaning |
 |---|---|---|
-| `plugin` | (required) | pluginlib class of the drawing, `ros2neuro::feedback::Wheel` or `ros2neuro::feedback::Bar` |
+| `plugin` | (required) | pluginlib class of the drawing, [`ros2neuro::feedback::Wheel`](wheel.md) or [`ros2neuro::feedback::Bar`](bar.md) |
 | `mode` | `control` | `control` (values only) or `training` (values plus fixation, cue and boom) |
 | `classes` | `[773, 771]` | class codes, **order = layout** (shared with the manager) |
 | `rest_mode` | `none` | `none`, `timeout` or `class` (shared with the manager) |
@@ -107,4 +107,4 @@ launch files, and the [hardware-free tutorial](../../tutorials/hardware-free-pip
 
 Derive from `ros2neuro::feedback::FeedbackPlugin` (`set_values`, cue, fixation, boom) and export it against
 `ros2neuro_feedback` with `pluginlib_export_plugin_description_file(ros2neuro_feedback plugins.xml)`. Keep the
-geometry in a pure, testable header, as `ros2neuro_feedback_bar` does with `bar_geometry.hpp`.
+geometry in a pure, testable header, as [`ros2neuro_feedback_bar`](bar.md) does with `bar_geometry.hpp`.

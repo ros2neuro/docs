@@ -17,7 +17,7 @@ own page.
 |---|---|
 | [Acquisition](acquisition/index.md) | [dummy](acquisition/dummy.md), [xdf](acquisition/xdf.md), [lsl](acquisition/lsl.md), [eegdev](acquisition/eegdev.md), [antneuro](acquisition/antneuro.md), [gusbamp](acquisition/gusbamp.md) |
 | [Filters](filters/index.md) | [dc](filters/dc.md), [butterworth](filters/butterworth.md), [car](filters/car.md), [laplacian](filters/laplacian.md), [hann](filters/hann.md), [hamming](filters/hamming.md), [blackman](filters/blackman.md), [flattop](filters/flattop.md) |
-| Processing | [spectral](processing/spectral.md) (FFT, Welch, spectrogram), [buffer](processing/buffer.md) |
+| [Processing](processing/index.md) | [spectral](processing/spectral.md) (FFT, Welch, spectrogram) for the classic decoders, [buffer](processing/buffer.md) for the deep-learning ones: the decoder decides. Nodes, not plugins |
 | [Decoder](decoder/index.md) | [lda](decoder/lda.md), [qda](decoder/qda.md), [svm](decoder/svm.md), [gaussian](decoder/gaussian.md), [python](decoder/python.md); [converters](decoder/converters.md) |
 | [Integrator](integrator/index.md) | [exponential](integrator/exponential.md), [buffer](integrator/buffer.md) |
 
@@ -43,6 +43,7 @@ own page.
 | run without hardware | acquisition [xdf](acquisition/xdf.md) or [dummy](acquisition/dummy.md) |
 | record a session | recorder [xdf](recorder/xdf.md) |
 | classify motor imagery from a PSD | [spectral](processing/spectral.md) Welch, a [gaussian](decoder/gaussian.md) or [qda](decoder/qda.md) model, an [exponential](integrator/exponential.md) integrator |
+| classify with a deep-learning model | [buffer](processing/buffer.md) instead of Welch, then the [Python decoder](decoder/python.md) |
 | run a calibration or an evaluation | manager [synchronous](manager/synchronous.md) |
 | run a free-control session | manager [asynchronous](manager/asynchronous.md) |
 | show two classes | feedback [wheel](feedback/wheel.md) |

@@ -4,7 +4,7 @@
     Package: [`ros2neuro_acquisition_antneuro`](https://github.com/ros2neuro/ros2neuro_acquisition_antneuro) · pluginlib class: `ros2neuro::acquisition::EEGODevice` · part of [Acquisition](index.md)
 
 `ros2neuro_acquisition_antneuro` provides the dedicated ANT Neuro eego backend
-for `ros2neuro_acquisition`.
+for [`ros2neuro_acquisition`](index.md).
 
 Use eego hardware through this package and plugin:
 
@@ -12,7 +12,7 @@ Use eego hardware through this package and plugin:
 ros2neuro::acquisition::EEGODevice
 ```
 
-Do not route eego through `ros2neuro_acquisition_eegdev`: the eegdev package is
+Do not route eego through [`ros2neuro_acquisition_eegdev`](eegdev.md): the eegdev package is
 kept generic and no longer contains eego-specific SDK setup.
 
 ## Executable
@@ -22,7 +22,7 @@ ros2 run ros2neuro_acquisition_antneuro acquisition_antneuro
 ```
 
 The package also installs a convenience launch file that uses the generic
-`ros2neuro_acquisition` runtime:
+[`ros2neuro_acquisition`](index.md) runtime:
 
 ```bash
 ros2 launch ros2neuro_acquisition_antneuro eego_acquisition.launch.xml
@@ -32,7 +32,7 @@ ros2 launch ros2neuro_acquisition_antneuro eego_acquisition.launch.xml
 
 Device parameters are read under the prefix passed by the acquisition runtime.
 The installed `eego_acquisition.launch.xml` uses the generic
-`ros2neuro_acquisition` executable with the `acquisition` prefix, so the bundled
+[`ros2neuro_acquisition`](index.md) executable with the `acquisition` prefix, so the bundled
 configuration file uses `acquisition.*` parameter names. If the plugin is loaded
 with a different prefix, use the same keys under that prefix.
 

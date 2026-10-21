@@ -3,8 +3,8 @@
 !!! info ""
     Package: [`ros2neuro_decoder_svm`](https://github.com/ros2neuro/ros2neuro_decoder_svm) · pluginlib class: `ros2neuro::decoder::SVM` · part of [Decoder](index.md)
 
-`ros2neuro_decoder_svm` provides a linear SVM decoder plugin for `ros2neuro_decoder`
-with the same runtime structure used by `ros2neuro_decoder_lda` and `ros2neuro_decoder_qda`.
+`ros2neuro_decoder_svm` provides a linear SVM decoder plugin for [`ros2neuro_decoder`](index.md)
+with the same runtime structure used by [`ros2neuro_decoder_lda`](lda.md) and [`ros2neuro_decoder_qda`](qda.md).
 
 ## Runtime configuration
 

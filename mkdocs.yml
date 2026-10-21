@@ -96,8 +96,9 @@ nav:
           - packages/filters/blackman.md
           - packages/filters/flattop.md
       - Processing:
-          - packages/processing/buffer.md
+          - packages/processing/index.md
           - packages/processing/spectral.md
+          - packages/processing/buffer.md
       - Decoder:
           - packages/decoder/index.md
           - packages/decoder/lda.md

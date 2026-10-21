@@ -88,7 +88,7 @@ Validation rules:
 
 The converter writes:
 
-- `.r2nd` binary model with decoder type `ros2neuro::decoder::Gaussian`
+- `.r2nd` binary model with decoder type [`ros2neuro::decoder::Gaussian`](gaussian.md)
 - `manifest.yaml` with the input contract, selected features, output fields, and available training metadata
 
 ## Internal Layout

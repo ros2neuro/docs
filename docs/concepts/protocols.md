@@ -13,8 +13,8 @@ flowchart LR
 
 | Node | Package | Plugins | Role |
 |---|---|---|---|
-| Manager | `ros2neuro_manager` | `Training` (`manager_synchronous`), `Control` (`manager_asynchronous`) | owns the protocol, the only publisher of events |
-| Feedback | `ros2neuro_feedback` | `Wheel` (`feedback_wheel`), `Bar` (`feedback_bar`) | **passive**: draws what the manager says |
+| Manager | [`ros2neuro_manager`](../packages/manager/index.md) | `Training` ([`manager_synchronous`](../packages/manager/synchronous.md)), `Control` ([`manager_asynchronous`](../packages/manager/asynchronous.md)) | owns the protocol, the only publisher of events |
+| Feedback | [`ros2neuro_feedback`](../packages/feedback/index.md) | `Wheel` ([`feedback_wheel`](../packages/feedback/wheel.md)), `Bar` ([`feedback_bar`](../packages/feedback/bar.md)) | **passive**: draws what the manager says |
 
 The feedback never reads `/neuroevent` and never decides anything: it reads only the manager's control topic.
 

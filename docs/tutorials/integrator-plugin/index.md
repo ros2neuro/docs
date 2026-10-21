@@ -22,7 +22,7 @@ and it is compiled by the CI of the repository.
 
 ## 1. Who does what
 
-| The integrator node (`ros2neuro_integrator`) | Your plugin |
+| The integrator node ([`ros2neuro_integrator`](../../packages/integrator/index.md)) | Your plugin |
 |---|---|
 | subscribes to `NeuroPrediction`, publishes `NeuroControl` | computes the integrated values from one prediction |
 | holds the previous output when the input confidence is below `integrator.rejection` | says what the neutral state is after a reset |

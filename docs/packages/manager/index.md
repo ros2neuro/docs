@@ -14,8 +14,8 @@ to classes, the normalisation of the values, the emission of events and the rese
 
 | Plugin | pluginlib class | Protocol |
 |---|---|---|
-| [Synchronous](synchronous.md) | `ros2neuro::manager::Training` | calibration and evaluation (`modality`): trial sequence, cues, outcomes |
-| [Asynchronous](asynchronous.md) | `ros2neuro::manager::Control` | free control: resets the integrator when a class reaches its threshold |
+| [Synchronous](synchronous.md) | [`ros2neuro::manager::Training`](synchronous.md) | calibration and evaluation (`modality`): trial sequence, cues, outcomes |
+| [Asynchronous](asynchronous.md) | [`ros2neuro::manager::Control`](asynchronous.md) | free control: resets the integrator when a class reaches its threshold |
 
 ## Topics and services
 
@@ -67,7 +67,7 @@ integrator --/integrated/raw--> manager (+ plugin) --control_topic (flow)--> fee
 It owns, in ONE place each: the code/event catalog, the `fields` -> class mapping,
 the normalization, the event emission, and the reset handling. A protocol is a
 **plugin** (pluginlib, base class `ros2neuro::manager::ManagerPlugin`):
-`ros2neuro_manager_synchronous` (calibration/evaluation) or `ros2neuro_manager_asynchronous`.
+[`ros2neuro_manager_synchronous`](synchronous.md) (calibration/evaluation) or [`ros2neuro_manager_asynchronous`](asynchronous.md).
 
 ## Class codes are free; the catalog is a convenience (`catalog.hpp`)
 
@@ -174,7 +174,7 @@ stale queue. The integrators in this workspace do not publish the epoch. If they
 
 | name | default | |
 |---|---|---|
-| `plugin` | (required) | `ros2neuro::manager::Training` / `ros2neuro::manager::Control` |
+| `plugin` | (required) | [`ros2neuro::manager::Training`](synchronous.md) / [`ros2neuro::manager::Control`](asynchronous.md) |
 | `classes`, `rest_mode`, `thresholds` | `[773, 771]`, `none`, `[0.8, 0.8]` | shared layout |
 | `input_fields` | (empty) | optional, manager only: the code the model/integrator uses for each output, in the order of `classes` (rest in timeout excluded); see below |
 | `integrated_topic` | `/integrated/raw` | |

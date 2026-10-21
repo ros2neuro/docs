@@ -7,7 +7,7 @@ Hann window filter package for `ros2neuro`.
 
 This package serves two related purposes:
 
-- it exports a `ros2neuro_filters` plugin that applies a Hann window to an input matrix
+- it exports a [`ros2neuro_filters`](index.md) plugin that applies a Hann window to an input matrix
 - it exposes a small reusable C++ API that can be used by other packages needing Hann
   coefficients and normalization terms, such as spectral estimators
 
@@ -38,7 +38,7 @@ The `ros2neuro::filters::Hann<T>` class now exposes:
 - `apply(...)`: multiply an input matrix by the window
 
 This makes the class usable both as a filter plugin and as a utility inside packages such as
-`ros2neuro_processing_spectral`.
+[`ros2neuro_processing_spectral`](../processing/spectral.md).
 
 Example:
 

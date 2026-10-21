@@ -77,7 +77,7 @@ ros2 launch rosbridge_server rosbridge_websocket_launch.xml
 It prints `Rosbridge WebSocket server started on port 9090`. Port 9090 is where the VR client connects.
 
 !!! note "Why the workspace must be sourced"
-    rosbridge converts a message to JSON using its definition. If `ros2neuro_msgs` is not found, the subscription to
+    rosbridge converts a message to JSON using its definition. If [`ros2neuro_msgs`](../../packages/msgs-data.md#ros2neuro_msgs) is not found, the subscription to
     `ros2neuro_msgs/msg/NeuroControl` fails.
 
 ## 3. Start a pipeline that produces a feedback flow
@@ -222,7 +222,7 @@ Points to decide when you implement it:
 - **Timing.** The marker travels through the network, so it reaches ROS2neuro a little after it happened. If the
   bridge node time-stamps it on arrival, the stamp is late by that latency. For precise alignment, the VR can send its own
   timestamp, or the marker can be sent on a hardware trigger line that the acquisition records with the signal.
-- **The display events of the feedback.** `ros2neuro_feedback` already has an option, `publish_display_events`, that publishes
+- **The display events of the feedback.** [`ros2neuro_feedback`](../../packages/feedback/index.md) already has an option, `publish_display_events`, that publishes
   *"this was shown"* events after drawing. A VR feedback could do the same with the instant at which the frame was displayed,
   which is the marker that matters for analysis.
 

@@ -4,7 +4,7 @@
     Package: [`ros2neuro_integrator_buffer`](https://github.com/ros2neuro/ros2neuro_integrator_buffer) · pluginlib class: `ros2neuro::integrator::Buffer` · part of [Integrator](index.md)
 
 ROS2 port of the `rosneuro_integrator_buffer` (ROS1) plugin: a
-`ros2neuro_integrator` backend (`ros2neuro::integrator::Buffer`) that keeps
+[`ros2neuro_integrator`](index.md) backend (`ros2neuro::integrator::Buffer`) that keeps
 one accumulator buffer per class. On every prediction it nudges the winning
 class's buffer up by one step and the other classes' buffers down by the same
 amount shared between them (`step / (K - 1)` each, so the sum of the buffers stays
@@ -35,7 +35,7 @@ mid-session).
   the `[0, 1]` clipping does not kick in. With two classes it is exactly the same as before. If the clipping alters
   the sum, the consumers normalize anyway (the manager divides by the sum).
 - **No `n_classes` parameter.** ROS1 required it upfront to size the
-  buffers and validate `init_val`. In ROS2, `ros2neuro_integrator` tells the
+  buffers and validate `init_val`. In ROS2, [`ros2neuro_integrator`](index.md) tells the
   plugin the class count directly -- via `reset(class_count)`, and
   implicitly via the size of each `NeuroPrediction.values` -- so the buffer
   now sizes (and re-sizes, with a warning, if a prediction's size changes
@@ -76,7 +76,7 @@ colcon test --packages-select ros2neuro_integrator_buffer
 ```
 
 `test/test_buffer.cpp` loads the plugin through `pluginlib::ClassLoader`
-(the same path `ros2neuro_integrator` uses in production) and covers HARD
+(the same path [`ros2neuro_integrator`](index.md) uses in production) and covers HARD
 and SOFT increment, `[0, 1]` clipping, `init_val` handling (both matching
 and mismatched sizes), invalid `configure()` parameters, and
 `set_runtime_parameter` validation.

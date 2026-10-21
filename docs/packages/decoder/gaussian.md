@@ -4,7 +4,7 @@
     Package: [`ros2neuro_decoder_gaussian`](https://github.com/ros2neuro/ros2neuro_decoder_gaussian) · pluginlib class: `ros2neuro::decoder::Gaussian` · part of [Decoder](index.md)
 
 `ros2neuro_decoder_gaussian` provides a diagonal Gaussian prototype decoder plugin for
-`ros2neuro_decoder`, reimplemented from the legacy `rosneuro_decoder_gaussian` package
+[`ros2neuro_decoder`](index.md), reimplemented from the legacy `rosneuro_decoder_gaussian` package
 using the same core algorithm inside the ROS 2 plugin structure used by the other decoders.
 
 ## Legacy algorithm summary

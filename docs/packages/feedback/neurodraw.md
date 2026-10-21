@@ -3,7 +3,7 @@
 !!! info ""
     Package: [`neurodraw`](https://github.com/neurorobotics-iaslab/neurodraw) · used by the [Wheel](wheel.md) and [Bar](bar.md) feedback plugins · part of [Feedback](index.md)
 
-neurodraw is the library that draws the feedback windows of ROS2neuro. It is **required** by the two feedback plugins, `ros2neuro_feedback_wheel` and `ros2neuro_feedback_bar`, and by nothing else in the stack. It is not a ROS package: it is a plain CMake library, found by the plugins with `find_package(neurodraw CONFIG REQUIRED)`. How the feedback uses it is explained in [Feedback](index.md#neurodraw-the-drawing-library-required).
+neurodraw is the library that draws the feedback windows of ROS2neuro. It is **required** by the two feedback plugins, [`ros2neuro_feedback_wheel`](wheel.md) and [`ros2neuro_feedback_bar`](bar.md), and by nothing else in the stack. It is not a ROS package: it is a plain CMake library, found by the plugins with `find_package(neurodraw CONFIG REQUIRED)`. How the feedback uses it is explained in [Feedback](index.md#neurodraw-the-drawing-library-required).
 
 NeuroDraw is a compact C++ graphics library for 2D neurofeedback and BCI-style visual interfaces. It is built on SDL2, OpenGL, SDL2_ttf, and SDL2_image, and provides:
 

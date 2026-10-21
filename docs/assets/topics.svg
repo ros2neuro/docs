@@ -30,8 +30,8 @@
   <text class="name" x="175" y="212">Filters</text>
   <text class="node" x="175" y="232">node: filters</text>
   <rect class="box proc" x="60" y="328" width="230" height="64"/>
-  <text class="name" x="175" y="356">Spectral processing</text>
-  <text class="node" x="175" y="376">node: welch</text>
+  <text class="name" x="175" y="356">Processing</text>
+  <text class="node" x="175" y="376">node: welch or buffer</text>
   <rect class="box dec" x="60" y="472" width="230" height="64"/>
   <text class="name" x="175" y="500">Decoder</text>
   <text class="node" x="175" y="520">node: decoder</text>
@@ -51,8 +51,9 @@
   <text class="topic" x="191" y="286">/processing/filtered</text>
   <text class="type" x="191" y="305">NeuroFrame</text>
   <path class="line" d="M175,392 V470" marker-end="url(#arrow)"/>
-  <text class="topic" x="191" y="430">/processing/psd</text>
-  <text class="type" x="191" y="449">NeuroFeature</text>
+  <text class="topic" x="191" y="420">/processing/psd</text>
+  <text class="topic" x="191" y="438">or /processing/buffered_features</text>
+  <text class="type" x="191" y="457">NeuroFeature: PSD or window</text>
   <path class="line" d="M175,536 V614" marker-end="url(#arrow)"/>
   <text class="topic" x="191" y="574">/classification/prediction</text>
   <text class="type" x="191" y="593">NeuroPrediction</text>
@@ -62,24 +63,24 @@
   <path class="line" d="M175,824 V902" marker-end="url(#arrow)"/>
   <text class="topic" x="191" y="862">/manager_control/probabilities</text>
   <text class="type" x="191" y="881">NeuroControl</text>
-  <rect class="box side" x="520" y="184" width="230" height="64"/>
-  <text class="name" x="635" y="212">Visualizer</text>
-  <text class="node" x="635" y="232">node: neuroviz</text>
-  <rect class="box side" x="520" y="760" width="230" height="64"/>
-  <text class="name" x="635" y="788">Recorder</text>
-  <text class="node" x="635" y="808">node: recorder</text>
-  <path class="line" d="M290,72 H480 V774 H518" marker-end="url(#arrow)"/>
-  <path class="line" d="M480,216 H518" marker-end="url(#arrow)"/>
-  <text class="topic" x="494" y="342">/acquisition/neurodata</text>
-  <text class="topic" x="494" y="364">/acquisition/neurodata_info</text>
-  <text class="type" x="494" y="386">NeuroFrame, NeuroFrameInfo</text>
-  <text class="note" x="494" y="412">(the visualizer reads the first one)</text>
-  <path class="line" d="M290,806 H518" marker-end="url(#arrow)"/>
+  <rect class="box side" x="545" y="184" width="230" height="64"/>
+  <text class="name" x="660" y="212">Visualizer</text>
+  <text class="node" x="660" y="232">node: neuroviz</text>
+  <rect class="box side" x="545" y="760" width="230" height="64"/>
+  <text class="name" x="660" y="788">Recorder</text>
+  <text class="node" x="660" y="808">node: recorder</text>
+  <path class="line" d="M290,72 H510 V774 H543" marker-end="url(#arrow)"/>
+  <path class="line" d="M510,216 H543" marker-end="url(#arrow)"/>
+  <text class="topic" x="524" y="342">/acquisition/neurodata</text>
+  <text class="topic" x="524" y="364">/acquisition/neurodata_info</text>
+  <text class="type" x="524" y="386">NeuroFrame, NeuroFrameInfo</text>
+  <text class="note" x="524" y="412">(the visualizer reads the first one)</text>
+  <path class="line" d="M290,806 H543" marker-end="url(#arrow)"/>
   <text class="topic" x="304" y="798">/neuroevent</text>
   <text class="type" x="304" y="822">NeuroEvent</text>
   <path class="dash" d="M290,772 H430 V638 H292" marker-end="url(#arrow)"/>
   <text class="topic" x="304" y="660">/reset</text>
   <text class="type" x="304" y="678">service</text>
-  <text class="note" x="30" y="1010">Dashed line: a service call, not a topic. The topic names are the ones used by the</text>
-  <text class="note" x="30" y="1030">ros2neuro_devel_test launchers: the defaults of each node are in the table below.</text>
+  <text class="note" x="30" y="1010">Dashed line: a service call, not a topic. Processing is the Welch node (classic decoders) or the buffer node (deep learning).</text>
+  <text class="note" x="30" y="1030">Topic names are those of the ros2neuro_devel_test launchers: the defaults of each node are in the table below.</text>
 </svg>

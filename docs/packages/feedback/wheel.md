@@ -3,7 +3,7 @@
 !!! info ""
     Package: [`ros2neuro_feedback_wheel`](https://github.com/ros2neuro/ros2neuro_feedback_wheel) · pluginlib class: `ros2neuro::feedback::Wheel` · part of [Feedback](index.md)
 
-Plugin `ros2neuro::feedback::Wheel` (neurodraw) for `ros2neuro_feedback`: the wheel (ring, arc, moving line,
+Plugin `ros2neuro::feedback::Wheel` (neurodraw) for [`ros2neuro_feedback`](index.md): the wheel (ring, arc, moving line,
 cross, cue circle, threshold markers), driven by the feedback core.
 
 The wheel shows **two classes** on a ring. The position of the line says how much the classifier favours one class

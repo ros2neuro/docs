@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560" font-family="Helvetica, Arial, sans-serif" role="img" aria-labelledby="t d">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 584" font-family="Helvetica, Arial, sans-serif" role="img" aria-labelledby="t d">
   <title id="t">ROS2neuro architecture</title>
-  <desc id="d">Data flows from the hardware or a GDF file through acquisition, filters, spectral processing, decoder and integrator, then through the manager to the feedback. The manager emits events to the recorder and resets the integrator through a service.</desc>
+  <desc id="d">Data flows from the hardware or a GDF file through acquisition, filters, processing (a Welch spectrum or a buffer window, depending on the decoder), decoder and integrator, then through the manager to the feedback. The manager emits events to the recorder and resets the integrator through a service.</desc>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="#4a5568"/>
@@ -24,7 +24,7 @@
     </style>
   </defs>
 
-  <rect width="1000" height="560" fill="#ffffff"/>
+  <rect width="1000" height="584" fill="#ffffff"/>
   <text class="title" x="20" y="30">ROS2neuro</text>
   <text class="sub" x="20" y="48">signal flow: first row left to right, then the second row from the decoder to the feedback</text>
 
@@ -42,8 +42,9 @@
   <text class="pkg" x="625" y="116">ros2neuro_filters_*</text>
 
   <rect class="box proc" x="800" y="70" width="170" height="64"/>
-  <text class="name" x="885" y="98">Spectral processing</text>
-  <text class="pkg" x="885" y="116">ros2neuro_processing_*</text>
+  <text class="name" x="885" y="95">Processing</text>
+  <text class="pkg" x="885" y="111">Welch (PSD) or Buffer (window)</text>
+  <text class="pkg" x="885" y="125">ros2neuro_processing_*</text>
 
   <path class="line" d="M190,102 H278" marker-end="url(#arrow)"/>
   <path class="line" d="M450,102 H538" marker-end="url(#arrow)"/>
@@ -58,8 +59,9 @@
 
   <!-- Row 2 -->
   <rect class="box dec" x="20" y="230" width="170" height="64"/>
-  <text class="name" x="105" y="258">Decoder</text>
-  <text class="pkg" x="105" y="276">ros2neuro_decoder_*</text>
+  <text class="name" x="105" y="255">Decoder</text>
+  <text class="pkg" x="105" y="271">classic or deep learning</text>
+  <text class="pkg" x="105" y="285">ros2neuro_decoder_*</text>
 
   <rect class="box dec" x="280" y="230" width="170" height="64"/>
   <text class="name" x="365" y="258">Integrator</text>
@@ -102,9 +104,10 @@
   <!-- Legend -->
   <text class="key" x="20" y="494">Recorder inputs: NeuroFrame and NeuroFrameInfo (from the acquisition), NeuroEvent (from the manager).</text>
   <text class="key" x="20" y="512">Visualizer input: NeuroFrame (raw from the acquisition or filtered). Both are optional and sit beside the main chain.</text>
-  <rect x="20" y="526" width="14" height="14" class="box proc"/><text class="key" x="40" y="537">signal chain</text>
-  <rect x="140" y="526" width="14" height="14" class="box dec"/><text class="key" x="160" y="537">decoding</text>
-  <rect x="240" y="526" width="14" height="14" class="box prot"/><text class="key" x="260" y="537">protocol and feedback</text>
-  <rect x="410" y="526" width="14" height="14" class="box side"/><text class="key" x="430" y="537">side nodes</text>
-  <path class="dash" d="M520,533 H560"/><text class="key" x="568" y="537">service or event path</text>
+  <text class="key" x="20" y="530">Processing depends on the decoder: the classic decoders (LDA, QDA, SVM, Gaussian) read a Welch PSD, the deep-learning ones a window from the buffer.</text>
+  <rect x="20" y="550" width="14" height="14" class="box proc"/><text class="key" x="40" y="561">signal chain</text>
+  <rect x="140" y="550" width="14" height="14" class="box dec"/><text class="key" x="160" y="561">decoding</text>
+  <rect x="240" y="550" width="14" height="14" class="box prot"/><text class="key" x="260" y="561">protocol and feedback</text>
+  <rect x="410" y="550" width="14" height="14" class="box side"/><text class="key" x="430" y="561">side nodes</text>
+  <path class="dash" d="M520,557 H560"/><text class="key" x="568" y="561">service or event path</text>
 </svg>

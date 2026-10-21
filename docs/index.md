@@ -34,13 +34,14 @@ interchangeable pieces that talk through a small set of messages.
 ## The stack in one paragraph
 
 Data flows from the hardware (or a GDF file) through the **acquisition**, the **filters** and the
-**spectral processing**, is classified by a **decoder** and smoothed by an **integrator**. A **manager**
+**processing** (a Welch spectrum for the classic classifiers, a window of the signal for the deep-learning ones), is
+classified by a **decoder** and smoothed by an **integrator**. A **manager**
 runs the protocol (calibration, evaluation or free control), emits the events and tells a passive
 **feedback** what to draw. A **recorder** writes everything to GDF/BDF and a **visualizer** shows the signals.
 
 ## Conventions used in this documentation
 
-- Package names are written as in the workspace (`ros2neuro_filters`), plugin classes with their full
-  pluginlib name (`ros2neuro::acquisition::XDFDevice`).
+- Package names are written as in the workspace ([`ros2neuro_filters`](packages/filters/index.md)), plugin classes with their full
+  pluginlib name ([`ros2neuro::acquisition::XDFDevice`](packages/acquisition/xdf.md)).
 - Commands assume a sourced ROS 2 environment (`source /opt/ros/<distro>/setup.bash`) and the workspace installed (`source install/setup.bash`).
 - Parameters are shown in YAML (`ros__parameters`), the way they are normally passed to a node.
