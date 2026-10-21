@@ -3,7 +3,7 @@
 !!! info ""
     Package: [`ros2neuro_acquisition_dummy`](https://github.com/ros2neuro/ros2neuro_acquisition_dummy) · pluginlib class: `ros2neuro::acquisition::DummyDevice` · part of [Acquisition](index.md)
 
-`ros2neuro_acquisition_dummy` is a reference acquisition plugin for the ROS2 Neuro stack.
+`ros2neuro_acquisition_dummy` is a reference acquisition plugin for the ROS2neuro stack.
 It implements the `ros2neuro::acquisition::NeuroDevice` interface with a synthetic device
 that generates deterministic EEG-, EMG-, and trigger-like data.
 

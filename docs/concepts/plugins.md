@@ -1,6 +1,6 @@
 # Plugins
 
-ros2neuro uses [`pluginlib`](https://docs.ros.org/en/jazzy/Tutorials/Beginner-Client-Libraries/Pluginlib.html)
+ROS2neuro uses [`pluginlib`](https://docs.ros.org/en/rolling/Tutorials/Beginner-Client-Libraries/Pluginlib.html)
 for everything that has more than one implementation. A *base package* defines an interface and a generic node,
 and each *plugin package* provides one implementation, compiled into a shared library that the node loads at
 startup.

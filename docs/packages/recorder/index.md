@@ -40,7 +40,7 @@ ros2 launch ros2neuro_recorder_xdf xdf_recorder.launch.py output:=/tmp/recording
 
 ## Reference (from the package README)
 
-Core recorder node and plugin interface for ros2neuro.
+Core recorder node and plugin interface for ROS2neuro.
 
 The package provides:
 - `ros2neuro::recorder::NeuroRecorder`, the abstract plugin interface

@@ -1,13 +1,15 @@
-# ros2neuro
+![ROS2neuro](assets/logo.png){ .home-logo }
 
-**ros2neuro** is a modular C++ framework for real-time neurophysiological signal acquisition, processing,
-decoding and closed-loop Brain-Computer Interface (BCI) applications, built on **ROS 2** (tested on Jazzy).
+# ROS2neuro
+
+**ROS2neuro** is a modular C++ framework for real-time neurophysiological signal acquisition, processing,
+decoding and closed-loop Brain-Computer Interface (BCI) applications, built on **ROS 2**.
 
 Every stage of the pipeline is a ROS 2 node whose behaviour is chosen at launch time by loading a **plugin**:
 the amplifier, the filters, the decoder, the integrator, the recorder, the protocol and the feedback are all
 interchangeable pieces that talk through a small set of messages.
 
-![ros2neuro architecture](assets/architecture.svg)
+![ROS2neuro architecture](assets/architecture.svg)
 
 ## Where to start
 
@@ -15,7 +17,7 @@ interchangeable pieces that talk through a small set of messages.
 
 -   **[Concepts](concepts/architecture.md)**
 
-    How ros2neuro is organised: the architecture, the messages and their data types, the topics, the plugin
+    How ROS2neuro is organised: the architecture, the messages and their data types, the topics, the plugin
     mechanism and the protocol layer (manager and feedback).
 
 -   **[Packages](packages/index.md)**
@@ -40,5 +42,5 @@ runs the protocol (calibration, evaluation or free control), emits the events an
 
 - Package names are written as in the workspace (`ros2neuro_filters`), plugin classes with their full
   pluginlib name (`ros2neuro::acquisition::XDFDevice`).
-- Commands assume a sourced ROS 2 Jazzy environment and the workspace installed (`source install/setup.bash`).
+- Commands assume a sourced ROS 2 environment (`source /opt/ros/<distro>/setup.bash`) and the workspace installed (`source install/setup.bash`).
 - Parameters are shown in YAML (`ros__parameters`), the way they are normally passed to a node.

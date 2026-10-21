@@ -10,7 +10,6 @@ own page.
 | Package | Role |
 |---|---|
 | [`ros2neuro_msgs`, `ros2neuro_data`](msgs-data.md) | messages and in-memory data types |
-| [`neurodraw`](neurodraw.md) | SDL2/OpenGL 2D graphics library used by the feedbacks (not a ROS package) |
 
 ## Signal chain
 
@@ -27,7 +26,7 @@ own page.
 | Base package | Plugins |
 |---|---|
 | [Manager](manager/index.md) | [synchronous](manager/synchronous.md) (`Training`), [asynchronous](manager/asynchronous.md) (`Control`) |
-| [Feedback](feedback/index.md) | [wheel](feedback/wheel.md), [bar](feedback/bar.md) |
+| [Feedback](feedback/index.md) | [wheel](feedback/wheel.md), [bar](feedback/bar.md). Both need the [neurodraw](feedback/neurodraw.md) library |
 
 ## Tools
 

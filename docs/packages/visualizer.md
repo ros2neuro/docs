@@ -3,13 +3,22 @@
 !!! info ""
     Package: [`ros2neuro_visualizer`](https://github.com/ros2neuro/ros2neuro_visualizer) · part of [Packages](index.md)
 
-Qt-based ROS2 visualizer for `ros2neuro` streams.
+Qt-based visualizer for ROS2neuro streams: the oscilloscope of the stack.
 
-The package currently provides an extensible multi-tab GUI with a first visualization tab focused on time-domain inspection of `ros2neuro_msgs/msg/NeuroFrame` data. The architecture is intentionally prepared for adding more tabs later, for example spectrum or feature views.
+The package provides an extensible multi-tab GUI for `ros2neuro_msgs/msg/NeuroFrame` data. It has two kinds of tab,
+added with the `+` button: the **Time Scope**, for time-domain inspection of the signal, and the **Spectrum**, which
+computes and shows the power spectrum (Welch or FFT). The architecture is intentionally prepared for adding more tabs,
+for example feature views (see "Extending the Visualizer" below).
+
+![The visualizer with the EEG filtered between 2 and 40 Hz and its Welch spectrum](img/visualizer-eeg-welch.png){ .screenshot }
+
+A step-by-step guide with screenshots is in the tutorial
+[Looking at the signals with the visualizer](../tutorials/visualizer/index.md).
 
 ## Features
 
 - live visualization of `NeuroFrame` topics
+- **Time Scope** and **Spectrum** tabs, which can be shown side by side
 - automatic topic discovery for `ros2neuro_msgs/msg/NeuroFrame`
 - runtime channel labels from `NeuroSensor` and `NeuroTrigger`, with metadata fallback
 - multi-tab interface with tab rename and tab close
@@ -92,9 +101,7 @@ The right sidebar is divided into four areas:
 
 ## Time Scope Tab
 
-The current tab implementation is `Time Scope`.
-
-It supports:
+The `Time Scope` tab shows the signal in time. It supports:
 
 - configurable time window
 - configurable amplitude scale
@@ -120,6 +127,23 @@ For trigger sources, the tab can apply:
 - edge detection (`Off`, `Rising`, `Falling`, `Both`)
 
 Analog filters are not applied to trigger sources.
+
+## Spectrum Tab
+
+The `Spectrum` tab computes the power spectrum of the selected channels from the frames it receives, so no spectral
+node has to be running. It uses the same `WelchProcessor` and `FFTProcessor` as `ros2neuro_processing_spectral`.
+
+| Control | Values |
+|---|---|
+| `Method` | `Welch`, `FFT` |
+| `Scale` | `Log`, `Linear` |
+| `Buffer (s)` | `0.5`, `1`, `2`, `4`, `8` |
+| `Window` | `Hamming`, `Hann`, `Blackman`, `Flattop`, `Rectangular` |
+| `Averaging` | `Off`, `2 s`, `4 s`, `8 s`, `All` |
+| `Min frequency`, `Max frequency` | the range of the horizontal axis (defaults 0 and 100 Hz) |
+| `Reset average` | restarts the averaging |
+
+With `Welch` and the `Log` scale the vertical axis is the PSD in dB/Hz.
 
 ## Layout and Tabs
 
@@ -160,7 +184,7 @@ The code is structured around `VisualizerTab`, so new visualizations can be adde
 Relevant classes:
 
 - `VisualizerTab`
-- `TimeSeriesTab`
+- `TimeSeriesTab` and `SpectrumTab`, the two tabs that exist today
 - `MainWindow`
 - `DockTabWidget`
 
@@ -189,13 +213,13 @@ This keeps tab-specific controls and rendering isolated while the main window co
 
 ## Current Limitations
 
-- only `Time Scope` is implemented as a visualization tab
+- only two visualization tabs exist, `Time Scope` and `Spectrum`
 - configuration persistence of GUI state is not implemented yet
 - metadata topic override is runtime-only
 
 ## Suggested Next Steps
 
-- add a `Spectrum` tab
+- add more tabs, for example a view of `NeuroFeature` messages
 - persist window/layout/tab state
 - expose more launch/config parameters
 - add more tests around GUI state transitions and docking behavior

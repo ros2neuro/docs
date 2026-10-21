@@ -16,7 +16,7 @@ get a small simulator, so you can run everything without hardware and without fr
 - how this ties in with the stack: the event ids `1024` (Blink) and `1024 + 32768` (Blink Off) are the ones the
   [manager](../../packages/manager/index.md) already listens to.
 
-**You need** a built ros2neuro workspace (Jazzy). Read the [power threshold tutorial](../power-threshold-event/index.md)
+**You need** a built ROS2neuro workspace. Read the [power threshold tutorial](../power-threshold-event/index.md)
 first: this one builds on the same ideas.
 
 The complete package is in the repository, under `docs/tutorials/eog-check/tutorial_eog_check/`, and it is
@@ -108,7 +108,7 @@ Things to notice:
 - **Sample-accurate time stamps.** Unlike the previous tutorial, the event is stamped with
   `frame.header.stamp + s / samplerate`, the time of the sample that triggered it. A blink then lines up with
   the signal in the recorded file.
-- **Event ids.** `1024` is *Blink* in the ros2neuro catalog and its end is `1024 + 32768`
+- **Event ids.** `1024` is *Blink* in the ROS2neuro catalog and its end is `1024 + 32768`
   ([event codes](../../concepts/protocols.md#event-codes)). The manager keeps track of whether a blink is in
   progress by listening to these two ids, so you do not need to change the manager to make it aware of your
   detector.
@@ -230,3 +230,5 @@ the detector is following.
 3. Add a service `reset` that clears the blink count, as the integrator does.
 4. Combine this node with the [power threshold](../power-threshold-event/index.md) node: publish an event only
    when a blink *and* a rise of the frontal power occur together.
+
+Next: [Showing the feedback in virtual reality](../vr-feedback/index.md).

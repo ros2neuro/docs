@@ -1,8 +1,8 @@
 # Architecture
 
-![ros2neuro architecture](../assets/architecture.svg)
+![ROS2neuro architecture](../assets/architecture.svg)
 
-ros2neuro is a chain of ROS 2 nodes. Each node subscribes to the output of the previous one, does one job and
+ROS2neuro is a chain of ROS 2 nodes. Each node subscribes to the output of the previous one, does one job and
 publishes its result. A few nodes (recorder, visualizer) sit beside the chain and only listen.
 
 ## The layers

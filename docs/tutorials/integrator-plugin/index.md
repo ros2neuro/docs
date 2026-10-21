@@ -1,6 +1,6 @@
 # Writing an integrator plugin
 
-In this tutorial you write a new integrator for ros2neuro, build it as a plugin package, test it, and run it in
+In this tutorial you write a new integrator for ROS2neuro, build it as a plugin package, test it, and run it in
 the real [integrator node](../../packages/integrator/index.md).
 
 An integrator turns the noisy stream of `NeuroPrediction` messages of the decoder into a smoother
@@ -14,7 +14,7 @@ last `window` predictions, and anything older counts for nothing.
 - what the node does for you (topics, rejection, reset service) and what the plugin does;
 - how to register, test and load the plugin.
 
-**You need** a built ros2neuro workspace (Jazzy) and about 25 minutes. It helps to have done
+**You need** a built ROS2neuro workspace and about 25 minutes. It helps to have done
 [Writing a filter plugin](../filter-plugin/index.md), because the registration steps are the same.
 
 The complete package is in the repository, under `docs/tutorials/integrator-plugin/tutorial_integrator_plugin/`,

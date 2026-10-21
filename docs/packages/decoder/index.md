@@ -47,7 +47,7 @@ ros2 run ros2neuro_decoder decoder_node --ros-args --params-file decoder.yaml \
 ## Model format
 
 A trained decoder is a folder with a `manifest.yaml` (decoder type, input contract, feature selection, output
-fields) and a binary model file, `.r2nd` for the ros2neuro decoders. The manifest is the runtime entry point.
+fields) and a binary model file, `.r2nd` for the ROS2neuro decoders. The manifest is the runtime entry point.
 The details are in the reference below.
 
 ---
@@ -145,7 +145,7 @@ payload referenced by `decoder.path` and validate manifest and payload consisten
 
 ## `.r2nd` Container
 
-The suggested extension for ros2neuro decoder model files is `.r2nd`:
+The suggested extension for ROS2neuro decoder model files is `.r2nd`:
 
 - `r2n`: short for `ros2neuro`
 - `d`: short for `decoder`

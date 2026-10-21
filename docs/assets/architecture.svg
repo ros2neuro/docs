@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560" font-family="Helvetica, Arial, sans-serif" role="img" aria-labelledby="t d">
-  <title id="t">ros2neuro architecture</title>
+  <title id="t">ROS2neuro architecture</title>
   <desc id="d">Data flows from the hardware or a GDF file through acquisition, filters, spectral processing, decoder and integrator, then through the manager to the feedback. The manager emits events to the recorder and resets the integrator through a service.</desc>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
@@ -25,7 +25,7 @@
   </defs>
 
   <rect width="1000" height="560" fill="#ffffff"/>
-  <text class="title" x="20" y="30">ros2neuro</text>
+  <text class="title" x="20" y="30">ROS2neuro</text>
   <text class="sub" x="20" y="48">signal flow: first row left to right, then the second row from the decoder to the feedback</text>
 
   <!-- Row 1 -->

@@ -1,6 +1,6 @@
-# ros2neuro documentation
+# ROS2neuro documentation
 
-Source of the documentation site of **ros2neuro**, a modular ROS 2 framework for neurophysiological signal
+Source of the documentation site of **ROS2neuro**, a modular ROS 2 framework for neurophysiological signal
 acquisition, processing, decoding and closed-loop BCI. The site is built with
 [MkDocs](https://www.mkdocs.org) and the [Material](https://squidfunk.github.io/mkdocs-material/) theme.
 
@@ -15,7 +15,7 @@ docs/
 └── tutorials/           one folder per tutorial: the page (index.md) and its ROS 2 package (tutorial_*/)
 ```
 
-- **Concepts** explains how ros2neuro is organised.
+- **Concepts** explains how ROS2neuro is organised.
 - **Packages** documents every package of the workspace. A base package (for example
   `acquisition`) explains the node and tells which plugin to select, and links to one page per plugin.
 - **Tutorials** are step-by-step guides. The code of each one is a real ROS 2 package in the same folder as its
@@ -53,9 +53,9 @@ Markdown files in the repository, or run `mkdocs serve`.
 
 ## Tutorial packages
 
-The packages `docs/tutorials/*/tutorial_*/` are ordinary ROS 2 (Jazzy) packages, shown and explained in the
+The packages `docs/tutorials/*/tutorial_*/` are ordinary ROS 2 packages, shown and explained in the
 tutorial pages. They depend on `ros2neuro_msgs`, `ros2neuro_filters` and `ros2neuro_integrator`. To build one by
-hand, from your ros2neuro workspace:
+hand, from your ROS2neuro workspace:
 
 ```bash
 colcon build --paths path/to/docs/docs/tutorials/filter-plugin/tutorial_filter_plugin

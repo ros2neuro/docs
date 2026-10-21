@@ -3,9 +3,9 @@
 !!! info ""
     Package: [`ros2neuro_decoder_py`](https://github.com/ros2neuro/ros2neuro_decoder_py) · part of [Decoder](index.md)
 
-Python implementation of the EEG decoder for ROS2Neuro.
+Python implementation of the EEG decoder for ROS2neuro.
 
-This package allows the integration of machine learning and deep learning algorithms (using libraries such as `braindecode`, `skops`, `torch`, etc.) for EEG decoding directly into the ROS2Neuro framework.
+This package allows the integration of machine learning and deep learning algorithms (using libraries such as `braindecode`, `skops`, `torch`, etc.) for EEG decoding directly into the ROS2neuro framework.
 
 ## Setup Instructions
 
@@ -39,7 +39,7 @@ pip install -r requirements.txt
 
 ### 3. Build the Package
 
-Ensure your ROS 2 installation is sourced (e.g., `source /opt/ros/humble/setup.bash`), and your virtual environment is active. Then, build the package using `colcon` from the root of the workspace:
+Ensure your ROS 2 installation is sourced (e.g., `source /opt/ros/<distro>/setup.bash`), and your virtual environment is active. Then, build the package using `colcon` from the root of the workspace:
 
 ```bash
 cd ~/neurorobotics/ros2neuro_ws

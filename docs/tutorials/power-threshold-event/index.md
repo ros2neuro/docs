@@ -15,7 +15,7 @@ GDF/BDF file next to the signal, with no extra work.
 - how to publish a `NeuroEvent` that is correctly aligned with the data;
 - how to change a parameter of a running node.
 
-**You need** a built ros2neuro workspace (Jazzy). No hardware: the tutorial runs on the dummy acquisition.
+**You need** a built ROS2neuro workspace. No hardware: the tutorial runs on the dummy acquisition.
 Read [Messages and data types](../../concepts/messages.md) first if the message layout is new to you.
 
 The complete package is in the repository, under `docs/tutorials/power-threshold-event/tutorial_power_threshold/`,
@@ -100,7 +100,7 @@ Things to notice:
   `frame.header.stamp` is the time of the *first* sample, so the end is
   `stamp + samples / samplerate`. The recorder places the event using `header.stamp`, so stamping with the
   acquisition time instead of `now()` keeps the event aligned with the data even when processing is delayed.
-- **The end of the event** is published as `event_id + 32768`, the ros2neuro convention for *Off*
+- **The end of the event** is published as `event_id + 32768`, the ROS2neuro convention for *Off*
   (see the [event codes](../../concepts/protocols.md#event-codes)). The default id 2001 does not collide with the
   ids reserved by the stack (1, 781, 786, 897, 898, 899, 1024).
 - **The threshold can be changed at runtime** through the parameter callback, which also rejects invalid values.

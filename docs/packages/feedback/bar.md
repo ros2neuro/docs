@@ -5,6 +5,35 @@
 
 Plugin `ros2neuro::feedback::Bar`, **neurodraw only** (`Rectangle`, `Circle`, `Cross`; neurodraw itself is not modified).
 
+The Bar plugin draws **one bar for each class that has an output of the classifier**, so it works with **any number of
+classes** (`K` bars, two or more), each bar with its own colour and its own threshold line.
+
+**Two classes** (here a trial of a calibration: the fixation cross, the cue, the feedback and the outcome, in which the
+bar that reaches its threshold lights up):
+
+![Two bars in the four moments of a trial](img/bars-2-phases.png){ .screenshot }
+
+**Four classes**, each with a different threshold (the white lines are at 0.4, 0.5, 0.6 and 0.7 from the left):
+
+![Four bars in the four moments of a trial](img/bars-4-phases.png){ .screenshot }
+
+![Four bars during the feedback](img/bars-4-classes.png){ .screenshot style="max-width: 560px;" }
+
+What you see in the window:
+
+| Element | Meaning |
+|---|---|
+| a **bar** | one classifier output, in the order of the `classes` parameter; all bars start at `1/K` and when one rises the others fall |
+| the **white line** across a bar | the threshold of that class |
+| a **brighter bar with a thicker line** | the threshold is reached |
+| the **cross** under the bars | the fixation, always in the same place |
+| the **circle** under the bars | the cue, with the colour of the target bar |
+
+**The rest.** With `rest_mode: timeout` the rest has no bar: its cue is a **yellow** circle, and when the rest ends as a
+Hit a small yellow dot appears under the bars (here the four-class task with the rest):
+
+![The rest cue and the yellow dot of a rest that is a Hit](img/bars-rest.png){ .screenshot }
+
 * One bar per classifier output, in the order of `output_classes`, **each with its own color** (royalblue, firebrick,
   forestgreen, mediumpurple, deeppink, darkcyan, saddlebrown; none is yellow: yellow is always the rest). There are no
   labels: the colors tell the bars apart, and the order is the one of the `classes` parameter. With two bars they are

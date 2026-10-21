@@ -75,7 +75,7 @@ launch/
 ```bash
 distrobox enter ros2neuro
 cd ~/ros2neuro_ws && colcon build --packages-select ros2neuro_devel_test     # once, and after editing any file here
-source /opt/ros/jazzy/setup.bash && source install/setup.bash
+source /opt/ros/<distro>/setup.bash && source install/setup.bash
 ```
 
 ## Launching

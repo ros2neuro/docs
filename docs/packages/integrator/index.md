@@ -53,7 +53,7 @@ shows the whole process.
 
 ## Reference (from the package README)
 
-ROS 2 base package for control integration in ros2neuro.
+ROS 2 base package for control integration in ROS2neuro.
 
 It provides:
 

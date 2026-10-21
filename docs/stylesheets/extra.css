@@ -1,0 +1,44 @@
+/* The logo is dark navy: keep it readable on the coloured header and in dark mode. */
+.md-header__button.md-logo {
+  padding: 0.2rem;
+}
+
+.md-header__button.md-logo img {
+  height: 1.9rem;
+  width: auto;
+  padding: 0.15rem 0.35rem;
+  background: #ffffff;
+  border-radius: 0.4rem;
+}
+
+/* Full logo on the home page, on a white card so it also works in dark mode. */
+.md-typeset img.home-logo {
+  display: block;
+  margin: 0 auto 1.5rem;
+  max-width: 340px;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: #ffffff;
+  border-radius: 0.8rem;
+}
+
+/* Screenshots */
+.md-typeset img.screenshot {
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.3rem;
+}
+
+.md-typeset figure.shot {
+  margin: 1rem auto;
+  text-align: center;
+}
+
+.md-typeset figure.shot figcaption {
+  font-size: 0.7rem;
+  color: var(--md-default-fg-color--light);
+}
+
+/* Names of messages and classes in the first column of a table must not break in the middle */
+.md-typeset td:first-child code {
+  white-space: nowrap;
+}

@@ -153,7 +153,7 @@ The feedback core rebuilds the same layout and delegates the drawing to a plugin
 - **Wheel**: exactly two classes with an output. A line moves on a ring; threshold markers show the targets.
 - **Bar**: one bar per classifier output, each with its own color and a white threshold line.
 
-Both are drawn with [neurodraw](../packages/neurodraw.md). See the package pages for the colors and the
+Both are drawn with [neurodraw](../packages/feedback/neurodraw.md). See the package pages for the colors and the
 behaviour of the rest.
 
 ## Where to look next

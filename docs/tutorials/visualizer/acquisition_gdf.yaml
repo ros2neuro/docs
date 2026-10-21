@@ -1,0 +1,21 @@
+# Replays a recorded GDF file as if it were a live amplifier (16 EEG channels, 512 Hz, 16 frames per second).
+#
+#   ros2 run ros2neuro_acquisition acquisition --ros-args --params-file acquisition_gdf.yaml \
+#       -p acquisition.filename:=/path/to/recording.gdf
+acquisition:
+  ros__parameters:
+    acquisition.plugin: ros2neuro::acquisition::XDFDevice
+    acquisition.autostart: true
+    acquisition.reopen: true
+    acquisition.filename: "/path/to/recording.gdf"    # overridden on the command line
+    acquisition.framerate: 16.0
+    acquisition.loop: true
+
+    # name, unit and channel labels of the EEG block and of the trigger block
+    acquisition.sensors.eeg.name: "EEG"
+    acquisition.sensors.eeg.unit: "uV"
+    acquisition.sensors.eeg.type: 1       # NeuroSensorInfo::TYPE_EEG
+    acquisition.sensors.eeg.labels: [Fz, FC3, FC1, FCz, FC2, FC4, C3, C1, Cz, C2, C4, CP3, CP1, CPz, CP2, CP4]
+    acquisition.triggers.tri.name: "TRI"
+    acquisition.triggers.tri.unit: "code"
+    acquisition.triggers.tri.labels: [trigger]

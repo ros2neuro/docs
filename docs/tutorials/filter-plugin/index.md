@@ -1,6 +1,6 @@
 # Writing a filter plugin
 
-In this tutorial you write a new filter for the ros2neuro [filter chain](../../packages/filters/index.md), build it
+In this tutorial you write a new filter for the ROS2neuro [filter chain](../../packages/filters/index.md), build it
 as a plugin package, test it, and load it in a running chain.
 
 The filter is called **Clip**: it limits every sample to the range `[-limit, +limit]`, which bounds the effect of
@@ -13,7 +13,7 @@ large artifacts on the filters that follow.
 - how to test a filter without ROS running;
 - how to put the filter in a chain from a YAML file.
 
-**You need** a built ros2neuro workspace (Jazzy) and about 20 minutes. Read
+**You need** a built ROS2neuro workspace and about 20 minutes. Read
 [Plugins](../../concepts/plugins.md) first if the pluginlib mechanism is new to you.
 
 The complete package is in the repository, under `docs/tutorials/filter-plugin/tutorial_filter_plugin/`, and it is
@@ -109,7 +109,7 @@ does, and checks both the result and the rejection of an invalid limit.
 
 ## 7. Build
 
-From the root of your workspace, with ROS 2 Jazzy and the ros2neuro workspace sourced:
+From the root of your workspace, with ROS 2 and the ROS2neuro workspace sourced:
 
 ```bash
 colcon build --packages-select tutorial_filter_plugin

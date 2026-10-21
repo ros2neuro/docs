@@ -67,7 +67,7 @@ mechanism.
 
 ## Reference (from the package README)
 
-`ros2neuro_acquisition` is the acquisition runtime package for the ROS2 Neuro stack.
+`ros2neuro_acquisition` is the acquisition runtime package for the ROS2neuro stack.
 It provides the generic acquisition node, the abstract device plugin interface, and
 the state machine that turns a device implementation into ROS 2 topics and services.
 

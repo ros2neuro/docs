@@ -14,22 +14,33 @@ flowchart LR
 
 ## Overview
 
+Click a message name to jump to its description.
+
 | Message | Role | Produced by | Consumed by |
 |---|---|---|---|
-| `NeuroFrame` | one synchronous chunk of analog and trigger samples | acquisition, filters | filters, processing, recorder, visualizer |
-| `NeuroFrameInfo` | static description of the stream (rate, channels, labels) | acquisition | recorder, visualizer |
-| `NeuroFeature` | processed data of any dimensionality (PSD, spectrogram...) | processing | decoder |
-| `NeuroPrediction` | decoder output, one value per class | decoder | integrator |
-| `NeuroControl` | integrated or normalised control values plus discrete actions | integrator, manager | manager, feedback |
-| `NeuroEvent` | sparse marker (trial start, cue, outcome...) | manager, feedback | recorder, integrator |
+| [`NeuroFrame`](#neuroframe) | one synchronous chunk of analog and trigger samples | acquisition, filters | filters, processing, recorder, visualizer |
+| [`NeuroFrameInfo`](#neuroframeinfo) | static description of the stream (rate, channels, labels) | acquisition | recorder, visualizer |
+| [`NeuroFeature`](#neurofeature) | processed data of any dimensionality (PSD, spectrogram...) | processing | decoder |
+| [`NeuroPrediction`](#neuroprediction) | decoder output, one value per class | decoder | integrator |
+| [`NeuroControl`](#neurocontrol) | integrated or normalised control values plus discrete actions | integrator, manager | manager, feedback |
+| [`NeuroEvent`](#neuroevent) | sparse marker (trial start, cue, outcome...) | manager, feedback | recorder, integrator |
 
-The helper messages `NeuroSensor`, `NeuroTrigger`, `NeuroSensorInfo`, `NeuroTriggerInfo` and `NeuroAxis` are
-embedded in the ones above.
+Helper messages, embedded in the ones above:
+
+| Message | Embedded in | Describes |
+|---|---|---|
+| [`NeuroSensor`](#neurosensor) | `NeuroFrame` | an analog block (EEG, EMG, EOG...) |
+| [`NeuroTrigger`](#neurotrigger) | `NeuroFrame` | a digital block (trigger lines, markers) |
+| [`NeuroSensorInfo`](#neurosensorinfo) | `NeuroFrameInfo` | the metadata of an analog block |
+| [`NeuroTriggerInfo`](#neurotriggerinfo) | `NeuroFrameInfo` | the metadata of a digital block |
+| [`NeuroAxis`](#neuroaxis) | `NeuroFeature` | the meaning of one dimension of a feature |
+
+---
 
 ## NeuroFrame
 
-The atomic chunk coming from a device. It carries `NeuroSensor[]` (analog, `float32`) and `NeuroTrigger[]`
-(digital, `int32`).
+**`NeuroFrame`** is the atomic chunk coming from a device. It carries `NeuroSensor[]` (analog, `float32`) and
+`NeuroTrigger[]` (digital, `int32`) that were acquired at the same time.
 
 ```text
 std_msgs/Header header      # stamp = acquisition time of the FIRST sample
@@ -53,22 +64,37 @@ index = sample * channels + channel
 
 The size of `data` must be `samples * channels`. All publishers and consumers must respect this.
 
-### NeuroSensor and NeuroTrigger
+### NeuroSensor
 
-| Field | NeuroSensor | NeuroTrigger |
-|---|---|---|
-| `name` | logical stream name (`EEG`, `EMG`, `EOG`...) | logical block name |
-| `channels` | number of channels | number of digital channels |
-| `labels` | channel names (optional, `labels.size() == channels`) | same |
-| `data` | `float32[]` | `int32[]` |
+**`NeuroSensor`** is one analog block of a frame.
+
+| Field | Meaning |
+|---|---|
+| `name` | logical stream name (`EEG`, `EMG`, `EOG`...) |
+| `channels` | number of channels |
+| `labels` | channel names (optional, `labels.size() == channels`) |
+| `data` | `float32[]`, sample-major |
 
 Labels travel with the runtime data, so a processing node can read channel names without subscribing to the
 metadata topic.
 
+### NeuroTrigger
+
+**`NeuroTrigger`** is one digital block of a frame (trigger lines, event codes).
+
+| Field | Meaning |
+|---|---|
+| `name` | logical block name |
+| `channels` | number of digital channels |
+| `labels` | channel names (optional, `labels.size() == channels`) |
+| `data` | `int32[]`, sample-major |
+
+---
+
 ## NeuroFrameInfo
 
-Slow metadata of the stream. It should be published with **`transient_local`** QoS so that late subscribers
-still receive it.
+**`NeuroFrameInfo`** is the slow metadata of a stream: its rate, its blocks, its channels. It should be published
+with **`transient_local`** QoS so that late subscribers still receive it.
 
 ```text
 std_msgs/Header     header
@@ -78,16 +104,24 @@ NeuroSensorInfo[]   sensors
 NeuroTriggerInfo[]  triggers
 ```
 
-`NeuroSensorInfo` has `name`, `type`, `channels`, `unit`, `transducer`, `hardware_filter`, `min_value`,
-`max_value`, `labels`. The `type` constant is one of `TYPE_EEG` (1), `TYPE_EMG` (2), `TYPE_EOG` (3),
-`TYPE_ECG` (4), `TYPE_GSR` (5), `TYPE_RESP` (6), `TYPE_MISC` (255), `TYPE_UNKNOWN` (0).
+### NeuroSensorInfo
 
-`NeuroTriggerInfo` adds an `encoding`: `ENCODING_STATE_PER_SAMPLE` (0, state of the digital line),
-`ENCODING_CODE_PER_SAMPLE` (1, one event code per sample), `ENCODING_BITMASK_PER_SAMPLE` (2, bitmask of lines).
+**`NeuroSensorInfo`** describes one analog block: `name`, `type`, `channels`, `unit`, `transducer`,
+`hardware_filter`, `min_value`, `max_value`, `labels`. The `type` constant is one of `TYPE_EEG` (1), `TYPE_EMG` (2),
+`TYPE_EOG` (3), `TYPE_ECG` (4), `TYPE_GSR` (5), `TYPE_RESP` (6), `TYPE_MISC` (255), `TYPE_UNKNOWN` (0).
+
+### NeuroTriggerInfo
+
+**`NeuroTriggerInfo`** describes one digital block. It has the same descriptive fields as `NeuroSensorInfo`
+(`min_value` and `max_value` are integers) plus an `encoding` that says how to read `data`:
+`ENCODING_STATE_PER_SAMPLE` (0, state of the digital line), `ENCODING_CODE_PER_SAMPLE` (1, one event code per sample),
+`ENCODING_BITMASK_PER_SAMPLE` (2, bitmask of lines).
+
+---
 
 ## NeuroFeature
 
-A generic N-dimensional tensor, the output of every processing node.
+**`NeuroFeature`** is a generic N-dimensional tensor, the output of every processing node.
 
 ```text
 std_msgs/Header header      # stamp = END of the analysis window
@@ -111,9 +145,6 @@ string          description
 | `TYPE_MATRIX` | 6 | generic matrix |
 | `TYPE_MISC` | 255 | anything else |
 
-`NeuroAxis` describes one dimension: `name` (`channels`, `frequency`, `time`...), `unit` (`Hz`, `s`),
-`labels` (for discrete axes, such as channel names) and `values` (numeric coordinates, such as frequency bins).
-
 Rules: `axes.size() == shape.size()`, `data.size()` is the product of `shape`, and when an axis has `labels` or
 `values` their size equals the corresponding `shape` entry.
 
@@ -122,7 +153,16 @@ Rules: `axes.size() == shape.size()`, `data.size()` is the product of `shape`, a
     pipeline has been observed publishing `shape [16, 23]` with axes `channels, frequency`. Always read `shape`
     and `axes` instead of assuming a fixed order.
 
+### NeuroAxis
+
+**`NeuroAxis`** describes one dimension of a feature: `name` (`channels`, `frequency`, `time`...), `unit` (`Hz`,
+`s`), `labels` (for discrete axes, such as channel names) and `values` (numeric coordinates, such as frequency bins).
+
+---
+
 ## NeuroPrediction
+
+**`NeuroPrediction`** is the output of a decoder: one value per class.
 
 ```text
 std_msgs/Header header
@@ -135,9 +175,12 @@ uint8           type         # TYPE_PROBABILITIES, TYPE_SCORES, TYPE_LOGITS, TYP
 `fields[i]` names the class of `values[i]`. A class name can be a catalog name (`BOTH_HANDS`) or the code as a
 string (`773`), see [Protocols](protocols.md).
 
+---
+
 ## NeuroControl
 
-Used twice: as output of the integrator and as the flow that the manager sends to the feedback.
+**`NeuroControl`** is used twice: as output of the integrator and as the flow that the manager sends to the
+feedback.
 
 ```text
 std_msgs/Header header
@@ -152,7 +195,11 @@ Continuous values go in `fields`/`values`, discrete information in `actions`/`co
 `actions`/`commands` to carry a progressive counter `seq`, the current phase (`event`) or the trial outcome
 (`outcome`).
 
+---
+
 ## NeuroEvent
+
+**`NeuroEvent`** is a sparse marker: a trial that starts, a cue, an outcome, a blink.
 
 ```text
 std_msgs/Header header
@@ -166,14 +213,18 @@ string          description
 seconds in the timeline of the publisher; recorders typically use a time relative to the start of the
 recording. The recorder keys event types on the pair (`event_id`, `family_id`).
 
+---
+
 ## QoS
 
 | Message | Recommended QoS |
 |---|---|
-| `NeuroFrame` | sensor-data profile, low latency |
-| `NeuroFrameInfo` | reliable + `transient_local` |
-| `NeuroFeature` | reliable |
-| `NeuroEvent` | reliable |
+| [`NeuroFrame`](#neuroframe) | sensor-data profile, low latency |
+| [`NeuroFrameInfo`](#neuroframeinfo) | reliable + `transient_local` |
+| [`NeuroFeature`](#neurofeature) | reliable |
+| [`NeuroEvent`](#neuroevent) | reliable |
+
+---
 
 ## In-memory types: ros2neuro_data
 

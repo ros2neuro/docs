@@ -1,14 +1,26 @@
-site_name: ros2neuro
-site_description: Documentation of ros2neuro, a modular ROS 2 framework for neurophysiological signal acquisition, processing, decoding and closed-loop BCI.
+site_name: ROS2neuro
+site_description: Documentation of ROS2neuro, a modular ROS 2 framework for neurophysiological signal acquisition, processing, decoding and closed-loop BCI.
 site_url: https://ros2neuro.github.io/docs/
 repo_url: https://github.com/ros2neuro/docs
 
-# Tutorial packages live next to their page in docs/tutorials/<name>/tutorial_*/: keep their sources out of the site
+# Tutorial packages and client code live next to their page in docs/tutorials/<name>/: keep their sources out of the site
 exclude_docs: |
   /tutorials/*/tutorial_*/
+  /tutorials/visualizer/*.yaml
+  /tutorials/vr-feedback/webxr/
+  /tutorials/vr-feedback/unity/
+
+# a broken #anchor in a link is reported (and stops `mkdocs build --strict`)
+validation:
+  anchors: warn
+
+extra_css:
+  - stylesheets/extra.css
 
 theme:
   name: material
+  logo: assets/logo-icon.png
+  favicon: assets/favicon.png
   features:
     - navigation.sections
     - navigation.indexes
@@ -107,15 +119,17 @@ nav:
           - packages/manager/asynchronous.md
       - Feedback:
           - packages/feedback/index.md
+          - packages/feedback/neurodraw.md
           - packages/feedback/wheel.md
           - packages/feedback/bar.md
-      - packages/neurodraw.md
       - packages/visualizer.md
       - packages/devel-test.md
   - Tutorials:
       - tutorials/index.md
       - tutorials/hardware-free-pipeline/index.md
+      - tutorials/visualizer/index.md
       - tutorials/filter-plugin/index.md
       - tutorials/integrator-plugin/index.md
       - tutorials/power-threshold-event/index.md
       - tutorials/eog-check/index.md
+      - tutorials/vr-feedback/index.md

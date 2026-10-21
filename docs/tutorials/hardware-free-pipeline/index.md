@@ -1,13 +1,13 @@
 # Running the whole pipeline without hardware
 
-In this tutorial you start a complete ros2neuro pipeline on your computer, from the acquisition to the feedback
+In this tutorial you start a complete ROS2neuro pipeline on your computer, from the acquisition to the feedback
 the subject would see, **without an amplifier**. The EEG comes from a GDF file that is replayed as if it were
 live. You will run a calibration, look at what each node publishes, and see where each piece of the
 [architecture](../../concepts/architecture.md) lives.
 
 It takes about 10 minutes and needs no code. It is also the quickest way to check that your installation works.
 
-**You need** a built ros2neuro workspace (Jazzy) with the package `ros2neuro_devel_test`, and a display for the
+**You need** a built ROS2neuro workspace with the package `ros2neuro_devel_test`, and a display for the
 feedback window.
 
 ## 1. What will run
@@ -39,7 +39,7 @@ flowchart LR
 ## 2. Launch it
 
 ```bash
-source /opt/ros/jazzy/setup.bash
+source /opt/ros/<distro>/setup.bash
 source install/setup.bash
 
 ros2 launch ros2neuro_devel_test gaussian_bars.launch.xml protocol:=calibration record:=false
@@ -205,4 +205,4 @@ input of the next hardware-free test.
 - the manager adds the protocol on top of the signal chain and publishes the events;
 - you can replace the amplifier with a file, and nothing else changes.
 
-Next: [Writing a filter plugin](../filter-plugin/index.md).
+Next: [Looking at the signals with the visualizer](../visualizer/index.md).

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>ROS2neuro feedback in WebXR</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Versions are pinned on purpose: a page that works today keeps working. -->
+  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/roslib@1.4.1/build/roslib.min.js"></script>
+</head>
+<body>
+  <!--
+    A passive VR feedback for ROS2neuro.
+
+    It subscribes (through rosbridge) to the flow that the manager publishes for the feedback,
+    /manager_control/probabilities (ros2neuro_msgs/msg/NeuroControl), and draws it as one bar per class:
+
+      fields / values   the normalized value of each class       -> height of the bar
+      actions / commands:
+        "event"  phase of the trial: fixation 786, the cue (the class code), and their "Off" (+32768)
+        "outcome"  897 Hit, 898 Miss, 899 Timeout                -> the "boom"
+
+    It is the same logic as ros2neuro_feedback_bar, with one difference: the thresholds are not
+    in the flow, so they are given here (query parameter "thresholds", same order as the bars).
+
+    Query parameters (all optional):
+      ?host=localhost  &port=9090  &topic=/manager_control/probabilities  &thresholds=0.7,0.7
+  -->
+  <a-scene background="color: #05070d" renderer="colorManagement: true" vr-mode-ui="enabled: true">
+    <a-entity id="rig" position="0 0 0">
+      <a-entity camera look-controls wasd-controls position="0 1.6 0">
+        <!-- status line fixed in front of the eyes -->
+        <a-text id="status" value="connecting..." position="0 0.62 -1.2" width="1.3" align="center" color="#9aa4b2"></a-text>
+      </a-entity>
+    </a-entity>
+
+    <a-plane rotation="-90 0 0" width="12" height="12" color="#0d1220"></a-plane>
+    <a-entity light="type: ambient; intensity: 0.7"></a-entity>
+    <a-entity light="type: directional; intensity: 0.8" position="1 3 2"></a-entity>
+
+    <!-- everything the feedback draws is created inside this entity -->
+    <a-entity id="feedback" position="0 0 -2.4"></a-entity>
+  </a-scene>
+
+  <script>
+    // ------------------------------------------------------------------ settings
+    const params = new URLSearchParams(location.search);
+    const HOST = params.get('host') || 'localhost';
+    const PORT = params.get('port') || '9090';
+    const TOPIC = params.get('topic') || '/manager_control/probabilities';
+    const THRESHOLDS = (params.get('thresholds') || '').split(',').map(Number).filter(v => !isNaN(v) && v > 0);
+
+    const EVENT = { FIXATION: 786, HIT: 897, MISS: 898, TIMEOUT: 899, OFF: 32768 };
+    const REST = 783;
+    // a class is colored by its POSITION, never by its code (the rest is the only exception: yellow)
+    const COLORS = ['#4169e1', '#b22222', '#228b22', '#9370db', '#ff1493', '#008b8b', '#8b4513'];
+    const REST_COLOR = '#ffd400';
+
+    const BAR_HEIGHT = 1.5;     // meters for a value of 1
+    const BAR_WIDTH = 0.35;
+    const BAR_GAP = 0.25;
+
+    // ------------------------------------------------------------------ the scene
+    const root = document.querySelector('#feedback');
+    const statusText = document.querySelector('#status');
+    let bars = [];              // { field, el, color, base }
+    let cross = null, cue = null, outcomeText = null;
+    let target = null;          // class code of the current cue
+
+    function el(tag, attrs, parent) {
+      const e = document.createElement(tag);
+      for (const [k, v] of Object.entries(attrs || {})) e.setAttribute(k, v);
+      (parent || root).appendChild(e);
+      return e;
+    }
+
+    function color(field, index) {
+      return Number(field) === REST ? REST_COLOR : COLORS[index % COLORS.length];
+    }
+
+    // One bar per field of the first message. Built once.
+    function build(fields) {
+      const n = fields.length;
+      const span = n * BAR_WIDTH + (n - 1) * BAR_GAP;
+      fields.forEach((field, i) => {
+        const x = -span / 2 + BAR_WIDTH / 2 + i * (BAR_WIDTH + BAR_GAP);
+        const c = color(field, i);
+        // the frame of the bar: a thin transparent box, one unit tall
+        el('a-box', { position: `${x} ${BAR_HEIGHT / 2} 0`, width: BAR_WIDTH, height: BAR_HEIGHT, depth: 0.12,
+                      material: 'color: #ffffff; opacity: 0.08; transparent: true' });
+        // the bar itself: its height is set at every message
+        const bar = el('a-box', { position: `${x} 0 0`, width: BAR_WIDTH * 0.9, height: 0.01, depth: 0.1,
+                                  material: `color: ${c}` });
+        // the threshold line, in white
+        const th = THRESHOLDS[i];
+        if (th) {
+          el('a-box', { position: `${x} ${th * BAR_HEIGHT} 0.07`, width: BAR_WIDTH * 1.25, height: 0.02, depth: 0.02,
+                        material: 'color: #ffffff' });
+        }
+        bars.push({ field, el: bar, x, base: c });
+      });
+      // fixation cross, cue and outcome text, above the bars (hidden until the manager asks)
+      const top = BAR_HEIGHT + 0.35;
+      cross = el('a-text', { value: '+', align: 'center', color: '#ffffff', width: 6, position: `0 ${top} 0`, visible: false });
+      cue = el('a-sphere', { radius: 0.12, position: `0 ${top} 0`, visible: false });
+      outcomeText = el('a-text', { value: '', align: 'center', color: '#ffffff', width: 3.2, position: `0 ${top + 0.45} 0` });
+    }
+
+    function setHeight(bar, value) {
+      const h = Math.max(0.01, Math.min(1, value)) * BAR_HEIGHT;
+      bar.el.setAttribute('height', h);
+      bar.el.setAttribute('position', `${bar.x} ${h / 2} 0`);   // a bar grows upwards from the floor
+    }
+
+    // ------------------------------------------------------------------ the flow of the manager
+    function pairs(msg) {
+      const out = {};
+      (msg.actions || []).forEach((a, i) => { out[a] = (msg.commands || [])[i]; });
+      return out;   // { seq, event?, outcome? }
+    }
+
+    function onFlow(msg) {
+      const fields = msg.fields || [];
+      const values = msg.values || [];
+      if (!bars.length && fields.length) build(fields);
+
+      // 1. the values: the height of every bar. A bar whose value is at or above its threshold is brighter.
+      bars.forEach((bar, i) => {
+        const k = fields.indexOf(bar.field);
+        const v = k >= 0 ? values[k] : 0;
+        setHeight(bar, v);
+        const reached = THRESHOLDS[i] && v >= THRESHOLDS[i];
+        bar.el.setAttribute('material', 'color', reached ? '#ffffff' : bar.base);
+      });
+
+      // 2. phases and outcome, as in ros2neuro_feedback (feedback_controller.cpp)
+      const a = pairs(msg);
+      if (a.outcome !== undefined) {
+        const word = { [EVENT.HIT]: 'Hit', [EVENT.MISS]: 'Miss', [EVENT.TIMEOUT]: 'Timeout' }[a.outcome];
+        outcomeText.setAttribute('value', word || '');
+        outcomeText.setAttribute('color', a.outcome === EVENT.HIT ? '#7CFC00' : a.outcome === EVENT.MISS ? '#ff6b6b' : '#cccccc');
+      } else if (a.event !== undefined) {
+        const e = a.event;
+        if (e === EVENT.FIXATION) { cross.setAttribute('visible', true); }
+        else if (e === EVENT.FIXATION + EVENT.OFF) { cross.setAttribute('visible', false); }
+        else if (e - EVENT.OFF === EVENT.HIT || e - EVENT.OFF === EVENT.MISS || e - EVENT.OFF === EVENT.TIMEOUT) {
+          outcomeText.setAttribute('value', '');            // the boom is over
+          target = null;
+        } else if (e >= EVENT.OFF) {
+          cue.setAttribute('visible', false);               // the cue is over (class code + Off)
+        } else if (bars.some(b => Number(b.field) === e) || e === REST) {
+          target = e;                                       // the cue: a circle with the color of the target
+          const i = bars.findIndex(b => Number(b.field) === e);
+          cue.setAttribute('material', 'color', e === REST || i < 0 ? REST_COLOR : bars[i].base);
+          cue.setAttribute('visible', true);
+        }
+      }
+    }
+
+    // ------------------------------------------------------------------ rosbridge
+    function connect() {
+      const url = `ws://${HOST}:${PORT}`;
+      statusText.setAttribute('value', `connecting to ${url} ...`);
+      const ros = new ROSLIB.Ros({ url });
+
+      ros.on('connection', () => {
+        statusText.setAttribute('value', `connected: ${TOPIC}`);
+        // No throttle_rate here: the manager sends the events (fixation, cue, outcome) in the same instant as a
+        // value message, and a throttle would drop the second one. The flow is light (about 16 messages/s).
+        new ROSLIB.Topic({
+          ros, name: TOPIC, messageType: 'ros2neuro_msgs/msg/NeuroControl'
+        }).subscribe(onFlow);
+      });
+      ros.on('error', () => statusText.setAttribute('value', `cannot reach ${url}`));
+      ros.on('close', () => {
+        statusText.setAttribute('value', `disconnected, retrying ...`);
+        setTimeout(connect, 2000);
+      });
+    }
+    connect();
+  </script>
+</body>
+</html>
