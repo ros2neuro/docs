@@ -3,6 +3,15 @@
 !!! info ""
     Package: [`ros2neuro_visualizer`](https://github.com/ros2neuro/ros2neuro_visualizer) · part of [Packages](index.md)
 
+| | |
+|---|---|
+| **Layer** | Tools |
+| **Kind** | Application (`neuroviz`) with extensible tabs |
+| **Reads** | a `NeuroFrame` topic (default `/acquisition/neurodata`) and its `NeuroFrameInfo` |
+| **Publishes** | a window |
+| **Run** | `ros2 run ros2neuro_visualizer neuroviz`<br>`ros2 launch ros2neuro_visualizer visualizer.launch.py` |
+| **Depends on** | [`ros2neuro_processing_spectral`](processing/spectral.md) (the spectrum), [`ros2neuro_filters_butterworth`](filters/butterworth.md) and [`ros2neuro_filters_car`](filters/car.md) (the filters of the Time Scope) |
+
 Qt-based visualizer for ROS2neuro streams: the oscilloscope of the stack.
 
 The package provides an extensible multi-tab GUI for `ros2neuro_msgs/msg/NeuroFrame` data. It has two kinds of tab,
@@ -224,3 +233,38 @@ This keeps tab-specific controls and rendering isolated while the main window co
 - persist window/layout/tab state
 - expose more launch/config parameters
 - add more tests around GUI state transitions and docking behavior
+
+<!-- interfaces -->
+## Dependencies
+
+- **ROS 2 packages** (build and run): `rclcpp`, [`ros2neuro_data`](msgs-data.md#ros2neuro_data), [`ros2neuro_filters`](filters/index.md), [`ros2neuro_filters_butterworth`](filters/butterworth.md), [`ros2neuro_filters_car`](filters/car.md), [`ros2neuro_processing_spectral`](processing/spectral.md), [`ros2neuro_msgs`](msgs-data.md#ros2neuro_msgs)
+- **ROS 2 packages** (run only): `launch_ros`
+- **External libraries**:
+    - Qt5: `Core`, `Gui`, `Widgets`
+    - Eigen3: matrices
+    - `librtfilter`: the Butterworth filters (found with `find_library`)
+    - FFTW3: through [`ros2neuro_processing_spectral`](processing/spectral.md)
+
+## Messages and topics
+
+Default node name: `neuroviz`.
+
+| | Default topic | Type | Changed by |
+|---|---|---|---|
+| subscribes | `/acquisition/neurodata` | `NeuroFrame` | the **Topic** box of the window (or `topic` in the YAML) |
+| subscribes | `/acquisition/neurodata_info` | `NeuroFrameInfo` | the metadata topic is the data topic plus `_info`; change it in the **Info** dialog |
+
+Messages used:
+
+- `NeuroFrame`, `NeuroFrameInfo`: read
+
+## Example configuration
+
+`config/visualizer.yaml`:
+
+```yaml
+ros2neuro_visualizer:
+  ros__parameters:
+    topic: /acquisition/neurodata
+```
+<!-- /interfaces -->

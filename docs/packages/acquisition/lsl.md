@@ -3,8 +3,37 @@
 !!! info ""
     Package: [`ros2neuro_acquisition_lsl`](https://github.com/ros2neuro/ros2neuro_acquisition_lsl) · pluginlib class: `ros2neuro::acquisition::LSLDevice` · part of [Acquisition](index.md)
 
-`ros2neuro_acquisition_lsl` is a plugin for the [`ros2neuro_acquisition`](index.md) framework. It implements the [`ros2neuro::acquisition::NeuroDevice`](index.md) interface and allows the acquisition node to connect to and stream data from any active **Lab Streaming Layer (LSL)** Outlet present on the network, bridging external software (e.g., OpenViBE, EEGLAB, BrainProducts, g.tec) directly into the `ros2neuro` ROS2 ecosystem.
+Connects the acquisition node to any Lab Streaming Layer (LSL) outlet on the network, bridging external software and devices (OpenViBE, EEGLAB, BrainProducts, g.tec...) into ROS2neuro. It discovers the stream by name or type and splits its channels into EEG, EXG and trigger blocks.
 
+| | |
+|---|---|
+| **Layer** | Acquisition |
+| **Kind** | Plugin of [`ros2neuro_acquisition`](index.md) (pluginlib class `ros2neuro::acquisition::LSLDevice`) |
+| **Reads** | an LSL outlet |
+| **Publishes** | `NeuroFrame` and `NeuroFrameInfo` through the acquisition node |
+| **Run** | `ros2 run ros2neuro_acquisition_lsl acquisition_lsl`<br>`ros2 launch ros2neuro_acquisition_lsl acquisition_visualization.launch.py` |
+
+<!-- interfaces -->
+## Dependencies
+
+- **ROS 2 packages** (build and run): `pluginlib`, `rclcpp`, [`ros2neuro_acquisition`](index.md), [`ros2neuro_data`](../msgs-data.md#ros2neuro_data), [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs)
+- **External libraries**:
+    - `liblsl` ≥ 1.16: Lab Streaming Layer: stream discovery and `stream_inlet`
+    - `pylsl` (tests only): the CSV streamer of the end-to-end test: `pip install pylsl`
+
+## Messages and topics
+
+Default node name: `acquisition`.
+
+| | Default topic | Type | Changed by |
+|---|---|---|---|
+| publishes | `~/neurodata`, `~/neurodata_info` | `NeuroFrame`, `NeuroFrameInfo` | through the acquisition node (`acquisition.topic_data`, `acquisition.topic_info`) |
+
+Messages used:
+
+- `NeuroFrame`, `NeuroFrameInfo`: published through the acquisition node
+
+<!-- /interfaces -->
 The plugin class exported via `pluginlib` is:
 
 ```text
@@ -76,7 +105,7 @@ ros2 run ros2neuro_acquisition_lsl acquisition_lsl
 
 ## Parameters
 
-All parameters are declared under the prefix that `NeuroAcquisitionNode` passes to `configure()`. With the `lsl_configuration.yaml` configuration that prefix is `device`; with the test configuration it is `acquisition`. The table below uses `<prefix>` to indicate that slot.
+All parameters are declared under the prefix that `NeuroAcquisitionNode` passes to `configure()`. When a plugin class is set, as in every launch file, that prefix is `acquisition`. The table below uses `<prefix>` to indicate that slot.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
@@ -126,42 +155,6 @@ acquisition:
           enable: true
           name: "TRI"
           labels: ["TRIG"]
-```
-
----
-
-## Dependencies
-
-### Runtime (C++)
-
-| Dependency | Version | Role |
-|---|---|---|
-| `liblsl` | ≥ 1.16 | LabStreamingLayer C++ library — stream discovery, `stream_inlet`, sample pull |
-| `rclcpp` | ROS2 (Humble+) | ROS2 C++ client library |
-| `pluginlib` | ROS2 | Plugin loading and class registration macros |
-| [`ros2neuro_acquisition`](index.md) | — | `NeuroDevice` base class and `NeuroAcquisitionNode` |
-| [`ros2neuro_data`](../msgs-data.md#ros2neuro_data) | — | `NeuroFrame`, `NeuroSensor`, `NeuroTrigger` data structures |
-| [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs) | — | `NeuroFrame`, `NeuroSensorInfo` ROS2 message definitions |
-
-### Build
-
-| Dependency | Role |
-|---|---|
-| `ament_cmake` | CMake build system for ROS2 packages |
-
-### Test only
-
-| Dependency | Role |
-|---|---|
-| `ament_cmake_gtest` | C++ unit test runner (`test_lsl_device.cpp`) |
-| `ament_cmake_pytest` | Python test runner |
-| `launch_testing_ament_cmake` | End-to-end launch test support |
-| `pylsl` (`python3-pylsl`) | Python LSL library used by the CSV streamer script |
-
-Install the Python LSL library if not already present:
-
-```bash
-pip install pylsl
 ```
 
 ---

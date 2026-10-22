@@ -108,3 +108,50 @@ launch files, and the [hardware-free tutorial](../../tutorials/hardware-free-pip
 Derive from `ros2neuro::feedback::FeedbackPlugin` (`set_values`, cue, fixation, boom) and export it against
 `ros2neuro_feedback` with `pluginlib_export_plugin_description_file(ros2neuro_feedback plugins.xml)`. Keep the
 geometry in a pure, testable header, as [`ros2neuro_feedback_bar`](bar.md) does with `bar_geometry.hpp`.
+
+<!-- interfaces -->
+## Dependencies
+
+- **ROS 2 packages** (build and run): `pluginlib`, `rclcpp`, [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs), [`ros2neuro_manager`](../manager/index.md)
+- **External libraries**:
+    - [`neurodraw`](neurodraw.md): needed by the drawing plugins (see below)
+- **At run time**: a drawing plugin package ([`ros2neuro_feedback_wheel`](wheel.md) or `_bar`)
+
+## Messages and topics
+
+Default node name: `feedback`.
+
+| | Default topic | Type | Changed by |
+|---|---|---|---|
+| subscribes | `/manager_control/probabilities` | `NeuroControl` | `control_topic` |
+| publishes | `/neuroevent` | `NeuroEvent` | `event_topic`, **only** with `publish_display_events: true` |
+
+Messages used:
+
+- `NeuroControl`: read, the flow of the manager
+- `NeuroEvent`: published, optional display events
+
+## Example configuration
+
+The feedback of the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md) (`config/feedback_bars.yaml`). The layout (`classes`, `rest_mode`, `thresholds`) is the same file that the manager loads:
+
+```yaml
+# Feedback (bars). The layout (classes, rest_mode, thresholds) comes from layout.yaml; `mode` (training | control)
+# is set by the launcher from the protocol.
+/feedback:
+    ros__parameters:
+        plugin: ros2neuro::feedback::Bar
+        control_topic: /manager_control/probabilities    # the ONLY thing the feedback reads
+        event_topic: /neuroevent                         # only used by publish_display_events
+        fps: 60.0
+        window_title: "Gaussian - bars"
+        publish_display_events: false
+        latency_log_period_s: 0.0                        # seconds between the "Latency stamp->draw" log lines; 0 = off
+
+/**:
+    ros__parameters:
+        classes: [773, 771]
+        rest_mode: none
+        thresholds: [0.7, 0.7]
+```
+<!-- /interfaces -->

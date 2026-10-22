@@ -40,8 +40,45 @@ ros2 launch ros2neuro_recorder_xdf xdf_recorder.launch.py output:=/tmp/recording
 
 ## Reference (from the package README)
 
-Core recorder node and plugin interface for ROS2neuro.
+<!-- interfaces -->
+## Dependencies
 
+- **ROS 2 packages** (build and run): `pluginlib`, `rclcpp`, [`ros2neuro_data`](../msgs-data.md#ros2neuro_data), [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs)
+- **At run time**: a recorder plugin package ([`ros2neuro_recorder_xdf`](xdf.md))
+
+## Messages and topics
+
+Default node name: `recorder`.
+
+| | Default topic | Type | Changed by |
+|---|---|---|---|
+| subscribes | `/neurodata` | `NeuroFrame` | `topic_data` |
+| subscribes | `/neurodata_info` | `NeuroFrameInfo` | `topic_info` |
+| subscribes | `/neuroevent` | `NeuroEvent` | `topic_event` |
+
+Messages used:
+
+- `NeuroFrame`, `NeuroFrameInfo`, `NeuroEvent`: read and written to the file
+
+## Example configuration
+
+From the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md) (`config/recorder.yaml`). `$(var ...)` are launch substitutions (`allow_substs="true"`); replace them with values when the node is not started by a launch file:
+
+```yaml
+/recorder:
+    ros__parameters:
+        plugin: ros2neuro::recorder::XDFRecorder
+        topic_data: /acquisition/neurodata
+        topic_info: /acquisition/neurodata_info
+        topic_event: /neuroevent
+        output: "$(var recordings_dir)"    # launch argument recordings_dir (created if missing)
+        subject: "test"
+        session: ""
+        modality: "$(var protocol)"
+        xdf.file_type: gdf
+```
+
+<!-- /interfaces -->
 The package provides:
 - `ros2neuro::recorder::NeuroRecorder`, the abstract plugin interface
 - `ros2neuro::recorder::NeuroRecorderNode`, the ROS 2 node managing recorder lifecycle

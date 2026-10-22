@@ -3,18 +3,35 @@
 !!! info ""
     Package: [`ros2neuro_devel_test`](https://github.com/ros2neuro/ros2neuro_devel_test) · part of [Packages](index.md)
 
-Development package to try an end-to-end motor-imagery `ros2neuro` pipeline. It contains only launch files, YAML
-parameter files and example decoder models, no code.
+Launch files, parameter files and example models to run the whole stack end to end. It has no code: `mi_loop` runs a motor-imagery loop with an ANT Neuro amplifier, and the hardware-free launchers replay a GDF file through the full chain, from the acquisition to the wheel or the bars, with the Gaussian, QDA or EEGNet decoders.
 
-It has two parts: the **`mi_loop`** launcher, which needs hardware, and the **hardware-free launchers** that
-replay a GDF file (described in the next section, and the ones to use for the tutorials).
+| | |
+|---|---|
+| **Layer** | Tools |
+| **Kind** | Launchers and example assets (no code) |
+| **Reads** | a GDF file, or an ANT Neuro amplifier for `mi_loop` |
+| **Publishes** | the whole pipeline, up to the feedback window |
+| **Run** | `ros2 launch ros2neuro_devel_test gaussian_bars.launch.xml protocol:=calibration`<br>`ros2 launch ros2neuro_devel_test mi_loop.launch.xml` (hardware) |
 
-## `mi_loop`: the pipeline with an ANT Neuro amplifier
+<!-- interfaces -->
+## Dependencies
 
-The pipeline uses:
+- **ROS 2 packages**: none
+- **At run time**: the packages of the pipeline you launch (acquisition, filters, processing, decoder, integrator, manager, feedback, recorder), which `package.xml` lists as run-time dependencies
+
+## Messages and topics
+
+Messages used:
+
+- none: launchers and parameter files only
+
+<!-- /interfaces -->
+## `mi_loop`: a motor-imagery loop with an ANT Neuro amplifier
+
+The pipeline included uses:
 
 - acquisition from an ANT Neuro eego amplifier, through [`ros2neuro_acquisition_antneuro`](acquisition/antneuro.md);
-- a file recorder, `XDFRecorder`;
+- a recorder that writes to a file, `XDFRecorder`;
 - live visualisation with [`ros2neuro_visualizer`](visualizer.md);
 - a Laplacian filter;
 - a PSD computed with Welch;
@@ -44,12 +61,15 @@ Notes:
 ## Whole-chain tests without hardware (GDF replay)
 
 Hardware-free launchers to test the whole chain, **from the acquisition of a GDF file to the wheel or the bars**, with the
-gaussian and qda decoders. These launchers live in `launch/<folder>/` next to `mi_loop`: launch files (`.xml`), their yaml parameter files and the decoder models
+Gaussian, QDA and EEGNet (deep-learning) decoders. These launchers live in `launch/<folder>/` next to `mi_loop`: launch files (`.xml`), their yaml parameter files and the decoder models
 (`manifest.yaml` + `.r2nd`): no scripts, no code. Every launcher starts **every node explicitly**:
 
 ```
 acquisition -> filters -> welch -> decoder -> integrator -> manager -> feedback (wheel | bars)      (+ recorder)
 ```
+
+With a classic decoder (Gaussian, QDA) the processing between the filters and the decoder is a `welch_node`; with the EEGNet decoder
+it is a `buffer_node` (a window of the signal) and the decoder is the Python one ([`ros2neuro_decoder_py`](decoder/python.md)).
 
 ## Layout
 
@@ -67,6 +87,10 @@ launch/
   gaussian_4class/     gaussian_4class_bars.launch.xml        (4 bars, a different threshold each)
     config/            (same files, no wheel)
     model/             manifest.yaml  fake_4class_gaussian.r2nd
+  gaussian_4class_rest/  gaussian_4class_rest_bars.launch.xml   (the 4-class launcher with the REST, rest_mode timeout; only layout.yaml + manager_*.yaml)
+  eegnet/              eegnet_wheel.launch.xml   eegnet_bars.launch.xml   (deep-learning model of ros2neuro_decoder_py, buffer_node instead of welch)
+  eegnet_rest/         eegnet_rest_wheel.launch.xml   eegnet_rest_bars.launch.xml   (the EEGNet launchers with the REST)
+  timing_check/        timing_check.launch.py   (see below)
 ```
 
 `ros2 launch` finds a launch file by its name, wherever it is in the package, so the names are unique
@@ -75,7 +99,7 @@ launch/
 ```bash
 distrobox enter ros2neuro
 cd ~/ros2neuro_ws && colcon build --packages-select ros2neuro_devel_test     # once, and after editing any file here
-source /opt/ros/<distro>/setup.bash && source install/setup.bash
+source /opt/ros/jazzy/setup.bash && source install/setup.bash
 ```
 
 ## Launching
@@ -138,7 +162,10 @@ colored by its position in `classes`. To try other codes **edit `classes` in `la
 - **gaussian_4class**: a **fictitious** 4-class Gaussian (LEFT_HAND, RIGHT_HAND, BOTH_FEET, BOTH_HANDS) whose prototypes sit at four
   levels of the same 3 features, so replaying the file the four outputs take turns. Only to check a feedback with several bars.
 
-A model is a `manifest.yaml` plus a binary `.r2nd`: the manifest points to it (`decoder.path`), the weights cannot live in yaml.
+- **eegnet**: the model of [`ros2neuro_decoder_py`](decoder/python.md) (`extra/eegnet_mi_bhbf`, a braindecode ShallowFBCSPNet, both hands / both feet) on its own
+  recording `test_mi.gdf`, with a 4-14 Hz band-pass and a 512-sample window. The model takes a while to load, so `duration.begin` is 15 s.
+
+A classic model is a `manifest.yaml` plus a binary `.r2nd`: the manifest points to it (`decoder.path`), the weights cannot live in yaml.
 
 ## Timing check (`launch/timing_check/`)
 

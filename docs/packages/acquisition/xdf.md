@@ -3,9 +3,37 @@
 !!! info ""
     Package: [`ros2neuro_acquisition_xdf`](https://github.com/ros2neuro/ros2neuro_acquisition_xdf) · pluginlib class: `ros2neuro::acquisition::XDFDevice` · part of [Acquisition](index.md)
 
-`ros2neuro_acquisition_xdf` provides a file acquisition backend for
-[`ros2neuro_acquisition`](index.md) using `xdffileio` directly.
+Replays a recorded GDF or BDF file as if it were a live amplifier, using `xdffileio` directly. The sample rate comes from the file header; the file can be looped. It is the way to test the whole pipeline without hardware.
 
+| | |
+|---|---|
+| **Layer** | Acquisition |
+| **Kind** | Plugin of [`ros2neuro_acquisition`](index.md) (pluginlib class `ros2neuro::acquisition::XDFDevice`) |
+| **Reads** | a GDF/BDF file (`acquisition.filename`) |
+| **Publishes** | `NeuroFrame` and `NeuroFrameInfo` through the acquisition node |
+| **Run** | `ros2 launch ros2neuro_acquisition_xdf xdf_acquisition.launch.xml filename:=<file>.gdf`<br>`ros2 run ros2neuro_acquisition_xdf acquisition_xdf --ros-args -p acquisition.filename:=<file>.gdf` |
+
+<!-- interfaces -->
+## Dependencies
+
+- **ROS 2 packages** (build and run): `pluginlib`, `rclcpp`, [`ros2neuro_acquisition`](index.md), [`ros2neuro_data`](../msgs-data.md#ros2neuro_data), [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs)
+- **ROS 2 packages** (run only): `launch`, `launch_ros`
+- **External libraries**:
+    - `xdffileio`: reading GDF/BDF files (found with `pkg-config`)
+
+## Messages and topics
+
+Default node name: `acquisition`.
+
+| | Default topic | Type | Changed by |
+|---|---|---|---|
+| publishes | `~/neurodata`, `~/neurodata_info` | `NeuroFrame`, `NeuroFrameInfo` | through the acquisition node (`acquisition.topic_data`, `acquisition.topic_info`) |
+
+Messages used:
+
+- `NeuroFrame`, `NeuroFrameInfo`: published through the acquisition node
+
+<!-- /interfaces -->
 Plugin:
 
 ```text

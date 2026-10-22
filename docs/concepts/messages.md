@@ -152,9 +152,10 @@ Rules: `axes.size() == shape.size()`, `data.size()` is the product of `shape`, a
 `values` their size equals the corresponding `shape` entry.
 
 !!! warning "Check shape and axes before relying on the order"
-    The documented order for FFT and Welch is `[frequency, channel]`, but a Welch node launched in the test
-    pipeline has been observed publishing `shape [16, 23]` with axes `channels, frequency`. Always read `shape`
-    and `axes` instead of assuming a fixed order.
+    The FFT and Welch nodes publish `shape = [channels, frequency]`, with the axes named `channels` and `frequency` in this order
+    and the data channel-major (`index = channel * n_frequencies + frequency`): for 16 channels and 23 frequencies, `shape [16, 23]`.
+    The spectrogram node publishes `[time, frequency, channel]`, and the buffer node `[samples, channels]`. The order differs
+    from node to node, so always read `shape` and `axes` instead of assuming one.
 
 ### NeuroAxis
 

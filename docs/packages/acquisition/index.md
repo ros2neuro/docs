@@ -67,10 +67,54 @@ mechanism.
 
 ## Reference (from the package README)
 
-`ros2neuro_acquisition` is the acquisition runtime package for the ROS2neuro stack.
-It provides the generic acquisition node, the abstract device plugin interface, and
-the state machine that turns a device implementation into ROS 2 topics and services.
+<!-- interfaces -->
+## Dependencies
 
+- **ROS 2 packages** (build and run): `rclcpp`, `std_srvs`, `pluginlib`, [`ros2neuro_data`](../msgs-data.md#ros2neuro_data), [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs)
+- **ROS 2 packages** (run only): [`ros2neuro_visualizer`](../visualizer.md)
+- **At run time**: one acquisition plugin package (`ros2neuro_acquisition_*`); [`ros2neuro_visualizer`](../visualizer.md) is an optional run-time dependency of the launch file
+
+## Messages and topics
+
+Default node name: `acquisition`.
+
+| | Default topic | Type | Changed by |
+|---|---|---|---|
+| publishes | `~/neurodata` | `NeuroFrame` | `acquisition.topic_data` |
+| publishes | `~/neurodata_info` | `NeuroFrameInfo` (`transient_local`) | `acquisition.topic_info` |
+
+| | Service | Type | Note |
+|---|---|---|---|
+| provides | `~/start`, `~/stop`, `~/quit` | `std_srvs/Empty` | control the device |
+
+Messages used:
+
+- `NeuroFrame`: published, one chunk of samples
+- `NeuroFrameInfo`: published, the description of the stream
+- `std_srvs/Empty`: the start, stop and quit services
+
+## Example configuration
+
+The acquisition node reads its parameters from a YAML file. The plugin and the parameters of the device share the prefix `acquisition.`:
+
+```yaml
+/acquisition:
+  ros__parameters:
+    acquisition.plugin: ros2neuro::acquisition::XDFDevice   # the backend to load (required)
+    acquisition.autostart: true                              # start streaming right after the setup
+    acquisition.reopen: true                                 # reopen the device after a read or setup failure
+    acquisition.framerate: 16.0                              # NeuroFrame messages per second
+    acquisition.topic_data: ~/neurodata                      # optional, these are the defaults
+    acquisition.topic_info: ~/neurodata_info
+    # the parameters of the plugin follow, under the same prefix, for example:
+    acquisition.filename: /path/to/recording.gdf
+```
+
+```bash
+ros2 run ros2neuro_acquisition acquisition --ros-args --params-file acquisition.yaml
+```
+
+<!-- /interfaces -->
 The package is meant to sit between:
 
 - concrete hardware drivers or acquisition plugins
@@ -169,7 +213,7 @@ Core node parameters:
 - `acquisition.plugin`: pluginlib class name of the acquisition backend
 - `acquisition.topic_data`: runtime frame topic, defaults to `~/neurodata`
 - `acquisition.topic_info`: metadata topic, defaults to `~/neurodata_info`
-- `acquisition.prefix`: prefix used for plugin-specific parameters when using legacy `plugin`
+- `acquisition.prefix`: prefix of the plugin parameters, used **only** when no plugin class is set (the default is `device`); whenever `acquisition.plugin` / `plugin` is set the prefix is `acquisition`
 - `acquisition.autostart`: start streaming automatically after setup
 - `acquisition.reopen`: reopen the device after read/setup failures
 - `acquisition.framerate`: fallback frame rate if the plugin does not provide one
@@ -185,17 +229,6 @@ under the configured prefix, for example:
 - `acquisition.framerate`
 - `acquisition.device`
 - `acquisition.sensors.eeg.labels`
-
-## Dependencies
-
-Current direct dependencies:
-
-- `ament_cmake`
-- `rclcpp`
-- `std_srvs`
-- `pluginlib`
-- [`ros2neuro_data`](../msgs-data.md#ros2neuro_data)
-- [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs)
 
 ## Build
 
@@ -230,9 +263,9 @@ Run the generic acquisition executable with parameters selecting a plugin:
 
 ```bash
 ros2 run ros2neuro_acquisition acquisition --ros-args \
-  -p plugin:=ros2neuro::acquisition::DummyDevice \
-  -p device.samplerate:=512 \
-  -p device.framerate:=16.0
+  -p acquisition.plugin:=ros2neuro::acquisition::DummyDevice \
+  -p acquisition.samplerate:=512 \
+  -p acquisition.framerate:=16.0
 ```
 
 The concrete plugin must be provided by another package, such as

@@ -7,7 +7,7 @@ live. You will run a calibration, look at what each node publishes, and see wher
 
 It takes about 10 minutes and needs no code. It is also the quickest way to check that your installation works.
 
-**You need** a built ROS2neuro workspace with the package [`ros2neuro_devel_test`](../../packages/devel-test.md), and a display for the
+**You need** ROS2neuro [installed](../../installation.md) (from apt, or built in a workspace) with the package [`ros2neuro_devel_test`](../../packages/devel-test.md), and a display for the
 feedback window.
 
 ## 1. What will run
@@ -44,7 +44,7 @@ flowchart LR
 ## 2. Launch it
 
 ```bash
-source /opt/ros/<distro>/setup.bash
+source /opt/ros/jazzy/setup.bash
 source install/setup.bash
 
 ros2 launch ros2neuro_devel_test gaussian_bars.launch.xml protocol:=calibration record:=false

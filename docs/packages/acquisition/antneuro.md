@@ -3,9 +3,36 @@
 !!! info ""
     Package: [`ros2neuro_acquisition_antneuro`](https://github.com/ros2neuro/ros2neuro_acquisition_antneuro) · pluginlib class: `ros2neuro::acquisition::EEGODevice` · part of [Acquisition](index.md)
 
-`ros2neuro_acquisition_antneuro` provides the dedicated ANT Neuro eego backend
-for [`ros2neuro_acquisition`](index.md).
+The dedicated backend for ANT Neuro eego amplifiers, using the eego SDK directly. Use it, and not [`ros2neuro_acquisition_eegdev`](eegdev.md), for eego hardware.
 
+| | |
+|---|---|
+| **Layer** | Acquisition |
+| **Kind** | Plugin of [`ros2neuro_acquisition`](index.md) (pluginlib class `ros2neuro::acquisition::EEGODevice`) |
+| **Reads** | an ANT Neuro eego amplifier (hardware and SDK required) |
+| **Publishes** | `NeuroFrame` and `NeuroFrameInfo` through the acquisition node |
+| **Run** | `ros2 run ros2neuro_acquisition_antneuro acquisition_antneuro`<br>`ros2 launch ros2neuro_acquisition_antneuro eego_acquisition.launch.xml` |
+
+<!-- interfaces -->
+## Dependencies
+
+- **ROS 2 packages** (build and run): `pluginlib`, `rclcpp`, [`ros2neuro_acquisition`](index.md), [`ros2neuro_data`](../msgs-data.md#ros2neuro_data), [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs)
+- **External libraries**:
+    - ANT Neuro eego SDK (`libeego-SDK.so`): **loaded at run time** with `dlopen`: the package builds without it, but opening the device fails if the library is missing
+
+## Messages and topics
+
+Default node name: `acquisition`.
+
+| | Default topic | Type | Changed by |
+|---|---|---|---|
+| publishes | `~/neurodata`, `~/neurodata_info` | `NeuroFrame`, `NeuroFrameInfo` | through the acquisition node (`acquisition.topic_data`, `acquisition.topic_info`) |
+
+Messages used:
+
+- `NeuroFrame`, `NeuroFrameInfo`: published through the acquisition node
+
+<!-- /interfaces -->
 Use eego hardware through this package and plugin:
 
 ```text

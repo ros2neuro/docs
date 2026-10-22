@@ -63,13 +63,13 @@ ros2 topic echo /manager_control/probabilities
 ## 2. Install and start rosbridge
 
 ```bash
-sudo apt install ros-<distro>-rosbridge-suite
+sudo apt install ros-jazzy-rosbridge-suite
 ```
 
 Start it **in a terminal where the ROS2neuro workspace is sourced**, so that it knows the message type:
 
 ```bash
-source /opt/ros/<distro>/setup.bash
+source /opt/ros/jazzy/setup.bash
 source install/setup.bash
 ros2 launch rosbridge_server rosbridge_websocket_launch.xml
 ```

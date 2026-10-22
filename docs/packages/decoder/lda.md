@@ -3,8 +3,48 @@
 !!! info ""
     Package: [`ros2neuro_decoder_lda`](https://github.com/ros2neuro/ros2neuro_decoder_lda) · pluginlib class: `ros2neuro::decoder::LDA` · part of [Decoder](index.md)
 
-`ros2neuro_decoder_lda` provides a first concrete decoder plugin for [`ros2neuro_decoder`](index.md).
+A linear discriminant analysis decoder: it classifies a PSD feature with a model stored in a `.r2nd` file.
 
+| | |
+|---|---|
+| **Layer** | Decoder |
+| **Kind** | Plugin of [`ros2neuro_decoder`](index.md) (pluginlib class `ros2neuro::decoder::LDA`) |
+| **Reads** | a `NeuroFeature` (a PSD) through the decoder node |
+| **Publishes** | a `NeuroPrediction` through the decoder node |
+| **Run** | `ros2 run ros2neuro_decoder_lda write_example_lda_model` (writes an example model) |
+
+<!-- interfaces -->
+## Dependencies
+
+- **ROS 2 packages** (build and run): `pluginlib`, `rclcpp`, [`ros2neuro_decoder`](index.md), [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs)
+
+## Messages and topics
+
+Default node name: `decoder` (the node of [`ros2neuro_decoder`](index.md)).
+
+| | Default topic | Type | Changed by |
+|---|---|---|---|
+| subscribes | `/features` | `NeuroFeature` | `input_topic` |
+| publishes | `~/prediction` | `NeuroPrediction` | `output_topic` |
+
+Messages used:
+
+- `NeuroFeature`: read through the decoder node
+- `NeuroPrediction`: published through the decoder node
+
+## Example configuration
+
+The configuration shipped with the package (`config/decoder_lda.yaml`); `decoder.manifest_path` points to the model folder, with its `manifest.yaml`:
+
+```yaml
+decoder:
+  ros__parameters:
+    input_topic: "/features"
+    output_topic: "~/prediction"
+    decoder.manifest_path: /absolute/path/to/my_decoder/manifest.yaml
+```
+
+<!-- /interfaces -->
 ## Runtime configuration
 
 The plugin is loaded through:

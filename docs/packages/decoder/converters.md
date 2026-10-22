@@ -3,8 +3,30 @@
 !!! info ""
     Package: [`ros2neuro_decoder_converters`](https://github.com/ros2neuro/ros2neuro_decoder_converters) · part of [Decoder](index.md)
 
-Offline converters for `ros2neuro` decoder models.
+Offline tools that convert decoder models trained elsewhere into the ROS2neuro format. Today it converts a Matlab SMR Gaussian decoder (`.mat`) into a `.r2nd` model plus a `manifest.yaml`, through a small graphical tool.
 
+| | |
+|---|---|
+| **Layer** | Decoder (tools) |
+| **Kind** | Offline tool (not a node of the running pipeline) |
+| **Reads** | a Matlab `.mat` model |
+| **Publishes** | a `.r2nd` model and its `manifest.yaml` |
+| **Run** | `ros2 run ros2neuro_decoder_converters r2n_decoder_converter` |
+
+<!-- interfaces -->
+## Dependencies
+
+- **ROS 2 packages**: none
+- **External libraries**:
+    - `PyQt5`, `numpy`, `scipy`: the graphical tool and the reading of the Matlab file (`python3-pyqt5`, `python3-numpy`, `python3-scipy`)
+
+## Messages and topics
+
+Messages used:
+
+- none: an offline tool, it does not use the ROS graph
+
+<!-- /interfaces -->
 The main user entry point is the general converter GUI:
 
 ```bash

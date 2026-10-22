@@ -3,8 +3,44 @@
 !!! info ""
     Package: [`ros2neuro_filters_flattop`](https://github.com/ros2neuro/ros2neuro_filters_flattop) · pluginlib class: `ros2neuro_filters_flattop/FlattopFloat` · part of [Filters](index.md)
 
-Flattop window filter package for `ros2neuro`.
+Multiplies each block of samples by a flat-top window. A window filter for the [`ros2neuro_filters`](index.md) chain.
 
+| | |
+|---|---|
+| **Layer** | Filters |
+| **Kind** | Plugin of [`ros2neuro_filters`](index.md) (pluginlib class `ros2neuro_filters_flattop/FlattopFloat`) |
+| **Reads** | the `[samples x channels]` matrix of the previous filter in the chain |
+| **Publishes** | a matrix of the same size, for the next filter |
+| **Run** | in the chain YAML: `<configname>.<name>.class: ros2neuro_filters_flattop/FlattopFloat` |
+
+<!-- interfaces -->
+## Dependencies
+
+- **ROS 2 packages** (build and run): `pluginlib`, `rclcpp`, [`ros2neuro_filters`](index.md)
+- **External libraries**:
+    - Eigen3: matrices
+
+## Messages and topics
+
+Default node name: (none: it runs inside `filter_chain_node`).
+
+Messages used:
+
+- none: it works on a `[samples x channels]` matrix, not on messages
+
+## Example configuration
+
+The filter has no parameters: it is enough to put it in the chain.
+
+```yaml
+filter_chain:
+  ros__parameters:
+    configname: filters
+    filters.filters: [flattop]
+    filters.flattop.class: ros2neuro_filters_flattop/FlattopFloat
+```
+
+<!-- /interfaces -->
 This package serves two related purposes:
 
 - it exports a [`ros2neuro_filters`](index.md) plugin that applies a five-term flattop window to an input matrix

@@ -3,6 +3,15 @@
 !!! info ""
     Package: [`ros2neuro_feedback_bar`](https://github.com/ros2neuro/ros2neuro_feedback_bar) · pluginlib class: `ros2neuro::feedback::Bar` · part of [Feedback](index.md)
 
+| | |
+|---|---|
+| **Layer** | Feedback |
+| **Kind** | Plugin of [`ros2neuro_feedback`](index.md) (pluginlib class `ros2neuro::feedback::Bar`) |
+| **Reads** | the control flow of the manager, through the feedback node |
+| **Publishes** | a window |
+| **Run** | in the feedback YAML: `plugin: ros2neuro::feedback::Bar` |
+| **Depends on** | [`neurodraw`](neurodraw.md) |
+
 Plugin `ros2neuro::feedback::Bar`, **neurodraw only** (`Rectangle`, `Circle`, `Cross`; neurodraw itself is not modified).
 
 The Bar plugin draws **one bar for each class that has an output of the classifier**, so it works with **any number of
@@ -57,3 +66,37 @@ Hit a small yellow dot appears under the bars (here the four-class task with the
 * neurodraw has no scaling: each bar is a full-height rectangle that slides behind a black mask, whose top edge is the value.
 
 Tests: `colcon test --packages-select ros2neuro_feedback_bar` (geometry and colors, no window).
+
+<!-- interfaces -->
+## Dependencies
+
+- **ROS 2 packages** (build and run): `pluginlib`, `rclcpp`, [`ros2neuro_feedback`](index.md), [`ros2neuro_manager`](../manager/index.md), [`neurodraw`](neurodraw.md)
+- **External libraries**:
+    - [`neurodraw`](neurodraw.md): the drawing library: SDL2 and OpenGL
+
+## Messages and topics
+
+Default node name: `feedback` (the node of [`ros2neuro_feedback`](index.md)).
+
+Messages used:
+
+- `NeuroControl`: read through the feedback node
+
+## Example configuration
+
+From the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md) (`config/feedback_bars.yaml`); the layout (`classes`, `rest_mode`, `thresholds`) is loaded from the same file as the manager:
+
+```yaml
+# Feedback (bars). The layout (classes, rest_mode, thresholds) comes from layout.yaml; `mode` (training | control)
+# is set by the launcher from the protocol.
+/feedback:
+    ros__parameters:
+        plugin: ros2neuro::feedback::Bar
+        control_topic: /manager_control/probabilities    # the ONLY thing the feedback reads
+        event_topic: /neuroevent                         # only used by publish_display_events
+        fps: 60.0
+        window_title: "Gaussian - bars"
+        publish_display_events: false
+        latency_log_period_s: 0.0                        # seconds between the "Latency stamp->draw" log lines; 0 = off
+```
+<!-- /interfaces -->

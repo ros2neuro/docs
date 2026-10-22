@@ -107,7 +107,7 @@ whose `window_length` is `samples / samplerate`.
 | the processing node receives nothing | its input has a different name from the filter output: **remap** it (`/neurodata`, or `/neurodata_filtered` for the buffer) |
 | the buffer finds no sensor | `sensor_name` defaults to `eeg`; the stream block is usually called `EEG`: set it |
 | the decoder refuses the feature | its manifest declares the feature name, type and axes it expects; the processing must publish exactly that |
-| the PSD has the axes in another order | read `shape` and `axes` (see the [warning on `NeuroFeature`](../../concepts/messages.md#neurofeature)) |
+| the PSD has the axes in the "wrong" order | the Welch and FFT nodes publish `[channels, frequency]`, not `[frequency, channel]`; the spectrogram `[time, frequency, channel]` and the buffer `[samples, channels]`: always read `shape` and `axes` (see the [warning on `NeuroFeature`](../../concepts/messages.md#neurofeature)) |
 
 ## Writing your own processing
 

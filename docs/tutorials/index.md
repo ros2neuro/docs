@@ -18,7 +18,7 @@ real ROS 2 package that is compiled and tested by the CI of this repository, so 
 - A built ROS2neuro workspace on ROS 2, sourced:
 
   ```bash
-  source /opt/ros/<distro>/setup.bash
+  source /opt/ros/jazzy/setup.bash
   source install/setup.bash
   ```
 

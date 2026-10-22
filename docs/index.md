@@ -11,6 +11,10 @@ interchangeable pieces that talk through a small set of messages.
 
 ![ROS2neuro architecture](assets/architecture.svg)
 
+!!! info "Tested on ROS 2 Jazzy"
+    All of ROS2neuro was built and tested on **ROS 2 Jazzy** (Ubuntu 24.04), and the Debian packages are built for it:
+    see [Installation](installation.md). The commands in this documentation use `jazzy`; other releases have not been tested.
+
 ## Where to start
 
 <div class="grid cards" markdown>
@@ -43,5 +47,5 @@ runs the protocol (calibration, evaluation or free control), emits the events an
 
 - Package names are written as in the workspace ([`ros2neuro_filters`](packages/filters/index.md)), plugin classes with their full
   pluginlib name ([`ros2neuro::acquisition::XDFDevice`](packages/acquisition/xdf.md)).
-- Commands assume a sourced ROS 2 environment (`source /opt/ros/<distro>/setup.bash`) and the workspace installed (`source install/setup.bash`).
+- Commands assume a sourced ROS 2 environment (`source /opt/ros/jazzy/setup.bash`) and ROS2neuro installed, from apt or from a workspace (`source install/setup.bash`): see [Installation](installation.md).
 - Parameters are shown in YAML (`ros__parameters`), the way they are normally passed to a node.

@@ -3,8 +3,32 @@
 !!! info ""
     Package: [`ros2neuro_filters_laplacian`](https://github.com/ros2neuro/ros2neuro_filters_laplacian) · pluginlib class: `ros2neuro_filters_laplacian/LaplacianFloat` · part of [Filters](index.md)
 
-Laplacian spatial filter for `ros2neuro`.
+The Laplacian spatial filter: it subtracts from each channel the average of its four cardinal neighbours (north, south, east, west), defined by an electrode layout matrix. A spatial filter for the [`ros2neuro_filters`](index.md) chain.
 
+| | |
+|---|---|
+| **Layer** | Filters |
+| **Kind** | Plugin of [`ros2neuro_filters`](index.md) (pluginlib class `ros2neuro_filters_laplacian/LaplacianFloat`) |
+| **Reads** | the `[samples x channels]` matrix of the previous filter in the chain |
+| **Publishes** | a matrix of the same size, for the next filter |
+| **Run** | in the chain YAML: `<configname>.<name>.class: ros2neuro_filters_laplacian/LaplacianFloat` |
+
+<!-- interfaces -->
+## Dependencies
+
+- **ROS 2 packages** (build and run): `pluginlib`, `rclcpp`, [`ros2neuro_filters`](index.md)
+- **External libraries**:
+    - Eigen3: matrices
+
+## Messages and topics
+
+Default node name: (none: it runs inside `filter_chain_node`).
+
+Messages used:
+
+- none: it works on a `[samples x channels]` matrix, not on messages
+
+<!-- /interfaces -->
 ## Algorithm
 
 For each channel, the filter subtracts the average of the cardinal neighbours defined by the electrode layout:

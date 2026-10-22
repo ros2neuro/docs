@@ -56,8 +56,57 @@ asynchronous plugin is the smallest example.
 
 ## Reference (from the package README)
 
-Core of the protocol manager. It sits between the integrator and the feedback:
+<!-- interfaces -->
+## Dependencies
 
+- **ROS 2 packages** (build and run): `pluginlib`, `rclcpp`, `std_srvs`, `builtin_interfaces`, [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs)
+- **At run time**: a protocol plugin package ([`ros2neuro_manager_synchronous`](synchronous.md) or `_asynchronous`)
+
+## Messages and topics
+
+Default node name: `manager`.
+
+| | Default topic | Type | Changed by |
+|---|---|---|---|
+| subscribes | `/integrated/raw` | `NeuroControl` | `integrated_topic` |
+| subscribes | `/neuroevent` | `NeuroEvent` | `event_topic` (to follow the blinks) |
+| publishes | `/manager_control/probabilities` | `NeuroControl` | `control_topic` |
+| publishes | `/neuroevent` | `NeuroEvent` | `event_topic` |
+
+| | Service | Type | Note |
+|---|---|---|---|
+| calls | `/integrator/reset` | `std_srvs/Empty` | `reset_service` (the launchers set `/reset`) |
+
+Messages used:
+
+- `NeuroControl`: read (the integrator output) and published (the flow for the feedback)
+- `NeuroEvent`: published, the protocol events
+- `std_srvs/Empty`: the reset request
+- `builtin_interfaces/Time`: the stamp shared by an event and the flow
+
+## Example configuration
+
+The layout is declared once and loaded by the manager **and** the feedback (the key `/**` applies it to every node that loads the file); the manager parameters follow:
+
+```yaml
+/**:
+    ros__parameters:
+        classes: [773, 771]
+        rest_mode: none
+        thresholds: [0.7, 0.7]
+
+/manager:
+  ros__parameters:
+    plugin: ros2neuro::manager::Control      # or ros2neuro::manager::Training
+    integrated_topic: /integrated/raw
+    control_topic: /manager_control/probabilities
+    event_topic: /neuroevent
+    reset_service: /reset
+```
+
+The plugin-specific parameters (trials, durations...) are in the README of each protocol plugin.
+
+<!-- /interfaces -->
 ```
 integrator --/integrated/raw--> manager (+ plugin) --control_topic (flow)--> feedback
                                    |  ^                                        

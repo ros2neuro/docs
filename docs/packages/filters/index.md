@@ -74,8 +74,29 @@ export `plugins.xml` to `ros2neuro_filters`. The tutorial
 
 ## Reference (from the package README)
 
-`ros2neuro_filters` provides the ROS2 filter-chain core for `ros2neuro`.
+<!-- interfaces -->
+## Dependencies
 
+- **ROS 2 packages** (build and run): `pluginlib`, `rclcpp`, [`ros2neuro_data`](../msgs-data.md#ros2neuro_data), [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs)
+- **ROS 2 packages** (run only): `launch_ros`
+- **External libraries**:
+    - Eigen3: matrices
+- **At run time**: the filter plugin packages named in the chain
+
+## Messages and topics
+
+Default node name: `filter_chain`.
+
+| | Default topic | Type | Changed by |
+|---|---|---|---|
+| subscribes | `/neurodata` | `NeuroFrame` | `input_topic` |
+| publishes | `~/filtered` | `NeuroFrame` | `output_topic` |
+
+Messages used:
+
+- `NeuroFrame`, `NeuroSensor`: read, filtered and published again with the same structure
+
+<!-- /interfaces -->
 It includes:
 
 - the base interface `ros2neuro::filters::Filter<T>`
@@ -125,13 +146,18 @@ Published topic:
 
 Main parameters:
 
-- `configname` (`string`, default `filterchain`)
+- `configname` (`string`, default `filters`): the prefix of the chain parameters
+- `definitionsname` (`string`, default: the same as `configname`): the prefix under which the filters are *defined* (class and
+  parameters), when it must differ from the one of the chain
 - `input_topic` (`string`, default `/neurodata`)
 - `output_topic` (`string`, default `~/filtered`)
 
 ## Configuration Format
 
-In ROS2 the chain is configured with flattened parameters. The root prefix is selected by `configname`.
+In ROS2 the chain is configured with flattened parameters. The root prefix is selected by `configname`. The ordered list of filters
+is read from `<configname>.filters` (or from `<configname>.chain`, which is accepted as well), and every filter `<name>` is
+configured by the parameters under `<configname>.<name>.*`, with `<configname>.<name>.class` giving its plugin class. The examples
+below set `configname` explicitly; without it the prefix is `filters`.
 
 Minimal example:
 

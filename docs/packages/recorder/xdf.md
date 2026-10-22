@@ -3,8 +3,52 @@
 !!! info ""
     Package: [`ros2neuro_recorder_xdf`](https://github.com/ros2neuro/ros2neuro_recorder_xdf) · pluginlib class: `ros2neuro::recorder::XDFRecorder` · part of [Recorder](index.md)
 
-`pluginlib` recorder plugin for [`ros2neuro_recorder`](index.md) based on `xdffileio`.
+The recorder plugin that writes GDF or BDF files using `xdffileio`: the signal and the events of the session end up in one file that can be replayed with [`ros2neuro_acquisition_xdf`](../acquisition/xdf.md).
 
+| | |
+|---|---|
+| **Layer** | Recorder |
+| **Kind** | Plugin of [`ros2neuro_recorder`](index.md) (pluginlib class `ros2neuro::recorder::XDFRecorder`) |
+| **Reads** | frames, stream info and events, through the recorder node |
+| **Publishes** | a `.gdf` / `.bdf` file |
+| **Run** | `ros2 launch ros2neuro_recorder_xdf xdf_recorder.launch.py output:=<folder> subject:=<id> task:=<name> xdf_file_type:=gdf` |
+
+<!-- interfaces -->
+## Dependencies
+
+- **ROS 2 packages** (build and run): `pluginlib`, `rclcpp`, [`ros2neuro_data`](../msgs-data.md#ros2neuro_data), [`ros2neuro_recorder`](index.md)
+- **ROS 2 packages** (run only): `launch`, `launch_ros`
+- **External libraries**:
+    - `xdffileio`: writing GDF/BDF (found with `find_library`)
+    - `libeegdev`: optional, used by the round-trip tests
+
+## Messages and topics
+
+Default node name: `recorder` (the node of [`ros2neuro_recorder`](index.md)).
+
+Messages used:
+
+- `NeuroFrame`, `NeuroFrameInfo`, `NeuroEvent`: read through the recorder node
+
+## Example configuration
+
+From the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md) (`config/recorder.yaml`). `$(var ...)` are launch substitutions (`allow_substs="true"`); replace them with values when the node is not started by a launch file:
+
+```yaml
+/recorder:
+    ros__parameters:
+        plugin: ros2neuro::recorder::XDFRecorder
+        topic_data: /acquisition/neurodata
+        topic_info: /acquisition/neurodata_info
+        topic_event: /neuroevent
+        output: "$(var recordings_dir)"    # launch argument recordings_dir (created if missing)
+        subject: "test"
+        session: ""
+        modality: "$(var protocol)"
+        xdf.file_type: gdf
+```
+
+<!-- /interfaces -->
 The plugin supports:
 - `gdf` output
 - `bdf` output

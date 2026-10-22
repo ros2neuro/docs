@@ -3,10 +3,51 @@
 !!! info ""
     Package: [`ros2neuro_acquisition_dummy`](https://github.com/ros2neuro/ros2neuro_acquisition_dummy) · pluginlib class: `ros2neuro::acquisition::DummyDevice` · part of [Acquisition](index.md)
 
-`ros2neuro_acquisition_dummy` is a reference acquisition plugin for the ROS2neuro stack.
-It implements the [`ros2neuro::acquisition::NeuroDevice`](index.md) interface with a synthetic device
-that generates deterministic EEG-, EMG-, and trigger-like data.
+A synthetic acquisition device that needs no hardware: it generates sinusoidal EEG and EMG blocks and a periodic trigger at a configurable sample rate and frame rate. It is meant for tests and bring-up, and as the reference implementation of an acquisition plugin.
 
+| | |
+|---|---|
+| **Layer** | Acquisition |
+| **Kind** | Plugin of [`ros2neuro_acquisition`](index.md) (pluginlib class `ros2neuro::acquisition::DummyDevice`) |
+| **Reads** | nothing (generated data: 16 EEG channels, 8 EMG channels, 1 trigger channel by default) |
+| **Publishes** | `NeuroFrame` and `NeuroFrameInfo` through the acquisition node |
+| **Run** | `ros2 launch ros2neuro_acquisition_dummy dummy_acquisition.launch.py` |
+
+<!-- interfaces -->
+## Dependencies
+
+- **ROS 2 packages** (build and run): `rclcpp`, `pluginlib`, [`ros2neuro_acquisition`](index.md), [`ros2neuro_data`](../msgs-data.md#ros2neuro_data), [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs)
+- **ROS 2 packages** (run only): `launch`, `launch_ros`
+
+## Messages and topics
+
+Default node name: `acquisition` (the node of [`ros2neuro_acquisition`](index.md)).
+
+| | Default topic | Type | Changed by |
+|---|---|---|---|
+| publishes | `~/neurodata`, `~/neurodata_info` | `NeuroFrame`, `NeuroFrameInfo` | through the acquisition node (`acquisition.topic_data`, `acquisition.topic_info`) |
+
+Messages used:
+
+- `NeuroFrame`, `NeuroFrameInfo`: published through the acquisition node
+
+## Example configuration
+
+The plugin reads its parameters under the prefix `acquisition.` (the prefix of the acquisition node when a plugin is set); all of them are optional:
+
+```yaml
+/acquisition:
+  ros__parameters:
+    acquisition.plugin: ros2neuro::acquisition::DummyDevice
+    acquisition.autostart: true
+    acquisition.name: dummy_device
+    acquisition.id: dummy0
+    acquisition.model: dummy
+    acquisition.samplerate: 512      # Hz
+    acquisition.framerate: 16.0      # frames per second: 32 samples per frame at 512 Hz
+```
+
+<!-- /interfaces -->
 The package is intended for:
 
 - testing the generic acquisition node without hardware
@@ -53,24 +94,24 @@ downstream consumers can be exercised with realistic-looking synchronized frames
 
 ## Parameters
 
-The plugin reads its parameters from the acquisition node using the configured prefix,
-which defaults to `device`.
+The plugin reads its parameters from the acquisition node under the prefix `acquisition.` (the prefix the node uses
+whenever `acquisition.plugin` is set; a `acquisition.*` prefix is ignored in that case).
 
 Supported parameters:
 
-- `device.name`
-- `device.id`
-- `device.model`
-- `device.samplerate`
-- `device.framerate`
+- `acquisition.name`
+- `acquisition.id`
+- `acquisition.model`
+- `acquisition.samplerate`
+- `acquisition.framerate`
 
 Default values:
 
-- `device.name = dummy_device`
-- `device.id = dummy0`
-- `device.model = dummy`
-- `device.samplerate = 512`
-- `device.framerate = 16.0`
+- `acquisition.name = dummy_device`
+- `acquisition.id = dummy0`
+- `acquisition.model = dummy`
+- `acquisition.samplerate = 512`
+- `acquisition.framerate = 16.0`
 
 The number of samples per frame is derived internally as:
 
@@ -109,19 +150,6 @@ and exposes:
 - `/acquisition/start`
 - `/acquisition/stop`
 - `/acquisition/quit`
-
-## Dependencies
-
-Current direct dependencies:
-
-- `ament_cmake`
-- `rclcpp`
-- `pluginlib`
-- [`ros2neuro_acquisition`](index.md)
-- [`ros2neuro_data`](../msgs-data.md#ros2neuro_data)
-- [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs)
-- `launch`
-- `launch_ros`
 
 ## Build
 

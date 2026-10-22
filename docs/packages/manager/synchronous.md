@@ -8,6 +8,72 @@ protocol. It ports the logic of `game_controller`'s `training_controller` (trial
 phases, blink handling, `protocol_ended`, summary) to the normalized per-class values of the
 manager. The whole protocol runs on a thread of the plugin.
 
+| | |
+|---|---|
+| **Layer** | Manager (protocol) |
+| **Kind** | Plugin of [`ros2neuro_manager`](index.md) (pluginlib class `ros2neuro::manager::Training`) |
+| **Reads** | the integrator values, through the manager node |
+| **Publishes** | trial events on `/neuroevent` and the control flow, through the manager node |
+| **Run** | `ros2 launch ros2neuro_manager_synchronous synchronous.launch.xml modality:=calibration|evaluation` |
+
+<!-- interfaces -->
+## Dependencies
+
+- **ROS 2 packages** (build and run): `pluginlib`, `rclcpp`, `std_msgs`, [`ros2neuro_manager`](index.md)
+- **ROS 2 packages** (run only): [`ros2neuro_feedback`](../feedback/index.md), [`ros2neuro_feedback_wheel`](../feedback/wheel.md), [`ros2neuro_feedback_bar`](../feedback/bar.md)
+
+## Messages and topics
+
+Default node name: `manager` (the node of [`ros2neuro_manager`](index.md)).
+
+| | Default topic | Type | Changed by |
+|---|---|---|---|
+| publishes | `/protocol_ended` | `std_msgs/Empty` (`transient_local`) | `protocol_ended_topic` |
+| publishes | `/neuroevent`, `/manager_control/probabilities` | `NeuroEvent`, `NeuroControl` | through the manager node |
+
+Messages used:
+
+- `NeuroEvent`: published through the manager node
+- `NeuroControl`: the flow, through the manager node
+- `std_msgs/Empty`: the end of the protocol
+
+## Example configuration
+
+The evaluation protocol of the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md) (`config/manager_evaluation.yaml`; the layout is in `layout.yaml`):
+
+```yaml
+# Manager, evaluation protocol. The layout (classes, rest_mode, thresholds) comes from layout.yaml.
+/manager:
+    ros__parameters:
+        integrated_topic: /integrated/raw
+        control_topic: /manager_control/probabilities    # what the feedback reads
+        event_topic: /neuroevent
+        # the integrator creates its reset service as the relative name "reset"
+        reset_service: /reset
+        plugin: ros2neuro::manager::Training
+        modality: evaluation
+        trials: [3, 3]                  # one value per class of `classes`, in the same order
+        protocol_ended_topic: /protocol_ended
+        shutdown_on_end: true
+        # durations in ms
+        duration.begin: 3000
+        duration.start: 1000
+        duration.fixation: 2000
+        duration.cue: 1000
+        duration.boom: 1000
+        duration.iti: 100
+        duration.end: 2000
+        # evaluation: the real classifier output drives the feedback; a trial ends on the first threshold touched
+        # or after `timeout` ms (Timeout)
+        duration.feedback_min: 4000
+        duration.feedback_max: 5500
+        duration.timeout: 10000
+        # REQUIRED when rest_mode is timeout in layout.yaml (a rest in `classes` with no classifier output): seconds the
+        # rest must last without touching a threshold to be a Hit. Independent from duration.timeout.
+        # rest_timeout: 6.0
+```
+
+<!-- /interfaces -->
 Per trial: `Start` -> `Fixation` -> cue (class code) -> `CFeedback` -> outcome (897/898/899),
 each with its `+Off`. Events leave only through `emit_event()`.
 

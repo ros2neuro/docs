@@ -18,9 +18,14 @@ The decoder package turns a `NeuroFeature` (for example a PSD) into a `NeuroPred
 | [QDA](qda.md) | [`ros2neuro::decoder::QDA`](qda.md) | quadratic discriminant analysis |
 | [SVM](svm.md) | [`ros2neuro::decoder::SVM`](svm.md) | support vector machine |
 | [Gaussian](gaussian.md) | [`ros2neuro::decoder::Gaussian`](gaussian.md) | Gaussian classifier (ported from Matlab SMR) |
-| [Python](python.md) | [`ros2neuro_decoder_py`](python.md) | deep-learning models (braindecode, torch) |
 
 The [converters](converters.md) turn a Matlab SMR `.mat` decoder into the `.r2nd` + `manifest.yaml` format.
+
+!!! note "The Python decoder is not a plugin"
+    [`ros2neuro_decoder_py`](python.md) runs deep-learning models (braindecode, torch) as **a separate Python node**, `decoder_node`
+    of its own package, not as a pluginlib plugin of this one. It has the same topic contract (`/features` in, `~/prediction` out),
+    so the rest of the chain does not notice the difference, but its models are folders with their own `manifest.yaml` and it is
+    selected with `decoder.type`, not with a plugin class.
 
 ## Topics
 
@@ -61,8 +66,29 @@ The details are in the reference below.
 
 ## Reference (from the package README)
 
-`ros2neuro_decoder` provides the base plugin interface for BCI decoders and a ROS 2 node that loads one decoder plugin at runtime.
+<!-- interfaces -->
+## Dependencies
 
+- **ROS 2 packages** (build and run): `pluginlib`, `rclcpp`, [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs), `yaml-cpp`
+- **External libraries**:
+    - `yaml-cpp`: reading the model `manifest.yaml`
+- **At run time**: a decoder plugin package ([`ros2neuro_decoder_lda`](lda.md), `_qda`, `_svm`, `_gaussian`) and a model
+
+## Messages and topics
+
+Default node name: `decoder`.
+
+| | Default topic | Type | Changed by |
+|---|---|---|---|
+| subscribes | `/features` | `NeuroFeature` | `input_topic` |
+| publishes | `~/prediction` | `NeuroPrediction` | `output_topic` |
+
+Messages used:
+
+- `NeuroFeature`: read, the input of the model
+- `NeuroPrediction`: published, one value per class
+
+<!-- /interfaces -->
 This package is intentionally plugin-oriented. Unlike generic processing blocks, decoders are a natural fit for runtime replacement because different experiments may swap:
 
 - model family: `LDA`, `QDA`, `SVM`, `MLP`, `CNN`

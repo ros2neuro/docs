@@ -7,6 +7,46 @@
 [`ros2neuro_decoder`](index.md), reimplemented from the legacy `rosneuro_decoder_gaussian` package
 using the same core algorithm inside the ROS 2 plugin structure used by the other decoders.
 
+| | |
+|---|---|
+| **Layer** | Decoder |
+| **Kind** | Plugin of [`ros2neuro_decoder`](index.md) (pluginlib class `ros2neuro::decoder::Gaussian`) |
+| **Reads** | a `NeuroFeature` (a PSD) through the decoder node |
+| **Publishes** | a `NeuroPrediction` through the decoder node |
+| **Run** | `ros2 run ros2neuro_decoder_gaussian write_example_gaussian_model` (writes an example model) |
+
+<!-- interfaces -->
+## Dependencies
+
+- **ROS 2 packages** (build and run): `pluginlib`, `rclcpp`, [`ros2neuro_decoder`](index.md), [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs)
+
+## Messages and topics
+
+Default node name: `decoder` (the node of [`ros2neuro_decoder`](index.md)).
+
+| | Default topic | Type | Changed by |
+|---|---|---|---|
+| subscribes | `/features` | `NeuroFeature` | `input_topic` |
+| publishes | `~/prediction` | `NeuroPrediction` | `output_topic` |
+
+Messages used:
+
+- `NeuroFeature`: read through the decoder node
+- `NeuroPrediction`: published through the decoder node
+
+## Example configuration
+
+The configuration shipped with the package (`config/decoder_gaussian.yaml`); `decoder.manifest_path` points to the model folder, with its `manifest.yaml`:
+
+```yaml
+decoder:
+  ros__parameters:
+    input_topic: "/features"
+    output_topic: "~/prediction"
+    decoder.manifest_path: /absolute/path/to/my_decoder/manifest.yaml
+```
+
+<!-- /interfaces -->
 ## Legacy algorithm summary
 
 The old package implements a classifier with:

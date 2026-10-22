@@ -3,9 +3,38 @@
 !!! info ""
     Package: [`ros2neuro_acquisition_eegdev`](https://github.com/ros2neuro/ros2neuro_acquisition_eegdev) · pluginlib class: `ros2neuro::acquisition::EGDDevice` · part of [Acquisition](index.md)
 
-`ros2neuro_acquisition_eegdev` is a `libeegdev`-based plugin for the
-[`ros2neuro_acquisition`](index.md) framework.
+An acquisition backend for the devices and files supported by the `libeegdev` library: it can open a live eegdev driver or a `.gdf` / `.bdf` file and maps the eegdev channel groups to ROS2neuro sensors and triggers. ANT Neuro eego amplifiers have their own package, [`ros2neuro_acquisition_antneuro`](antneuro.md).
 
+| | |
+|---|---|
+| **Layer** | Acquisition |
+| **Kind** | Plugin of [`ros2neuro_acquisition`](index.md) (pluginlib class `ros2neuro::acquisition::EGDDevice`) |
+| **Reads** | a `libeegdev` device or a GDF/BDF file |
+| **Publishes** | `NeuroFrame` and `NeuroFrameInfo` through the acquisition node |
+| **Run** | `ros2 run ros2neuro_acquisition_eegdev acquisition_eegdev`<br>`ros2 launch ros2neuro_acquisition_eegdev eegdev_file_acquisition.launch.py` |
+
+<!-- interfaces -->
+## Dependencies
+
+- **ROS 2 packages** (build and run): `rclcpp`, `pluginlib`, [`ros2neuro_acquisition`](index.md), [`ros2neuro_data`](../msgs-data.md#ros2neuro_data), [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs)
+- **ROS 2 packages** (run only): `launch`, `launch_ros`
+- **External libraries**:
+    - `libeegdev`: devices and GDF/BDF files
+    - `xdffileio`: file support
+
+## Messages and topics
+
+Default node name: `acquisition`.
+
+| | Default topic | Type | Changed by |
+|---|---|---|---|
+| publishes | `~/neurodata`, `~/neurodata_info` | `NeuroFrame`, `NeuroFrameInfo` | through the acquisition node (`acquisition.topic_data`, `acquisition.topic_info`) |
+
+Messages used:
+
+- `NeuroFrame`, `NeuroFrameInfo`: published through the acquisition node
+
+<!-- /interfaces -->
 Its role is to adapt devices and files supported by `libeegdev` to the common
 [`ros2neuro::acquisition::NeuroDevice`](index.md) interface, so they can be loaded by the
 generic acquisition node and published as `NeuroFrame` / `NeuroFrameInfo`.
@@ -42,24 +71,23 @@ plugin: "ros2neuro::acquisition::EGDDevice"
 
 ## Parameters
 
-All parameters are expected under the acquisition node device prefix.
-With the default acquisition configuration, that prefix is `device`.
+All parameters are expected under the prefix `acquisition.`, which the acquisition node uses whenever a plugin class is set.
 
 Supported parameters:
 
-- `device.device`
-- `device.open_options`
-- `device.samplerate`
-- `device.framerate`
-- `device.sensors.eeg.enable`
-- `device.sensors.eeg.name`
-- `device.sensors.eeg.labels`
-- `device.sensors.exg.enable`
-- `device.sensors.exg.name`
-- `device.sensors.exg.labels`
-- `device.triggers.trigger.enable`
-- `device.triggers.trigger.name`
-- `device.triggers.trigger.labels`
+- `acquisition.device`
+- `acquisition.open_options`
+- `acquisition.samplerate`
+- `acquisition.framerate`
+- `acquisition.sensors.eeg.enable`
+- `acquisition.sensors.eeg.name`
+- `acquisition.sensors.eeg.labels`
+- `acquisition.sensors.exg.enable`
+- `acquisition.sensors.exg.name`
+- `acquisition.sensors.exg.labels`
+- `acquisition.triggers.trigger.enable`
+- `acquisition.triggers.trigger.name`
+- `acquisition.triggers.trigger.labels`
 
 Example:
 
@@ -88,7 +116,7 @@ Behavior notes:
 
 ## libeegdev backend options
 
-The plugin passes `device.open_options` through to `libeegdev`, so the actual
+The plugin passes `acquisition.open_options` through to `libeegdev`, so the actual
 accepted options depend on the selected backend.
 
 Based on the locally installed `libeegdev` man pages, the following backends
@@ -242,21 +270,9 @@ The plugin currently maps:
 
 The exact presence of these blocks depends on the device capabilities and on:
 
-- `device.sensors.eeg.enable`
-- `device.sensors.exg.enable`
-- `device.triggers.trigger.enable`
-
-## Dependencies
-
-Current direct dependencies:
-
-- `ament_cmake`
-- `rclcpp`
-- `pluginlib`
-- [`ros2neuro_acquisition`](index.md)
-- [`ros2neuro_data`](../msgs-data.md#ros2neuro_data)
-- [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs)
-- `libeegdev`
+- `acquisition.sensors.eeg.enable`
+- `acquisition.sensors.exg.enable`
+- `acquisition.triggers.trigger.enable`
 
 ## Build
 

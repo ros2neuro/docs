@@ -14,6 +14,47 @@ the integrated output is the buffer state itself, and the decision is
 whichever class currently has the highest buffer value (not necessarily the
 same as the instantaneous winning class of the latest prediction).
 
+| | |
+|---|---|
+| **Layer** | Integrator |
+| **Kind** | Plugin of [`ros2neuro_integrator`](index.md) (pluginlib class `ros2neuro::integrator::Buffer`) |
+| **Reads** | `NeuroPrediction`, through the integrator node |
+| **Publishes** | `NeuroControl` through the integrator node |
+| **Run** | in the integrator YAML: `integrator.type: ros2neuro::integrator::Buffer`, `integrator.params.buffer_size: 48` |
+
+<!-- interfaces -->
+## Dependencies
+
+- **ROS 2 packages** (build and run): `pluginlib`, `rclcpp`, [`ros2neuro_integrator`](index.md), [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs)
+
+## Messages and topics
+
+Default node name: `integrator` (the node of [`ros2neuro_integrator`](index.md)).
+
+Messages used:
+
+- `NeuroPrediction`: read through the integrator node
+- `NeuroControl`: published through the integrator node
+
+## Example configuration
+
+From the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md) (`integrator:=buffer`): at 16 predictions per second, `buffer_size: 48` means at least 3 seconds of unanimous votes to go from `1/K` to 1:
+
+```yaml
+/integrator:
+    ros__parameters:
+        input_topic: /classification/prediction
+        output_topic: /integrated/raw
+        event_topic: /neuroevent
+        integrator.name: mi_buffer_integrator
+        integrator.type: ros2neuro::integrator::Buffer
+        integrator.params.buffer_size: 48
+        integrator.params.increment: 0
+        integrator.rejection: 0.55
+        integrator.reset_event: 781
+```
+
+<!-- /interfaces -->
 ## Parameters
 
 | Name          | Type          | Default        | Notes                                                             |
