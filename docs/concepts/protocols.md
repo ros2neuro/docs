@@ -20,6 +20,8 @@ The feedback never reads `/neuroevent` and never decides anything: it reads only
 
 ## The two protocols
 
+The trials of `Training` follow the **cueing paradigm** of Posner (M. I. Posner, "Orienting of attention", *Quarterly Journal of Experimental Psychology*, 32(1), 3-25, 1980, [doi:10.1080/00335558008248231](https://doi.org/10.1080/00335558008248231)): a fixation, a cue that tells the subject what to do, then the feedback. The asynchronous protocol (`Control`) has no cues.
+
 | Plugin | Protocol | What happens |
 |---|---|---|
 | `Training` with `modality: calibration` | calibration | a sequence of trials with cues; an autopilot drives the feedback, the classifier is not read |

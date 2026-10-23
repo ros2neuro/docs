@@ -20,7 +20,7 @@ extra_css:
 theme:
   name: material
   logo: assets/logo-icon.png
-  favicon: assets/favicon-v2.png
+  favicon: assets/favicon-v3.png
   features:
     - navigation.sections
     - navigation.indexes

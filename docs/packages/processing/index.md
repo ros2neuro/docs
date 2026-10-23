@@ -112,7 +112,19 @@ whose `window_length` is `samples / samplerate`.
 ## Writing your own processing
 
 Because there is no parent class, **anyone can add a processing** by writing a node, reusing what comes before it: the
-filtering is already done, and the node starts from the clean `NeuroFrame`. Two examples of what could be built (they
+filtering is already done, and the node starts from the clean `NeuroFrame`. This is deliberate: the processing of a BCI depends
+on the paradigm, so the stack does not impose one. Each group can use the filters that already exist, combine them with its own
+code, or ignore them.
+
+!!! info "Any kind of BCI"
+    ROS2neuro has been tested with **motor imagery (MI)**, an endogenous BCI. Nothing in the architecture is specific to it:
+    it **should work for any BCI paradigm**, endogenous or exogenous. An **exogenous** BCI (for example one based on SSVEP or P300)
+    can use the same chain (acquisition, filters, decoder, integrator, manager, feedback): only the processing changes, and it is a node you
+    write yourself, publishing a `NeuroFeature` that your decoder declares as input. The `NeuroFrame` also carries the digital
+    triggers (`NeuroTrigger`) next to the signals, which is where the stimulus markers of such paradigms arrive. Paradigms
+    other than MI have **not been tested** yet.
+
+Two examples of what could be built (they
 **do not exist in the stack today**; they are given only to show the idea):
 
 - **The Hilbert transform.** The analytic signal of the filtered channels gives the **envelope** (the instantaneous power in a

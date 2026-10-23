@@ -11,6 +11,11 @@ interchangeable pieces that talk through a small set of messages.
 
 ![ROS2neuro architecture](assets/architecture.svg)
 
+!!! info "Which BCIs"
+    ROS2neuro has been tested with motor imagery (MI). It should work for any BCI paradigm: the processing stage has no
+    fixed implementation, so other paradigms, such as the exogenous SSVEP or P300, can be supported by writing your own processing node:
+    see [Processing](packages/processing/index.md).
+
 !!! info "Tested on ROS 2 Jazzy"
     All of ROS2neuro was built and tested on **ROS 2 Jazzy** (Ubuntu 24.04), and the Debian packages are built for it:
     see [Installation](installation.md). The commands in this documentation use `jazzy`; other releases have not been tested.

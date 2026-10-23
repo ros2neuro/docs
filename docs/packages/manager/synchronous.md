@@ -144,3 +144,12 @@ Declares `classes/rest_mode/thresholds` once and forwards them to manager and fe
 `colcon test --packages-select ros2neuro_manager_synchronous`: outcomes (three rest cases, double
 crossing, timeout), durations, trial sequence, autopilot (sum 1, always reaches a Hit, rest never
 touches).
+
+## Cueing paradigm
+
+The trial structure of `Training` (fixation, then a **cue** that tells the subject which class to perform, then the feedback)
+follows the cueing paradigm introduced by Posner. The asynchronous protocol (`Control`, see
+[`ros2neuro_manager_asynchronous`](asynchronous.md)) has no cues: the subject controls freely.
+
+Reference: M. I. Posner, "Orienting of attention", *Quarterly Journal of Experimental Psychology*, 32(1), 3-25, 1980.
+doi: [10.1080/00335558008248231](https://doi.org/10.1080/00335558008248231)
