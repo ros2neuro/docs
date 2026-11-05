@@ -39,6 +39,26 @@ Current converters:
 
 The GUI is implemented with PyQt5 and supports native file drag-and-drop, Browse, and Paste Path input selection.
 
+### Feature scale and unit
+
+A cnbi-smrtrain classifier is trained on the **natural logarithm** of the Welch PSD, and the `welch_node` of
+`ros2neuro_processing_spectral` publishes exactly that (`ln(power/Hz)`). The converter writes the **feature unit** in the model:
+the GUI field **Feature unit** (default `ln(power/Hz)`) or `--feature-unit` on the command line, in both `manifest.yaml` (`input.unit`) and
+the `.r2nd`. The decoder refuses a feature whose unit differs from the one of the model, so a model converted with another unit
+(for example the old default `dB/Hz`, which was a `10*log10` scale) does not run on the Welch node until it is converted again.
+
+### What it converts, and what it does not
+
+- It converts **only the Gaussian classifier saved by cnbi-smrtrain** (`eegc3_smr_train`, a `.smr.mat` with `settings.bci.smr.gau.M` and `.C`). There is no
+  converter for LDA, QDA or SVM, and none for classifiers of other toolboxes: a classifier from elsewhere works only if its `.mat` has the same `settings`
+  structure (see below).
+- Centers and diagonal covariances are copied unchanged, with uniform priors. The classifier is valid only on the scale it was trained on: `ln` of the
+  Welch PSD, which is what `welch_node` publishes.
+- `settings.modules.smr.options.classification.norm` (division of the features by `sum(abs(.))`) is **not** carried: a classifier trained with `norm = 1`
+  would not give the same output.
+- The spatial filter is not part of the model: the Laplacian matrix is only copied as metadata in the `training` section of the manifest, and the filter
+  chain, the window, the PSD window and overlap, and the frequencies of the pipeline must be set to the same values the classifier was trained with.
+
 ## Gaussian `.mat` Input
 
 The Gaussian converter expects a Matlab `.mat` file produced by the SMR Gaussian trainer with a top-level `settings` struct. The parser currently reads this structure:

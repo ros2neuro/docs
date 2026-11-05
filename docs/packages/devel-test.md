@@ -167,6 +167,11 @@ colored by its position in `classes`. To try other codes **edit `classes` in `la
 
 A classic model is a `manifest.yaml` plus a binary `.r2nd`: the manifest points to it (`decoder.path`), the weights cannot live in yaml.
 
+The Welch node publishes the natural logarithm of the PSD, so every classic model here declares `unit: ln(power/Hz)` (the decoder refuses a different unit).
+`b4_bhbf` is the converted cnbi classifier (reconverted with `--feature-unit "ln(power/Hz)"`). `qda_test_gdf` and `fake_4class_gaussian` were first
+written for features in dB (`10*log10`): they were rescaled for `ln` with `x_dB = (10/ln 10) * x_ln` (Gaussian: centers / 4.343, covariances / 4.343²;
+QDA: linear weights × 4.343, quadratic weights × 4.343², bias unchanged), which gives exactly the same probabilities as before.
+
 ## Timing check (`launch/timing_check/`)
 
 Checks whether the durations written in the events (what the recorder puts in the GDF) match the planned ones. The manager runs a calibration with

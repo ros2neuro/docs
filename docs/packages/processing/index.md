@@ -54,7 +54,7 @@ tensor described by its `shape` and its `axes`.
 
 The two pipelines of [`ros2neuro_devel_test`](../devel-test.md) show them in use.
 
-**Welch**, from the Gaussian pipeline (`launch/gaussian/config/pipeline.yaml`): a PSD in dB/Hz at 4, 6, ... 48 Hz, the input
+**Welch**, from the Gaussian pipeline (`launch/gaussian/config/pipeline.yaml`): a PSD, as natural logarithm (ln), at 4, 6, ... 48 Hz, the input
 contract of the decoder's manifest.
 
 ```yaml

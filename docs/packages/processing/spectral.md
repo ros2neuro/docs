@@ -41,7 +41,7 @@ Messages used:
 
 ## Example configuration
 
-The Welch node of the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md): a PSD in dB/Hz at 4, 6, ... 48 Hz of the `EEG` block (the node also reads the `welch_node:` section of `config/spectral_nodes.yaml`, with the long parameter names):
+The Welch node of the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md): a PSD, as natural logarithm (ln), at 4, 6, ... 48 Hz of the `EEG` block (the node also reads the `welch_node:` section of `config/spectral_nodes.yaml`, with the long parameter names):
 
 ```yaml
 /welch:
@@ -148,8 +148,22 @@ The package follows these conventions consistently:
 Units:
 
 - FFT: `amplitude` or `dB`
-- Welch: `power/Hz` or `dB/Hz`
+- Welch: `power/Hz` or `ln(power/Hz)`
 - spectrogram: `power/Hz` or `dB/Hz`
+
+### Scale of the Welch PSD: natural logarithm
+
+With `welch.log: true` (the default) `welch_node` publishes the **natural logarithm** of the PSD, `ln(power/Hz)`: it does **not**
+publish decibels. This is the scale of the cnbi-smrtrain classifiers (they are trained on `log` of the PSD), so a classifier converted
+with `ros2neuro_decoder_converters` receives the features it was trained with. The unit written in the `NeuroFeature` is
+`ln(power/Hz)`, and a decoder refuses a model whose `input.unit` is different.
+
+- `welch.log: false` publishes the linear PSD (`power/Hz`).
+- To get decibels (`10*log10`) use `welch.log: false` and apply `10*log10(PSD)` in your own node, which publishes the `NeuroFeature`
+  with `unit: dB/Hz`; a decoder trained on dB (model converted with `--feature-unit "dB/Hz"`) reads that one. The relation is
+  `dB = 10/ln(10) * ln = 4.3429 * ln`, and a classifier is **not** invariant to it: never mix the two scales.
+- The FFT node (`20*log10` of the amplitude) and the spectrogram node (`10*log10` of the power) still publish dB when `apply_log` is true:
+  they are not used by the decoders.
 
 ## Nodes
 
@@ -194,7 +208,8 @@ Shared parameters:
 - `sample_rate`: optional override, `0.0` means use `frame.samplerate`
 - `window_length`: analysis window length in samples
 - `window_type`: `rectangular`, `hann`, `hamming`, `blackman`, `flattop`
-- `apply_log`: publish logarithmic values
+- `apply_log`: publish logarithmic values. The Welch node publishes the **natural logarithm** (`ln`) of the PSD, the scale of
+  the cnbi-smrtrain classifiers; FFT (`20*log10`, amplitude) and spectrogram (`10*log10`) still publish dB
 
 The spectral nodes do not subscribe to `NeuroFrameInfo`; channel labels are taken
 from the incoming `NeuroFrame` payload.
