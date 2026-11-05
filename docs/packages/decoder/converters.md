@@ -59,6 +59,23 @@ the `.r2nd`. The decoder refuses a feature whose unit differs from the one of th
 - The spatial filter is not part of the model: the Laplacian matrix is only copied as metadata in the `training` section of the manifest, and the filter
   chain, the window, the PSD window and overlap, and the frequencies of the pipeline must be set to the same values the classifier was trained with.
 
+### Checking a converted classifier against Matlab
+
+`test/` holds a check that the converted classifier gives the same output in ROS 2 as in Matlab: `check_decoder.launch.py` replays a GDF through
+the pipeline (Laplacian filter, Welch, decoder) and `record_features.py` saves the PSD, the features the classifier uses and its probabilities in a CSV;
+`check_decoder.m` repeats the processing in Matlab, compares and plots. In the ROS 2 container, with the workspace sourced:
+
+```bash
+ros2 launch ros2neuro_decoder_converters check_decoder.launch.py          # the example of this package
+ros2 launch ros2neuro_decoder_converters check_decoder.launch.py manifest:=<manifest.yaml> \
+    mat_file:=<classifier.smr.mat> gdf_file:=<recording.gdf> output_csv:=<ros_features.csv>
+```
+
+Without arguments it uses the example installed with the package (`share/ros2neuro_decoder_converters/test_data`: a classifier, the model converted
+from it and a GDF; `test/data` in the sources). It replays the GDF in real time and ends by itself, writing `ros_features.csv` in the current
+folder (`output_csv:=...` to change it). Then in Matlab run `check_decoder(mat_file, gdf_file, 'ros_features.csv')`, or just `check_decoder` from
+`test/` with the example. The model must have been converted with the unit of the Welch node (`ln(power/Hz)`, the default).
+
 ## Gaussian `.mat` Input
 
 The Gaussian converter expects a Matlab `.mat` file produced by the SMR Gaussian trainer with a top-level `settings` struct. The parser currently reads this structure:
