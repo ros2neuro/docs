@@ -41,7 +41,7 @@ The GUI is implemented with PyQt5 and supports native file drag-and-drop, Browse
 
 ### Feature scale and unit
 
-A cnbi-smrtrain classifier is trained on the **natural logarithm** of the Welch PSD, and the `welch_node` of
+A Matlab SMR Gaussian classifier is trained on the **natural logarithm** of the Welch PSD, and the `welch_node` of
 `ros2neuro_processing_spectral` publishes exactly that (`ln(power/Hz)`). The converter writes the **feature unit** in the model:
 the GUI field **Feature unit** (default `ln(power/Hz)`) or `--feature-unit` on the command line, in both `manifest.yaml` (`input.unit`) and
 the `.r2nd`. The decoder refuses a feature whose unit differs from the one of the model, so a model converted with another unit
@@ -49,7 +49,7 @@ the `.r2nd`. The decoder refuses a feature whose unit differs from the one of th
 
 ### What it converts, and what it does not
 
-- It converts **only the Gaussian classifier saved by cnbi-smrtrain** (`eegc3_smr_train`, a `.smr.mat` with `settings.bci.smr.gau.M` and `.C`). There is no
+- It converts **only the Matlab SMR Gaussian classifier** (a `.smr.mat` with a top-level `settings` struct, with `settings.bci.smr.gau.M` and `.C`). There is no
   converter for LDA, QDA or SVM, and none for classifiers of other toolboxes: a classifier from elsewhere works only if its `.mat` has the same `settings`
   structure (see below).
 - Centers and diagonal covariances are copied unchanged, with uniform priors. The classifier is valid only on the scale it was trained on: `ln` of the

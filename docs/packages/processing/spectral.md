@@ -154,7 +154,7 @@ Units:
 ### Scale of the Welch PSD: natural logarithm
 
 With `welch.log: true` (the default) `welch_node` publishes the **natural logarithm** of the PSD, `ln(power/Hz)`: it does **not**
-publish decibels. This is the scale of the cnbi-smrtrain classifiers (they are trained on `log` of the PSD), so a classifier converted
+publish decibels. This is the scale of the Matlab SMR Gaussian classifiers (they are trained on `log` of the PSD), so a classifier converted
 with `ros2neuro_decoder_converters` receives the features it was trained with. The unit written in the `NeuroFeature` is
 `ln(power/Hz)`, and a decoder refuses a model whose `input.unit` is different.
 
@@ -209,7 +209,7 @@ Shared parameters:
 - `window_length`: analysis window length in samples
 - `window_type`: `rectangular`, `hann`, `hamming`, `blackman`, `flattop`
 - `apply_log`: publish logarithmic values. The Welch node publishes the **natural logarithm** (`ln`) of the PSD, the scale of
-  the cnbi-smrtrain classifiers; FFT (`20*log10`, amplitude) and spectrogram (`10*log10`) still publish dB
+  the Matlab SMR Gaussian classifiers; FFT (`20*log10`, amplitude) and spectrogram (`10*log10`) still publish dB
 
 The spectral nodes do not subscribe to `NeuroFrameInfo`; channel labels are taken
 from the incoming `NeuroFrame` payload.
