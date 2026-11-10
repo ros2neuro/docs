@@ -40,7 +40,7 @@ class RosbridgeSubscribe         // {"op": "subscribe", "topic": "...", "type": 
 public class RosbridgeClient : MonoBehaviour
 {
     public string url = "ws://localhost:9090";
-    public string topic = "/manager_control/probabilities";
+    public string topic = "/control_feedback/probabilities";
 
     // Raised on the main thread, once per message of the flow.
     public event Action<NeuroControlMsg> OnFlow;

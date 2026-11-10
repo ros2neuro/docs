@@ -73,6 +73,7 @@ nav:
       - concepts/architecture.md
       - concepts/messages.md
       - concepts/topics.md
+      - concepts/shared-parameters.md
       - concepts/plugins.md
       - concepts/protocols.md
   - Packages:
@@ -115,6 +116,9 @@ nav:
       - Recorder:
           - packages/recorder/index.md
           - packages/recorder/xdf.md
+      - Control:
+          - packages/control/index.md
+          - packages/control/feedback.md
       - Manager:
           - packages/manager/index.md
           - packages/manager/synchronous.md
@@ -135,3 +139,4 @@ nav:
       - tutorials/power-threshold-event/index.md
       - tutorials/eog-check/index.md
       - tutorials/vr-feedback/index.md
+      - tutorials/robot-control/index.md

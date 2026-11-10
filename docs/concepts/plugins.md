@@ -32,7 +32,8 @@ Adding a backend never requires changing the generic node.
 | [`ros2neuro_decoder`](../packages/decoder/index.md) | [`ros2neuro::decoder::Decoder`](../packages/decoder/index.md) | `type` field of the model `manifest.yaml` | [`decoder_lda`](../packages/decoder/lda.md), [`decoder_qda`](../packages/decoder/qda.md), [`decoder_svm`](../packages/decoder/svm.md), [`decoder_gaussian`](../packages/decoder/gaussian.md) |
 | [`ros2neuro_integrator`](../packages/integrator/index.md) | [`ros2neuro::integrator::Integrator`](../packages/integrator/index.md) | `integrator.type` | [`integrator_exponential`](../packages/integrator/exponential.md), [`integrator_buffer`](../packages/integrator/buffer.md) |
 | [`ros2neuro_recorder`](../packages/recorder/index.md) | [`ros2neuro::recorder::NeuroRecorder`](../packages/recorder/index.md) | `plugin` | [`recorder_xdf`](../packages/recorder/xdf.md) |
-| [`ros2neuro_manager`](../packages/manager/index.md) | [`ros2neuro::manager::ManagerPlugin`](../packages/manager/index.md) | `plugin` | [`manager_synchronous`](../packages/manager/synchronous.md) (`Training`), [`manager_asynchronous`](../packages/manager/asynchronous.md) (`Control`) |
+| [`ros2neuro_control`](../packages/control/index.md) | [`ros2neuro::control::Control`](../packages/control/index.md) | `plugin` | [`control_feedback`](../packages/control/feedback.md) (`Feedback`) |
+| [`ros2neuro_manager`](../packages/manager/index.md) | [`ros2neuro::manager::ManagerPlugin`](../packages/manager/index.md) | `plugin` | [`manager_synchronous`](../packages/manager/synchronous.md) (`Synchronous`), [`manager_asynchronous`](../packages/manager/asynchronous.md) (`Asynchronous`) |
 | [`ros2neuro_feedback`](../packages/feedback/index.md) | [`ros2neuro::feedback::FeedbackPlugin`](../packages/feedback/index.md) | `plugin` | [`feedback_wheel`](../packages/feedback/wheel.md) (`Wheel`), [`feedback_bar`](../packages/feedback/bar.md) (`Bar`) |
 
 !!! note "Not everything is a plugin"
@@ -103,12 +104,12 @@ pluginlib_export_plugin_description_file(ros2neuro_filters plugins.xml)
 ```
 
 Each family uses its own base package name in this call ([`ros2neuro_acquisition`](../packages/acquisition/index.md), [`ros2neuro_decoder`](../packages/decoder/index.md),
-[`ros2neuro_integrator`](../packages/integrator/index.md), [`ros2neuro_recorder`](../packages/recorder/index.md), [`ros2neuro_manager`](../packages/manager/index.md), [`ros2neuro_feedback`](../packages/feedback/index.md)).
+[`ros2neuro_integrator`](../packages/integrator/index.md), [`ros2neuro_recorder`](../packages/recorder/index.md), [`ros2neuro_control`](../packages/control/index.md), [`ros2neuro_manager`](../packages/manager/index.md), [`ros2neuro_feedback`](../packages/feedback/index.md)).
 
 ## Practical notes
 
 - A plugin that holds a `shared_ptr` to its node must be released before the node exits, otherwise the class
-  loader prints a warning. The manager and feedback nodes call `release_plugin()` for this.
+  loader prints a warning. The control, manager and feedback nodes call `release_plugin()` for this.
 - If a plugin class is not found, check that its package is installed, that the workspace is sourced
   (`source install/setup.bash`) and that the class name in the parameter matches `plugins.xml` exactly.
 - [`ros2neuro_devel_test`](../packages/devel-test.md) shows complete parameter files that select a plugin for every node.

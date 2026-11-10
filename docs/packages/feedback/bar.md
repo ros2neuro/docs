@@ -3,45 +3,54 @@
 !!! info ""
     Package: [`ros2neuro_feedback_bar`](https://github.com/ros2neuro/ros2neuro_feedback_bar) · pluginlib class: `ros2neuro::feedback::Bar` · part of [Feedback](index.md)
 
+A feedback drawing with one bar per classifier output, so it works with any number of classes: each bar has its own colour and a white threshold line, and lights up when its threshold is reached. It is drawn with [`neurodraw`](neurodraw.md).
+
 | | |
 |---|---|
 | **Layer** | Feedback |
 | **Kind** | Plugin of [`ros2neuro_feedback`](index.md) (pluginlib class `ros2neuro::feedback::Bar`) |
-| **Reads** | the control flow of the manager, through the feedback node |
+| **Reads** | the flow of [`ros2neuro_control_feedback`](../control/feedback.md) and the event bus, through the feedback node |
 | **Publishes** | a window |
 | **Run** | in the feedback YAML: `plugin: ros2neuro::feedback::Bar` |
 | **Depends on** | [`neurodraw`](neurodraw.md) |
 
-Plugin `ros2neuro::feedback::Bar`, **neurodraw only** (`Rectangle`, `Circle`, `Cross`; neurodraw itself is not modified).
+<!-- interfaces -->
+## Dependencies
 
-The Bar plugin draws **one bar for each class that has an output of the classifier**, so it works with **any number of
-classes** (`K` bars, two or more), each bar with its own colour and its own threshold line.
+- **ROS 2 packages** (build and run): `pluginlib`, `rclcpp`, [`ros2neuro_feedback`](index.md), [`neurodraw`](neurodraw.md)
+- **External libraries**:
+    - [`neurodraw`](neurodraw.md): the drawing library: SDL2 and OpenGL
 
-**Two classes** (here a trial of a calibration: the fixation cross, the cue, the feedback and the outcome, in which the
-bar that reaches its threshold lights up):
+## Messages and topics
 
-![Two bars in the four moments of a trial](img/bars-2-phases.png){ .screenshot }
+Default node name: `feedback` (the node of [`ros2neuro_feedback`](index.md)).
 
-**Four classes**, each with a different threshold (the white lines are at 0.4, 0.5, 0.6 and 0.7 from the left):
+Messages used:
 
-![Four bars in the four moments of a trial](img/bars-4-phases.png){ .screenshot }
+- `NeuroControl`: read through the feedback node
 
-![Four bars during the feedback](img/bars-4-classes.png){ .screenshot style="max-width: 560px;" }
+## Example configuration
 
-What you see in the window:
+From the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md) (`config/feedback_bars.yaml`); the layout (`classes`, `rest_mode`, the ids of the events, the thresholds) is not a parameter of the plugin: the feedback core reads it from its own parameters (the same as the manager and control) and gives it to the plugin:
 
-| Element | Meaning |
-|---|---|
-| a **bar** | one classifier output, in the order of the `classes` parameter; all bars start at `1/K` and when one rises the others fall |
-| the **white line** across a bar | the threshold of that class |
-| a **brighter bar with a thicker line** | the threshold is reached |
-| the **cross** under the bars | the fixation, always in the same place |
-| the **circle** under the bars | the cue, with the colour of the target bar |
+```yaml
+# Feedback (bars). It reads the event bus (the phases the manager writes, the outcome control writes) and the flow of control (values and
+# thresholds). The classes, rest_mode and the initial thresholds are the same for every node: they come from layout.yaml (loaded by the launcher).
+/feedback:
+    ros__parameters:
+        plugin: ros2neuro::feedback::Bar
+        control_topic: /control_feedback/probabilities    # the flow: values and thresholds (the phases come from event_topic)
+        event_topic: /neuroevent                         # the phases of the trials and the outcome; also publish_display_events
+        fps: 60.0
+        window_title: "Gaussian - bars"
+        publish_display_events: false
+        latency_log_period_s: 0.0                        # seconds between the "Latency stamp->draw" log lines; 0 = off
+```
 
-**The rest.** With `rest_mode: timeout` the rest has no bar: its cue is a **yellow** circle, and when the rest ends as a
-Hit a small yellow dot appears under the bars (here the four-class task with the rest):
+<!-- /interfaces -->
+The build needs the [`neurodraw`](neurodraw.md) library: see the README of [`ros2neuro_feedback`](index.md) for how to install it.
 
-![The rest cue and the yellow dot of a rest that is a Hit](img/bars-rest.png){ .screenshot }
+## Behaviour
 
 * One bar per classifier output, in the order of `output_classes`, **each with its own color** (royalblue, firebrick,
   forestgreen, mediumpurple, deeppink, darkcyan, saddlebrown; none is yellow: yellow is always the rest). There are no
@@ -56,47 +65,13 @@ Hit a small yellow dot appears under the bars (here the four-class task with the
   saturation do not change; the base brightness of the bars is capped at 78% so the difference is always visible) and the
   line becomes thicker. A bar never takes another color: on a miss the target keeps its own and the bar that was reached
   is the one that lights up.
-  (The thresholds are those of the feedback's own `thresholds` parameter: a runtime change on the manager is not followed.)
+  (The thresholds come in the flow of control and are followed while running: after `ros2 param set /control thresholds ...` the lines move.)
 * **Fixation cross and cue always in the same place**: centred under the bars, whatever the target. The bars are always
   there. The cue has the color of the target's bar (a rest in timeout, which has no bar, is yellow).
 * **No circle for the outcome**: the outcome is the bars lighting up, and a bar never changes color. The only exception is a
-  rest with **`rest_mode=timeout`** that is a Hit (no threshold touched for `rest_timeout` seconds, see the training README):
+  rest with **`rest_mode=timeout`** that is a Hit (no threshold touched for `rest_timeout` seconds, see the `ros2neuro_control_feedback` README, where it is a parameter):
   a small **yellow dot** appears in the same place under the bars while the boom lasts (only in that case).
 * With `rest_mode=class` the rest is one more bar, **yellow** (the bar and its threshold line, which is white on the other bars); with `none`/`timeout` it has no bar (cue and boom only).
 * neurodraw has no scaling: each bar is a full-height rectangle that slides behind a black mask, whose top edge is the value.
 
 Tests: `colcon test --packages-select ros2neuro_feedback_bar` (geometry and colors, no window).
-
-<!-- interfaces -->
-## Dependencies
-
-- **ROS 2 packages** (build and run): `pluginlib`, `rclcpp`, [`ros2neuro_feedback`](index.md), [`ros2neuro_manager`](../manager/index.md), [`neurodraw`](neurodraw.md)
-- **External libraries**:
-    - [`neurodraw`](neurodraw.md): the drawing library: SDL2 and OpenGL
-
-## Messages and topics
-
-Default node name: `feedback` (the node of [`ros2neuro_feedback`](index.md)).
-
-Messages used:
-
-- `NeuroControl`: read through the feedback node
-
-## Example configuration
-
-From the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md) (`config/feedback_bars.yaml`); the layout (`classes`, `rest_mode`, `thresholds`) is loaded from the same file as the manager:
-
-```yaml
-# Feedback (bars). The layout (classes, rest_mode, thresholds) comes from layout.yaml; `mode` (training | control)
-# is set by the launcher from the protocol.
-/feedback:
-    ros__parameters:
-        plugin: ros2neuro::feedback::Bar
-        control_topic: /manager_control/probabilities    # the ONLY thing the feedback reads
-        event_topic: /neuroevent                         # only used by publish_display_events
-        fps: 60.0
-        window_title: "Gaussian - bars"
-        publish_display_events: false
-        latency_log_period_s: 0.0                        # seconds between the "Latency stamp->draw" log lines; 0 = off
-```
-<!-- /interfaces -->

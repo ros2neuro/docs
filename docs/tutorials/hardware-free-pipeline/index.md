@@ -20,9 +20,13 @@ flowchart LR
     FIL --> WEL["welch<br/>PSD 4:2:48 Hz"]
     WEL --> DEC["decoder<br/>Gaussian"]
     DEC --> INT["integrator<br/>Exponential"]
-    INT --> MAN["manager<br/>Training plugin"]
-    MAN --> FB["feedback<br/>Bar plugin"]
-    MAN -.->|"events"| REC["recorder<br/>(optional)"]
+    INT --> CTL["control<br/>Feedback plugin"]
+    MAN["manager<br/>Synchronous plugin"] <-->|"events (/neuroevent)"| CTL
+    CTL -->|"values, thresholds"| FB["feedback<br/>Bar plugin"]
+    MAN -.->|"phases"| FB
+    CTL -.->|"outcome"| FB
+    CTL -.->|"events"| REC["recorder<br/>(optional)"]
+    MAN -.->|"events"| REC
 ```
 
 | Node | Package | Plugin or model |
@@ -32,7 +36,8 @@ flowchart LR
 | `welch` | [`ros2neuro_processing_spectral`](../../packages/processing/spectral.md) | power spectral density, 4 to 48 Hz in steps of 2 |
 | `decoder` | [`ros2neuro_decoder`](../../packages/decoder/index.md) | [`ros2neuro::decoder::Gaussian`](../../packages/decoder/gaussian.md), model `b4_bhbf_20230706.smr` (both hands / both feet) |
 | `integrator` | [`ros2neuro_integrator`](../../packages/integrator/index.md) | [`ros2neuro::integrator::Exponential`](../../packages/integrator/exponential.md), `alpha 0.98` |
-| `manager` | [`ros2neuro_manager`](../../packages/manager/index.md) | [`ros2neuro::manager::Training`](../../packages/manager/synchronous.md) |
+| `control` | [`ros2neuro_control`](../../packages/control/index.md) | [`ros2neuro::control_feedback::Feedback`](../../packages/control/feedback.md): reads the integrator, knows the thresholds, drives the feedback |
+| `manager` | [`ros2neuro_manager`](../../packages/manager/index.md) | [`ros2neuro::manager::Synchronous`](../../packages/manager/synchronous.md): runs the trials |
 | `feedback` | [`ros2neuro_feedback`](../../packages/feedback/index.md) | [`ros2neuro::feedback::Bar`](../../packages/feedback/bar.md), one bar per class |
 | `recorder` | [`ros2neuro_recorder`](../../packages/recorder/index.md) | [`ros2neuro::recorder::XDFRecorder`](../../packages/recorder/xdf.md), writes GDF (skipped with `record:=false`) |
 
@@ -63,15 +68,17 @@ A window with two bars opens. The log shows each node loading its plugin:
 
 ```text
 [acquisition]: Loaded plugin 'ros2neuro::acquisition::XDFDevice'
-[manager]: Layout: protocol classes [BOTH_HANDS (773), BOTH_FEET (771)], output classes [...], rest_mode=none, K=2
+[manager]: Layout: protocol classes [BOTH_HANDS (773), BOTH_FEET (771)], rest_mode=none
 [decoder]:   Decoder configured. input='/features' output='~/prediction' type='ros2neuro::decoder::Gaussian'
-[manager]: Training (calibration): 6 trials
-[manager]: Trial 1/6 (class: BOTH_FEET (771) | duration: 5366 ms)
+[control]: Layout: protocol classes [...], output classes [...], rest_mode=none, K=2
+[manager]: Synchronous: 6 trials, begins in 3000 ms
+[manager]: Trial 1/6 (class: BOTH_FEET (771))
+[control]: Feedback of class BOTH_FEET (771) (duration: 4740 ms)
 ```
 
-In a **calibration** the manager drives the bars with an autopilot (the target class rises towards its
+The manager runs the trials and writes their events; control does the rest. In a **calibration** control drives the bars with an autopilot (the target class rises towards its
 threshold), as the subject would do when training a classifier. In an **evaluation** the bars follow the real
-output of the classifier, and in **control** the manager resets the integrator when a class reaches its
+output of the classifier and control writes the outcome (Hit, Miss or Timeout), and in **control** control resets the integrator when a class reaches its
 threshold. Try the three:
 
 ```bash
@@ -83,7 +90,7 @@ ros2 launch ros2neuro_devel_test gaussian_bars.launch.xml protocol:=control reco
     The GDF is not synchronised with the cues, so the hits and misses of an evaluation only show that the chain
     works, not that the classifier is good.
 
-The session ends by itself when the protocol ends: the manager is started with `on_exit="shutdown"`. Close the
+The session ends by itself when the protocol ends: the manager and control are started with `on_exit="shutdown"`. Close the
 window with ESC to end it earlier.
 
 ## 3. Look inside
@@ -118,8 +125,8 @@ ros2 topic list -t
 /processing/filtered            [ros2neuro_msgs/msg/NeuroFrame]
 /processing/psd                 [ros2neuro_msgs/msg/NeuroFeature]
 /classification/prediction      [ros2neuro_msgs/msg/NeuroPrediction]
-/integrated/raw                 [ros2neuro_msgs/msg/NeuroControl]
-/manager_control/probabilities  [ros2neuro_msgs/msg/NeuroControl]
+/integrated/raw                 [ros2neuro_msgs/msg/NeuroPrediction]
+/control_feedback/probabilities [ros2neuro_msgs/msg/NeuroControl]
 /neuroevent                     [ros2neuro_msgs/msg/NeuroEvent]
 ```
 
@@ -131,7 +138,7 @@ ros2 topic hz /acquisition/neurodata                        # 16 Hz: the frame r
 ros2 topic echo /processing/psd --field shape --once       # the shape of the PSD feature
 ros2 topic echo /classification/prediction --field values  # decoder output, per class
 ros2 topic echo /integrated/raw --field values             # after the integrator
-ros2 topic echo /manager_control/probabilities             # what the feedback draws
+ros2 topic echo /control_feedback/probabilities            # what the feedback draws
 ```
 
 **The events**
@@ -165,13 +172,13 @@ Everything is in `ros2neuro_devel_test/launch/gaussian/config/`:
 |---|---|
 | `pipeline.yaml` | acquisition, filters, welch, decoder (the processing chain) |
 | `integrator_exponential.yaml`, `integrator_buffer.yaml` | the integrator |
-| `layout.yaml` | `classes`, `rest_mode`, `thresholds`: loaded by the manager **and** the feedback |
-| `manager_calibration.yaml`, `manager_evaluation.yaml`, `manager_control.yaml` | the protocol: trials, durations |
+| `layout.yaml` | `classes`, `rest_mode`, `thresholds`: loaded by the manager, control **and** the feedback |
+| `protocol_calibration.yaml`, `protocol_evaluation.yaml`, `protocol_control.yaml` | the protocol: `/manager` (trials, durations) and `/control` (the plugin, the length of the feedback) |
 | `feedback_bars.yaml`, `feedback_wheel.yaml` | the drawing |
 | `recorder.yaml` | where and how to record |
 
 Try changing something. For example, in `layout.yaml` change `thresholds: [0.7, 0.7]` to `[0.9, 0.9]` and in
-`manager_calibration.yaml` change `trials`. After editing, rebuild the package, because the launch files use the
+`protocol_calibration.yaml` change `trials`. After editing, rebuild the package, because the launch files use the
 installed copies:
 
 ```bash
@@ -207,7 +214,7 @@ input of the next hardware-free test.
 
 - every stage is a node, and the stages are chained only by topics;
 - the plugin of each stage is selected by a parameter in a YAML file;
-- the manager adds the protocol on top of the signal chain and publishes the events;
+- the manager runs the trials and control drives the feedback, on top of the signal chain, talking through the events;
 - you can replace the amplifier with a file, and nothing else changes.
 
 Next: [Looking at the signals with the visualizer](../visualizer/index.md).

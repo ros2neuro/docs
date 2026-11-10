@@ -10,7 +10,7 @@ An exponential moving average of the predicted probabilities: the new output is 
 | **Layer** | Integrator |
 | **Kind** | Plugin of [`ros2neuro_integrator`](index.md) (pluginlib class `ros2neuro::integrator::Exponential`) |
 | **Reads** | `NeuroPrediction` of type `TYPE_PROBABILITIES`, through the integrator node |
-| **Publishes** | `NeuroControl` through the integrator node |
+| **Publishes** | `NeuroPrediction` (`TYPE_SCORES`) through the integrator node |
 | **Run** | in the integrator YAML: `integrator.type: ros2neuro::integrator::Exponential`, `integrator.params.alpha: 0.98` |
 
 <!-- interfaces -->
@@ -25,7 +25,7 @@ Default node name: `integrator` (the node of [`ros2neuro_integrator`](index.md))
 Messages used:
 
 - `NeuroPrediction`: read through the integrator node
-- `NeuroControl`: published through the integrator node
+- `NeuroPrediction`: published through the integrator node (`type = TYPE_SCORES`, the smoothed probabilities as `values`)
 
 <!-- /interfaces -->
 ## How it works

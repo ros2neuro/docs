@@ -3,52 +3,54 @@
 !!! info ""
     Package: [`ros2neuro_manager`](https://github.com/ros2neuro/ros2neuro_manager)
 
-The manager sits between the integrator and the feedback and runs the **protocol**. The core is shared by all
-protocols; the protocol itself is a **plugin that you must select** with the parameter `plugin`.
+The manager runs the **trials** of a calibration or an evaluation. It writes the phases of every trial (Start, Fixation, cue,
+CFeedback...) on the event bus and listens to the same bus, where [`ros2neuro_control_feedback`](../control/feedback.md) writes
+the outcome (Hit / Miss / Timeout): that is what ends the continuous feedback and lets the manager go on with the next trial.
+It does not read the integrator, does not reset it and does not talk to the feedback: that is the [control](../control/index.md)
+layer. The core is shared by all protocols; the protocol itself is a **plugin that you must select** with the parameter `plugin`.
 
-The core owns, in one place each: the catalog of event and class codes, the mapping of the integrator `fields`
-to classes, the normalisation of the values, the emission of events and the reset handling. See
-[Protocols](../../concepts/protocols.md) for the concepts behind them.
+The manager reads only its own parameters. What it shares with [`ros2neuro_control_feedback`](../control/feedback.md) and
+[the feedback](../feedback/index.md) (the `classes`, the `rest_mode`, the ids of the events) is **the same parameter in each of the
+three**, written once for every node (a `/**` section of the parameter file, see [Shared parameters](../../concepts/shared-parameters.md)):
+nobody asks the manager for anything, and there is no code shared between the three. The thresholds are the only thing it does not
+know: they are control's. See [Protocols](../../concepts/protocols.md) for the concepts behind them.
 
 ## Available plugins
 
 | Plugin | pluginlib class | Protocol |
 |---|---|---|
-| [Synchronous](synchronous.md) | [`ros2neuro::manager::Training`](synchronous.md) | calibration and evaluation (`modality`): trial sequence, cues, outcomes |
-| [Asynchronous](asynchronous.md) | [`ros2neuro::manager::Control`](asynchronous.md) | free control: resets the integrator when a class reaches its threshold |
+| [Synchronous](synchronous.md) | [`ros2neuro::manager::Synchronous`](synchronous.md) | calibration and evaluation: random order of the trials, Start, Fixation, cue, CFeedback, waits for the outcome |
+| [Asynchronous](asynchronous.md) | [`ros2neuro::manager::Asynchronous`](asynchronous.md) | free control: no trials, writes no event (the reset at the threshold is in [`ros2neuro_control_feedback`](../control/feedback.md)) |
 
 ## Topics and services
 
 | | Name (default) | Type |
 |---|---|---|
-| subscribes | `/integrated/raw` (`integrated_topic`) | `NeuroControl` |
-| publishes | `/manager_control/probabilities` (`control_topic`) | `NeuroControl` |
+| subscribes | `/neuroevent` (`event_topic`) | `NeuroEvent` |
 | publishes | `/neuroevent` (`event_topic`) | `NeuroEvent` |
-| service client | `/integrator/reset` (`reset_service`, launchers use `/reset`) | `std_srvs/Empty` |
 
 ## Minimal example
 
 ```yaml
-/**:                       # shared layout, also loaded by the feedback
+/**:                          # the same for the manager, control and the feedback
   ros__parameters:
     classes: [773, 771]
     rest_mode: none
-    thresholds: [0.7, 0.7]
+    thresholds: [0.7, 0.7]    # the manager ignores them
 
 /manager:
   ros__parameters:
-    plugin: ros2neuro::manager::Training
-    modality: calibration
+    plugin: ros2neuro::manager::Synchronous
     trials: [10, 10]
-    reset_service: /reset
+    duration.begin: 5000
 ```
 
 Complete launch files for every protocol are in [`ros2neuro_devel_test`](../devel-test.md).
 
 ## Writing a new protocol
 
-Derive from `ros2neuro::manager::ManagerPlugin` (`configure`, `start`, `stop`, `on_input`), use only
-`ManagerContext` (`emit_event`, `publish_values`, `request_reset`...), and export it with
+Derive from `ros2neuro::manager::ManagerPlugin` (`configure`, `start`, `stop`, `on_event`), use only
+`ManagerContext` (`emit_event`, `request_shutdown`, `now`...), and export it with
 `PLUGINLIB_EXPORT_CLASS` and `pluginlib_export_plugin_description_file(ros2neuro_manager plugins.xml)`. The
 asynchronous plugin is the smallest example.
 
@@ -59,8 +61,8 @@ asynchronous plugin is the smallest example.
 <!-- interfaces -->
 ## Dependencies
 
-- **ROS 2 packages** (build and run): `pluginlib`, `rclcpp`, `std_srvs`, `builtin_interfaces`, [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs)
-- **At run time**: a protocol plugin package ([`ros2neuro_manager_synchronous`](synchronous.md) or `_asynchronous`)
+- **ROS 2 packages** (build and run): `pluginlib`, `rclcpp`, `builtin_interfaces`, [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs)
+- **At run time**: a protocol plugin package ([`ros2neuro_manager_synchronous`](synchronous.md) or `_asynchronous`), and [`ros2neuro_control_feedback`](../control/feedback.md) for the outcomes
 
 ## Messages and topics
 
@@ -68,181 +70,113 @@ Default node name: `manager`.
 
 | | Default topic | Type | Changed by |
 |---|---|---|---|
-| subscribes | `/integrated/raw` | `NeuroControl` | `integrated_topic` |
-| subscribes | `/neuroevent` | `NeuroEvent` | `event_topic` (to follow the blinks) |
-| publishes | `/manager_control/probabilities` | `NeuroControl` | `control_topic` |
-| publishes | `/neuroevent` | `NeuroEvent` | `event_topic` |
+| subscribes | `/neuroevent` | `NeuroEvent` | `event_topic` (the outcome that ends the continuous feedback) |
+| publishes | `/neuroevent` | `NeuroEvent` | `event_topic` (the phases of the trials) |
 
-| | Service | Type | Note |
-|---|---|---|---|
-| calls | `/integrator/reset` | `std_srvs/Empty` | `reset_service` (the launchers set `/reset`) |
+The manager calls no service.
 
 Messages used:
 
-- `NeuroControl`: read (the integrator output) and published (the flow for the feedback)
-- `NeuroEvent`: published, the protocol events
-- `std_srvs/Empty`: the reset request
-- `builtin_interfaces/Time`: the stamp shared by an event and the flow
+- `NeuroEvent`: published (the protocol events) and read (the bus)
 
 ## Example configuration
 
-The layout is declared once and loaded by the manager **and** the feedback (the key `/**` applies it to every node that loads the file); the manager parameters follow:
+The classes, the `rest_mode` and the thresholds are the same for the manager, control and the feedback: they go in a `/**` section, so
+every node that loads the file takes them (a node ignores the ones it does not declare). The manager does not read the thresholds.
 
 ```yaml
 /**:
-    ros__parameters:
-        classes: [773, 771]
-        rest_mode: none
-        thresholds: [0.7, 0.7]
+  ros__parameters:
+    classes: [773, 771]
+    rest_mode: none
+    thresholds: [0.7, 0.7]                    # control's and the feedback's; changeable while running on /control
+    # event.hit: 897 ...                      # the ids of the events: the defaults are the ones of the project
 
 /manager:
   ros__parameters:
-    plugin: ros2neuro::manager::Control      # or ros2neuro::manager::Training
-    integrated_topic: /integrated/raw
-    control_topic: /manager_control/probabilities
+    plugin: ros2neuro::manager::Synchronous      # or ros2neuro::manager::Asynchronous
     event_topic: /neuroevent
-    reset_service: /reset
 ```
 
 The plugin-specific parameters (trials, durations...) are in the README of each protocol plugin.
 
 <!-- /interfaces -->
 ```
-integrator --/integrated/raw--> manager (+ plugin) --control_topic (flow)--> feedback
-                                   |  ^                                        
-                       /neuroevent |  | /integrator/reset (std_srvs/Empty)
+manager --Start, Fixation, cue, CFeedback--------------------> /neuroevent --> control_feedback
+manager <--CFeedback+Off, Hit / Miss / Timeout----------------- /neuroevent <-- control_feedback
 ```
 
-It owns, in ONE place each: the code/event catalog, the `fields` -> class mapping,
-the normalization, the event emission, and the reset handling. A protocol is a
-**plugin** (pluginlib, base class `ros2neuro::manager::ManagerPlugin`):
-[`ros2neuro_manager_synchronous`](synchronous.md) (calibration/evaluation) or [`ros2neuro_manager_asynchronous`](asynchronous.md).
+The manager decides **when** things happen (order and timing of the phases); [`ros2neuro_control_feedback`](../control/feedback.md) decides **what
+happens during the continuous feedback** (autopilot, thresholds, outcome) and closes the trial. A protocol is a **plugin** (pluginlib, base class
+`ros2neuro::manager::ManagerPlugin`): [`ros2neuro_manager_synchronous`](synchronous.md) (calibration/evaluation trials) or
+[`ros2neuro_manager_asynchronous`](asynchronous.md) (continuous control: nothing to write).
 
-## Class codes are free; the catalog is a convenience (`catalog.hpp`)
+## The protocol parameters: the same value in every node
 
-Any integer in 1..16383 that is not the id of an event is a valid class code (`501`, `502`, ...): 771/773/769/770 are only the codes the
-project uses. The cue of a class is emitted as an event with the code of the class, so these ids are **reserved** and refused with the reason:
-1 Start, 781 CFeedback, 786 Fixation, 897/898/899 Hit/Miss/Timeout, 1024 Blink (16384 and 32768 are the Shown / Off flags).
-The **rest (783) is the only code with a meaning** (and the only one with a color: yellow). The catalog just gives names to the codes the
-project knows, for the `fields` of the integrator and for the logs (`BOTH_FEET (771)`; a code without a name is shown as `501`):
+Nobody asks the manager for anything. The parameters that describe the protocol are **the same parameters in every node that needs
+them**, written once for every node (a `/**` section of the parameter file, which each of those nodes loads):
 
-| code | name |
-|---|---|
-| 783 | `REST` |
-| 769 / 770 | `LEFT_HAND` / `RIGHT_HAND` |
-| 771 / 773 | `BOTH_FEET` / `BOTH_HANDS` |
-| 730 / 731 / 750 / 751 | `BOTTOM_LEFT` / `BOTTOM_RIGHT` / `MI_LEFT` / `MI_RIGHT` |
+| Parameter | What | Read by |
+|---|---|---|
+| `classes`, `rest_mode` | the classes of the trials, in order; `none` \| `timeout` \| `class` | manager, control_feedback, feedback |
+| `event.start`, `event.fixation`, `event.cfeedback`, `event.hit`, `event.miss`, `event.timeout`, `event.off`, `event.shown` | the ids of the events (defaults 1, 786, 781, 897, 898, 899, 32768, 16384) | manager, control_feedback, feedback |
+| `thresholds` | one per class with a classifier output | control_feedback, feedback (the manager ignores them) |
 
-Events: Start 1, Fixation 786, CFeedback 781, Hit 897, Miss 898, Timeout 899, Blink 1024, Off 32768 (added to the id it closes), Shown 16384
-(added to the id of what the feedback has shown). Colors never depend on the code: the feedback colors a class by its position.
+The durations of the trials (`duration.*`) are the manager's own; the ones of the continuous feedback (`duration.feedback_min`,
+`duration.feedback_max`, `duration.timeout`, `rest_timeout`) are [`ros2neuro_control_feedback`](../control/feedback.md)'s.
 
-## Fields mapping (`fields_map.hpp`, the only implementation)
+### The ids of the events
 
-For every `fields[i]` of the integrator message: (1) a whole-integer string is that code;
-(2) otherwise it is normalized (upper case, spaces/`-` -> `_`) and looked up in the catalog;
-(3) an unknown or duplicated name discards the message with a throttled error listing the
-accepted names. The position of a class in the vector is found by its code: **the order of
-the integrator outputs does not matter**. The order that matters is the one of the
-`classes` parameter (feedback layout).
+Declared with `event.*` (checked at start: positive, all different, `event.off` and `event.shown` above the others) and available to the
+plugins as `ManagerContext::events()`. `event.off` is added to the id of the event it closes; `event.shown` is the flag of the display
+events of the feedback, and every class code is below it. To change an id give the same value to the manager, control and the feedback (a `/**` section does it).
 
-## Model codes different from the classes (`input_fields`)
+### Class codes are free
 
-The integrator publishes the codes of the **model**. If they are the ones of `classes`, nothing to do. If not (the model says 773/771 but
-the experiment calls the classes 501/502), `input_fields: [773, 771]` says which model code stands for each class, in the order of `classes`
-(codes or names; a rest in timeout has no output and is not listed). The manager maps them: events, flow, feedback and logs use the classes' codes.
-Without the map the message is discarded with an error that says which codes the model should send. Calibration needs none of this.
+Any integer in 1..`event.shown`-1 that is not the id of an event is a valid class code (`501`, `502`, ...): 771/773/769/770 are only the
+codes the project uses. The cue of a class is emitted as an event with the code of the class, so the ids of the events are **reserved**
+and refused with the reason (Start, Fixation, CFeedback, Hit, Miss, Timeout). The **rest (783)** is the only code with a meaning (and the
+only one with a color of its own: yellow, in the feedback). The names of the known codes (`BOTH_FEET (771)`, ...) only serve the logs.
 
-## Layout and the three roles of REST
+### `rest_mode`
 
-Parameters shared with the feedback: `classes` (codes, order matters), `rest_mode`
-(`none` | `timeout` | `class`, default `none`), `thresholds`.
+`none` (default) | `timeout` | `class`. The manager keeps it and checks it: unsupported value, or `class` without 783 in
+`classes`, is a configuration error. What it means is the classifier side's: with 783 in `classes`, `timeout` makes the rest a trial with
+a cue and no classifier output (in an evaluation it is a Hit if no threshold is touched for `rest_timeout`), `class` makes it a normal class
+with its own output and threshold; a calibration needs neither. Whether an evaluation or a control with 783 says `timeout` or `class` is
+checked by [`ros2neuro_control_feedback`](../control/feedback.md).
 
-* `protocol_classes` = `classes` (rest included: it has trials and cues).
-* `output_classes` = `classes` minus 783 when `rest_mode=timeout` (same order); `K = |output_classes|`.
-* `thresholds` has exactly `K` values, in the order of `output_classes` (a rest in timeout has none).
+## The event bus
 
-Roles of the rest: **A. trial/cue** (always, if 783 is in `classes`); **B. classifier output**
-(only with `rest_mode=class`); **C. evaluation** (training: see its README).
-
-`rest_mode=none` (default) means "not said": the layout treats a 783 as `timeout` (trial and cue, no output, no
-threshold). A **calibration** needs nothing more (the rest is just one of the given classes). An **evaluation** or
-a **control** with 783 in `classes` must say `timeout` or `class`, otherwise `configure()` fails.
-`rest_mode=class` without 783 in `classes` is a configuration error (the old value `bar` is gone).
-
-Configuration errors (`configure()` fails): class code reserved or out of range; duplicate classes;
-unsupported `rest_mode`; `rest_mode=class` without 783 (evaluation/control: 783 without `rest_mode`); fewer than 2 output classes;
-`thresholds.size() != K`; thresholds outside (0, 1]. Warning: a threshold <= 1/K.
-
-## Input handling
-
-Each `NeuroControl` from the integrator: map fields -> check (set of codes == `output_classes`,
-`values.size() == fields.size()`; empty `fields` falls back to the `output_classes` order with a
-one-time warning, needs `values.size() == K`) -> reorder -> **normalize** `v_i / sum`
-(negative/non-finite count as 0; sum <= 0 gives the uniform 1/K; a vector that already sums to 1
-is left alone). The integrator publishes per-class accumulators in [0, 1] that do not sum to 1:
-only the normalized vector is ever used. Invalid messages are dropped with a throttled error;
-the protocol keeps running. The field map is logged at the first valid message.
-
-## Flow towards the feedback
-
-`control_topic` (default `/manager_control/probabilities`) is the ONLY source of the feedback.
-`NeuroControl` in canonical form: `fields` = codes of `output_classes` as strings, `values` =
-normalized vector, `actions/commands`: `seq` (progressive counter), optionally `event`
-(command = catalog id) or `outcome` (897/898/899). A message carries at most one of the two.
-
-`ManagerContext::emit_event(id)` is the single place that emits events: first on
-`/neuroevent` (`header.stamp = now()`), then on the flow with the same stamp. The recorder keys
-event types on (`event_id`, `family_id`): never put counters in `family_id`/`description`.
-
-## Reset
-
-A reset is a **service call**, not a topic: `std_srvs/srv/Empty` on `reset_service` (default `/integrator/reset`; the
-integrator creates it as the relative name `reset`, i.e. **`/reset`**, so the launchers pass `reset_service:=/reset`). The
-integrator can also reset on an event (`integrator.reset_event`, `/neuroevent`): training relies on that (CFeedback, 781).
-Either way, **every reset makes the integrator publish a message whose values are all 1/K** on its output topic.
-
-**Control (`request_reset()`).** From the moment the request is sent, the values coming from the integrator are the ones of
-before the reset, so until the reset message arrives they are neither forwarded to the feedback nor given to the plugin for
-decisions (the feedback keeps showing the last value). The first message with all values = 1/K (tolerance 1e-3 on each
-normalized value) ends the wait and is used like any other. While waiting no other reset is requested.
-* **Timeout**: if that message does not arrive within **1000 ms** (fixed) something in the pipeline does not work (the
-  integrator does not publish, or the service does not reset it): the manager logs an **error** and **shuts down** (exit
-  code 1). `asynchronous.launch.xml` starts it with `on_exit="shutdown"`, so the whole session (feedback and pipeline launched
-  in the same file) ends with it.
-* **Resets asked by someone else** do not disturb it: they also produce a neutral message, which at most ends the wait a
-  little early (the neutral message of our own request then follows as an ordinary message).
-* A threshold <= 1/K (warned at start) is met by the neutral vector itself: it would ask for a reset at every message.
-
-**Training.** The plugin does not ask for the reset (the integrator does it on CFeedback). Before emitting CFeedback it
-calls `expect_reset()`: if the integrator messages carry an `epoch` action (reset counter) the values are ignored until it
-advances (capped by `reset_ack_timeout_ms`); without epoch the plugin recreates the input subscription instead, to drop the
-stale queue. The integrators in this workspace do not publish the epoch. If they did, the integrator should put the counter in
-`actions`/`commands` of every message it publishes (reset and rejection included) and increment it at every reset.
+`ManagerContext::emit_event(id)` is the single place that writes events: on `/neuroevent`, with `header.stamp = now()`. The manager
+writes the phases of a trial (Start, Fixation, the cue, CFeedback, the end of the first three) and the end of the outcome. **It does not
+write** the end of the continuous feedback nor the outcome: they come from [`ros2neuro_control_feedback`](../control/feedback.md), the node that knows the
+thresholds. Every event of the bus (also the ones the manager wrote) is given to the plugin through `on_event()`. The recorder keys event
+types on (`event_id`, `family_id`): never put counters in `family_id`/`description`.
 
 ## Parameters
 
 | name | default | |
 |---|---|---|
-| `plugin` | (required) | [`ros2neuro::manager::Training`](synchronous.md) / [`ros2neuro::manager::Control`](asynchronous.md) |
-| `classes`, `rest_mode`, `thresholds` | `[773, 771]`, `none`, `[0.8, 0.8]` | shared layout |
-| `input_fields` | (empty) | optional, manager only: the code the model/integrator uses for each output, in the order of `classes` (rest in timeout excluded); see below |
-| `integrated_topic` | `/integrated/raw` | |
-| `control_topic` | `/manager_control/probabilities` | flow |
-| `event_topic` | `/neuroevent` | also read for Blink / Blink+Off |
-| `reset_service` | `/integrator/reset` | |
-| `reset_ack_timeout_ms` | 2000 | training only: how long values are ignored after CFeedback if the epoch never advances |
+| `plugin` | (required) | [`ros2neuro::manager::Synchronous`](synchronous.md) / [`ros2neuro::manager::Asynchronous`](asynchronous.md) |
+| `classes`, `rest_mode` | `[773, 771]`, `none` | the classes of the protocol |
+| `event.*` | see above | the ids of the events |
+| `event_topic` | `/neuroevent` | the bus: written and read |
 
-Number arrays accept both `[1, 1]` and `[0.8, 0.8]` spellings. `classes`/`rest_mode` cannot change
-at runtime; `thresholds` can only if the plugin allows it (control does).
+Number arrays accept both `[1, 1]` and `[0.8, 0.8]` spellings. `classes` and `rest_mode` are read once. The manager does not read
+`thresholds` (a `/**` section that has them for other nodes is fine).
 
 ## Writing a plugin
 
-Derive from `ManagerPlugin` (`configure/start/stop/on_input`), export it with
-`PLUGINLIB_EXPORT_CLASS` and `pluginlib_export_plugin_description_file(ros2neuro_manager plugins.xml)`.
-The plugin may run its own thread; `ManagerContext` is thread-safe. Never spin inside callbacks.
+Derive from `ManagerPlugin` (`configure/start/stop/on_event`), export it with `PLUGINLIB_EXPORT_CLASS` and
+`pluginlib_export_plugin_description_file(ros2neuro_manager plugins.xml)`. The plugin may run its own thread; `ManagerContext` is
+thread-safe (`layout`, `events`, `emit_event`, `now`, `request_shutdown(failed)`). Never spin inside callbacks. A plugin that holds the
+`shared_ptr` of the node must let it go: the node calls `release_plugin()` before exiting. A plugin that has parameters other nodes need
+declares them on the node.
 
 ## Tests
 
-`colcon test --packages-select ros2neuro_manager` (pure gtest, no ROS running): layout and
-configuration checks, fields mapping (numeric/named/order), set and size checks, normalization
-(sum <= 0 included), reset gate with epoch and fallback, flow format.
+`colcon test --packages-select ros2neuro_manager`: the ids of the events (defaults, validation, changed ids), the class codes (reserved,
+out of range, following the configured ids), the protocol layout, and `test_manager_node` (a test plugin loaded by the node: it writes on
+the bus, it hears the bus including its own events, the event ids / classes / rest_mode are parameters of the node, a missing
+or unknown plugin or invalid ids do not configure).

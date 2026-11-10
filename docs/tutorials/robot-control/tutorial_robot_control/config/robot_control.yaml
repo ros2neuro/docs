@@ -1,0 +1,19 @@
+# The robot control: a control_node (named control_robot, the feedback one is /control) with the plugin of this package.
+/control_robot:
+    ros__parameters:
+        plugin: tutorial::control::RobotControl
+        input_topic: /integrated/raw            # the NeuroPrediction of the integrator: the input of every control
+        output_topic: /control_robot/command
+        threshold: 0.7
+        commands: [1, 2]                        # FORWARD for the first class, TURN_LEFT for the second
+
+# The synchronization: the command is released when the feedback has the values of the same prediction.
+/sync:
+    ros__parameters:
+        flow_topic: /control_feedback/probabilities
+        command_topic: /control_robot/command
+        output_topic: /sync/command
+
+/robot:
+    ros__parameters:
+        command_topic: /sync/command

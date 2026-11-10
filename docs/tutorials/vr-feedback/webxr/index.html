@@ -13,7 +13,7 @@
     A passive VR feedback for ROS2neuro.
 
     It subscribes (through rosbridge) to the flow that the manager publishes for the feedback,
-    /manager_control/probabilities (ros2neuro_msgs/msg/NeuroControl), and draws it as one bar per class:
+    /control_feedback/probabilities (ros2neuro_msgs/msg/NeuroControl), and draws it as one bar per class:
 
       fields / values   the normalized value of each class       -> height of the bar
       actions / commands:
@@ -24,7 +24,7 @@
     in the flow, so they are given here (query parameter "thresholds", same order as the bars).
 
     Query parameters (all optional):
-      ?host=localhost  &port=9090  &topic=/manager_control/probabilities  &thresholds=0.7,0.7
+      ?host=localhost  &port=9090  &topic=/control_feedback/probabilities  &thresholds=0.7,0.7
   -->
   <a-scene background="color: #05070d" renderer="colorManagement: true" vr-mode-ui="enabled: true">
     <a-entity id="rig" position="0 0 0">
@@ -47,7 +47,7 @@
     const params = new URLSearchParams(location.search);
     const HOST = params.get('host') || 'localhost';
     const PORT = params.get('port') || '9090';
-    const TOPIC = params.get('topic') || '/manager_control/probabilities';
+    const TOPIC = params.get('topic') || '/control_feedback/probabilities';
     const THRESHOLDS = (params.get('thresholds') || '').split(',').map(Number).filter(v => !isNaN(v) && v > 0);
 
     const EVENT = { FIXATION: 786, HIT: 897, MISS: 898, TIMEOUT: 899, OFF: 32768 };

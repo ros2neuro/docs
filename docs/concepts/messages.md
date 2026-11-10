@@ -6,9 +6,11 @@ All messages live in the [`ros2neuro_msgs`](../packages/msgs-data.md#ros2neuro_m
 flowchart LR
     A[NeuroFrame] --> F[NeuroFeature]
     F --> P[NeuroPrediction]
-    P --> C[NeuroControl]
+    P --> P2[NeuroPrediction<br/>integrated]
+    P2 --> C[NeuroControl]
     M[manager] --> E[NeuroEvent]
-    M --> C
+    K[control] --> E
+    K --> C
     I[NeuroFrameInfo] -.->|"describes"| A
 ```
 
@@ -21,9 +23,9 @@ Click a message name to jump to its description.
 | [`NeuroFrame`](#neuroframe) | one synchronous chunk of analog and trigger samples | acquisition, filters | filters, processing, recorder, visualizer |
 | [`NeuroFrameInfo`](#neuroframeinfo) | static description of the stream (rate, channels, labels) | acquisition | recorder, visualizer |
 | [`NeuroFeature`](#neurofeature) | processed data of any dimensionality (PSD, spectrogram, a window of the signal...) | processing (spectral or buffer, see [Processing](../packages/processing/index.md)) | decoder |
-| [`NeuroPrediction`](#neuroprediction) | decoder output, one value per class | decoder | integrator |
-| [`NeuroControl`](#neurocontrol) | integrated or normalised control values plus discrete actions | integrator, manager | manager, feedback |
-| [`NeuroEvent`](#neuroevent) | sparse marker (trial start, cue, outcome...) | manager, feedback | recorder, integrator |
+| [`NeuroPrediction`](#neuroprediction) | one value per class: decoder output, and integrated values (`TYPE_SCORES`) | decoder, integrator | integrator, control |
+| [`NeuroControl`](#neurocontrol) | normalised control values plus discrete actions: the flow of the feedback | control | feedback |
+| [`NeuroEvent`](#neuroevent) | sparse marker (trial start, cue, outcome...) | manager, control (outcomes only), feedback | recorder, integrator, manager, control, feedback |
 
 Helper messages, embedded in the ones above:
 
@@ -34,6 +36,48 @@ Helper messages, embedded in the ones above:
 | [`NeuroSensorInfo`](#neurosensorinfo) | `NeuroFrameInfo` | the metadata of an analog block |
 | [`NeuroTriggerInfo`](#neurotriggerinfo) | `NeuroFrameInfo` | the metadata of a digital block |
 | [`NeuroAxis`](#neuroaxis) | `NeuroFeature` | the meaning of one dimension of a feature |
+
+## Who publishes and who reads
+
+The same messages, with the **node** that publishes each one, the **topic** it uses by default, and the nodes that read it.
+Topic names are the defaults; each node can change them with a parameter, see [Topics and services](topics.md).
+
+| Message | Published by (node → default topic) | Read by (node ← default topic) |
+|---|---|---|
+| [`NeuroFrame`](#neuroframe) | `acquisition` → `/acquisition/neurodata`; `filter_chain` → `/filter_chain/filtered` | `filter_chain` ← `/neurodata`; `fft_node`, `welch_node`, `spectrogram_node` ← `/neurodata`; `processing_buffer` ← `/neurodata_filtered`; `recorder` ← `/neurodata`; `neuroviz` ← `/acquisition/neurodata` |
+| [`NeuroFrameInfo`](#neuroframeinfo) | `acquisition` → `/acquisition/neurodata_info` (`transient_local`) | `recorder` ← `/neurodata_info`; `neuroviz` ← `/acquisition/neurodata_info` |
+| [`NeuroFeature`](#neurofeature) | `fft_node` → `~/fft`; `welch_node` → `~/psd`; `spectrogram_node` → `~/spectrogram`; `processing_buffer` → `/features` | `decoder` ← `/features`; [`ros2neuro_decoder_py`](../packages/decoder/python.md) ← `/features` |
+| [`NeuroPrediction`](#neuroprediction) | `decoder` → `~/prediction`; [`ros2neuro_decoder_py`](../packages/decoder/python.md) → `~/prediction`; `integrator` → `~/control` (the [`ros2neuro_devel_test`](../packages/devel-test.md) configuration sets `output_topic: /integrated/raw`) | `integrator` ← `/prediction`; `control` ← `/integrated/raw` |
+| [`NeuroControl`](#neurocontrol) | `control` → `/control_feedback/probabilities` | `feedback` ← `/control_feedback/probabilities` (the values and the thresholds) |
+| [`NeuroEvent`](#neuroevent) | `manager` → `/neuroevent` (the phases of the trials and the end of the outcome); `control` → `/neuroevent` (the end of the continuous feedback, Hit / Miss / Timeout); `feedback` → `/neuroevent` (only with `publish_display_events: true`) | `recorder` ← `/neuroevent`; `integrator` ← `/neuroevent` (only for `integrator.reset_event`); `manager` ← `/neuroevent` (the end of the outcome); `control` ← `/neuroevent` (cue, CFeedback); `feedback` ← `/neuroevent` (the phases and the outcome: fixation, cue, boom) |
+
+The helper messages (`NeuroSensor`, `NeuroTrigger`, `NeuroSensorInfo`, `NeuroTriggerInfo`, `NeuroAxis`) are never published on their own:
+they travel inside the message that embeds them, so they are published and read by the same nodes as that message.
+
+### Other messages and services used by the nodes
+
+Besides its own messages, the stack uses a few standard ones:
+
+| Type | Used for | Provided or published by | Used by |
+|---|---|---|---|
+| `std_srvs/Empty` (service) | start, stop and quit the device: `~/start`, `~/stop`, `~/quit` | `acquisition` | whoever controls the acquisition |
+| `std_srvs/Empty` (service) | reset the integrator to the neutral state (`1/K`): `/reset` | `integrator` | called by `control` (the `Feedback` plugin, protocol `control`) |
+| `std_msgs/Empty` (`transient_local`) | the protocol has ended: `/protocol_ended` | `manager` (the `Synchronous` plugin) | whoever waits for the end of the session |
+| `std_msgs/Header` | `header` of every `Neuro*` message (stamp and frame) | every publisher | every subscriber |
+
+### Types inside the messages
+
+Some messages carry a `type` constant that says what the data are. Who sets it:
+
+| Message | Constant | Values | Set by |
+|---|---|---|---|
+| `NeuroFeature.type` | `TYPE_TIME_SERIES` | 1 | `processing_buffer` (window of the signal) |
+| | `TYPE_SPECTRUM` | 2 | `fft_node`, `welch_node` |
+| | `TYPE_TIME_FREQUENCY` | 3 | `spectrogram_node` |
+| | `TYPE_CONNECTIVITY`, `TYPE_VECTOR`, `TYPE_MATRIX`, `TYPE_MISC`, `TYPE_UNKNOWN` | 4, 5, 6, 255, 0 | free: a new processing node chooses it |
+| `NeuroPrediction.type` | `TYPE_UNSPECIFIED`, `TYPE_SCORES`, `TYPE_PROBABILITIES`, `TYPE_LOGITS`, `TYPE_REGRESSION` | 0, 1, 2, 3, 4 | the decoder: from the `output_type` parameter or from the model manifest; [`ros2neuro_decoder_py`](../packages/decoder/python.md) publishes `TYPE_PROBABILITIES` |
+| `NeuroSensorInfo.type` | `TYPE_UNKNOWN`, `TYPE_EEG`, `TYPE_EMG`, `TYPE_EOG`, `TYPE_ECG`, `TYPE_GSR`, `TYPE_RESP`, `TYPE_MISC` | 0, 1, 2, 3, 4, 5, 6, 255 | the acquisition plugin, for each analog block (the plugins of the stack declare `TYPE_EEG`, the dummy also `TYPE_EMG`) |
+| `NeuroTriggerInfo.encoding` | `ENCODING_STATE_PER_SAMPLE`, `ENCODING_CODE_PER_SAMPLE`, `ENCODING_BITMASK_PER_SAMPLE` | 0, 1, 2 | the acquisition plugin, for each digital block |
 
 ---
 
@@ -183,8 +227,7 @@ string (`773`), see [Protocols](protocols.md).
 
 ## NeuroControl
 
-**`NeuroControl`** is used twice: as output of the integrator and as the flow that the manager sends to the
-feedback.
+**`NeuroControl`** is the control signal that a control plugin publishes, for example the flow that [`ros2neuro_control_feedback`](../packages/control/feedback.md) sends to the feedback (the integrator publishes a `NeuroPrediction`).
 
 ```text
 std_msgs/Header header
@@ -195,15 +238,17 @@ string[]        actions     # discrete actions
 int32[]         commands    # same size as actions
 ```
 
-Continuous values go in `fields`/`values`, discrete information in `actions`/`commands`. The manager uses
-`actions`/`commands` to carry a progressive counter `seq`, the current phase (`event`) or the trial outcome
-(`outcome`).
+Continuous values go in `fields`/`values`, discrete information in `actions`/`commands`. The flow of
+[`ros2neuro_control_feedback`](../packages/control/feedback.md) carries the class values and then the thresholds in force (`threshold:<code>` in `fields`), and a progressive
+counter `seq` in `actions`/`commands`. Its `header` is **the header of the `NeuroPrediction` it was made from**, so the flow (and any
+other `NeuroControl` made from the same prediction, such as the commands of a robot) can be paired with it by `header.stamp`. The phases of
+the trials and the outcome are not in the flow: they travel on the event bus as `NeuroEvent`.
 
 ---
 
 ## NeuroEvent
 
-**`NeuroEvent`** is a sparse marker: a trial that starts, a cue, an outcome, a blink.
+**`NeuroEvent`** is a sparse marker: a trial that starts, a cue, an outcome.
 
 ```text
 std_msgs/Header header

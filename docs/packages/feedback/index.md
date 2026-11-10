@@ -3,12 +3,19 @@
 !!! info ""
     Package: [`ros2neuro_feedback`](https://github.com/ros2neuro/ros2neuro_feedback)
 
-The feedback is the window the subject looks at during a BCI session. It is **passive**: it makes no decisions. It
-reads only the manager's control topic and draws what it finds there. The drawing itself is a **plugin that you must
-select** with the parameter `plugin`, and the plugins are drawn with the [neurodraw](neurodraw.md) library.
+The feedback is the window the subject looks at during a BCI session. It is **passive**: it makes no decisions. It hears two things
+and draws what it is told. The drawing itself is a **plugin that you must select** with the parameter `plugin`, and the plugins are
+drawn with the [neurodraw](neurodraw.md) library.
 
-It rebuilds the same layout as the manager from the same parameters (`classes`, `rest_mode`, `thresholds`), so
-declare them once and load them in both nodes (see [Protocols](../../concepts/protocols.md)).
+| It reads | What it gives |
+|---|---|
+| the event bus `/neuroevent` | the phases that the [manager](../manager/index.md) writes (fixation, cue, ...) and the outcome (Hit / Miss / Timeout) that [control](../control/feedback.md) writes: they decide what is shown |
+| the flow of [`ros2neuro_control_feedback`](../control/feedback.md) (a `NeuroControl`) | the values and the thresholds in force. Its header is the one of the `NeuroPrediction` it comes from, so the feedback is in step with the predictions |
+
+Every parameter is its own: the `classes`, the `rest_mode`, the ids of the events (`event.*`) and the initial `thresholds` are the same
+values that the manager and control use, written once for every node (see [Shared parameters](../../concepts/shared-parameters.md)).
+**Nobody is asked for anything.** When the thresholds are changed while running (`ros2 param set /control thresholds ...`) control puts the
+new ones in the flow and the markers follow. A control has no trials, so no events: only the values are drawn.
 
 ## Available plugins
 
@@ -63,20 +70,18 @@ The full description of the library (shapes, the engine, examples) is in the [ne
 
 ## The node: `feedback_node`
 
-The package provides one executable, `feedback_node`. It subscribes to the control topic, rebuilds the layout,
-loads the plugin and runs the drawing loop at `fps` frames per second.
+The package provides one executable, `feedback_node`. It subscribes to the event bus and to the flow,
+builds the layout from its parameters, loads the plugin and runs the drawing loop at `fps` frames per second.
 
 | Parameter | Default | Meaning |
 |---|---|---|
 | `plugin` | (required) | pluginlib class of the drawing, [`ros2neuro::feedback::Wheel`](wheel.md) or [`ros2neuro::feedback::Bar`](bar.md) |
-| `mode` | `control` | `control` (values only) or `training` (values plus fixation, cue and boom) |
-| `classes` | `[773, 771]` | class codes, **order = layout** (shared with the manager) |
-| `rest_mode` | `none` | `none`, `timeout` or `class` (shared with the manager) |
-| `thresholds` | `[0.8, 0.8]` | one per class with an output (shared with the manager) |
-| `control_topic` | `/manager_control/probabilities` | the **only** topic it reads |
-| `event_topic` | `/neuroevent` | used only with `publish_display_events` |
+| `classes`, `rest_mode`, `thresholds` | (see the layout) | the same as the manager and control: the layout of the drawing and the initial markers |
+| `event.start` ... `event.shown` | the defaults of the stack | the ids of the events (the same as the manager and control) |
+| `control_topic` | `/control_feedback/probabilities` | the flow: values and thresholds |
+| `event_topic` | `/neuroevent` | the phases of the trials and the outcome; also where `publish_display_events` writes |
 | `fps` | `60` | frames per second of the window |
-| `publish_display_events` | `false` | after drawing, publish `Shown + id` events for the cue and the boom, and the matching `Off` |
+| `publish_display_events` | `false` | after drawing, publish `shown + id` events for the cue and the boom, and the matching `Off` |
 | `latency_log_period_s` | `5.0` | seconds between the "latency stamp to draw" log lines, `0` disables them |
 | `window_title` | `ros2neuro feedback` | title of the window |
 
@@ -95,12 +100,12 @@ Behaviour worth knowing:
   ros__parameters:
     plugin: ros2neuro::feedback::Bar
     mode: training
-    control_topic: /manager_control/probabilities
+    control_topic: /control_feedback/probabilities
     fps: 60.0
     window_title: "Bars"
 ```
 
-The feedback is started together with the manager. See [`ros2neuro_devel_test`](../devel-test.md) for complete
+The feedback is started together with the manager and control. See [`ros2neuro_devel_test`](../devel-test.md) for complete
 launch files, and the [hardware-free tutorial](../../tutorials/hardware-free-pipeline/index.md) to see them run.
 
 ## Writing a new drawing
@@ -112,7 +117,8 @@ geometry in a pure, testable header, as [`ros2neuro_feedback_bar`](bar.md) does 
 <!-- interfaces -->
 ## Dependencies
 
-- **ROS 2 packages** (build and run): `pluginlib`, `rclcpp`, [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs), [`ros2neuro_manager`](../manager/index.md)
+- **ROS 2 packages** (build and run): `pluginlib`, `rclcpp`, [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs)
+- **At run time**: the manager (writes the phases) and control (writes the outcome and the flow)
 - **External libraries**:
     - [`neurodraw`](neurodraw.md): needed by the drawing plugins (see below)
 - **At run time**: a drawing plugin package ([`ros2neuro_feedback_wheel`](wheel.md) or `_bar`)
@@ -123,35 +129,62 @@ Default node name: `feedback`.
 
 | | Default topic | Type | Changed by |
 |---|---|---|---|
-| subscribes | `/manager_control/probabilities` | `NeuroControl` | `control_topic` |
+| subscribes | `/control_feedback/probabilities` | `NeuroControl` | `control_topic` |
 | publishes | `/neuroevent` | `NeuroEvent` | `event_topic`, **only** with `publish_display_events: true` |
 
 Messages used:
 
-- `NeuroControl`: read, the flow of the manager
+- `NeuroControl`: read, the flow of [`ros2neuro_control_feedback`](../control/feedback.md)
 - `NeuroEvent`: published, optional display events
 
 ## Example configuration
 
-The feedback of the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md) (`config/feedback_bars.yaml`). The layout (`classes`, `rest_mode`, `thresholds`) is the same file that the manager loads:
+The feedback of the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md) (`config/feedback_bars.yaml`). The `classes`, `rest_mode` and `thresholds` are in `layout.yaml`, which the launcher gives to the manager, control and the feedback alike.
+
 
 ```yaml
-# Feedback (bars). The layout (classes, rest_mode, thresholds) comes from layout.yaml; `mode` (training | control)
-# is set by the launcher from the protocol.
+# Feedback (bars). It reads the event bus (the phases the manager writes, the outcome control writes) and the flow of control (values and
+# thresholds). The classes, rest_mode and the initial thresholds are the same for every node: they come from layout.yaml (loaded by the launcher).
 /feedback:
     ros__parameters:
         plugin: ros2neuro::feedback::Bar
-        control_topic: /manager_control/probabilities    # the ONLY thing the feedback reads
-        event_topic: /neuroevent                         # only used by publish_display_events
+        control_topic: /control_feedback/probabilities    # the flow: values and thresholds (the phases come from event_topic)
+        event_topic: /neuroevent                         # the phases of the trials and the outcome; also publish_display_events
         fps: 60.0
         window_title: "Gaussian - bars"
         publish_display_events: false
         latency_log_period_s: 0.0                        # seconds between the "Latency stamp->draw" log lines; 0 = off
-
-/**:
-    ros__parameters:
-        classes: [773, 771]
-        rest_mode: none
-        thresholds: [0.7, 0.7]
 ```
+
 <!-- /interfaces -->
+## Requirements: `neurodraw`
+
+The feedback itself (the node and the flow) does not draw anything: the two drawing plugins, [`ros2neuro_feedback_wheel`](wheel.md) and
+[`ros2neuro_feedback_bar`](bar.md), are built on the **[`neurodraw`](neurodraw.md)** library (SDL2 and OpenGL), which they find with
+`find_package(neurodraw CONFIG REQUIRED)`. Install it before building them:
+
+```bash
+sudo apt-get install libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev
+git clone https://github.com/neurorobotics-iaslab/neurodraw.git
+cd neurodraw && cmake -S . -B build && cmake --build build && sudo cmake --install build
+```
+
+Alternatively, put the [`neurodraw`](neurodraw.md) folder in the `src/` of the workspace: `colcon` builds it before the plugins.
+
+* Phases: what the bus says. With trials (calibration, evaluation) it shows the fixation, the cue and the boom; a control writes no events and only the values are drawn.
+* Before the first message the neutral vector (1/K) is drawn. Gaps in `seq` are logged.
+* Cue = last class event; a rest in timeout that ends as a Hit is marked by the plugins with a small circle (`is_rest_timeout_hit()`); on a Miss the boom shows the class over its threshold (same rule as training),
+  on a Timeout a neutral grey boom.
+* The latency (message stamp -> drawing) is logged every `latency_log_period_s`.
+* `publish_display_events` (default false): after drawing, publishes on `/neuroevent` `shown + id` for the cue
+  (class code), the boom (the id of Hit / Miss / Timeout) and the matching `+Off` (`shown` and `off` are the manager's), stamped after the drawing.
+* Parameters: `plugin`, `control_topic`, `event_topic`, `fps` (60), `publish_display_events`, `latency_log_period_s` (5), `window_title`,
+  `classes`, `rest_mode`, `thresholds` (initial) and `event.*` (the same as the manager and control). ESC in the window ends the node.
+* The plugin API: `configure(node, layout, options)`, `set_values`, `set_thresholds` (the markers move), `show_fixation` / `hide_fixation`,
+  `show_cue` / `hide_cue`, `show_boom(Outcome, target, reached)` / `hide_boom`. A plugin knows nothing about the ids of the events: the
+  controller translates them into the `Outcome` enum (`Hit`, `Miss`, `Timeout`).
+
+Writing a plugin: derive from `FeedbackPlugin`, register in a `plugins.xml` exported with
+`pluginlib_export_plugin_description_file(ros2neuro_feedback plugins.xml)`.
+
+Tests: `colcon test --packages-select ros2neuro_feedback`: the controller with a recording plugin (ids of the events other than the defaults, thresholds changed while running, the class a miss shows), the layout, the thresholds, the colors, the flow reader.

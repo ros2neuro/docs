@@ -4,7 +4,7 @@ In this tutorial you write a new integrator for ROS2neuro, build it as a plugin 
 the real [integrator node](../../packages/integrator/index.md).
 
 An integrator turns the noisy stream of `NeuroPrediction` messages of the decoder into a smoother
-`NeuroControl`. The [exponential integrator](../../packages/integrator/exponential.md) forgets the past with a
+`NeuroPrediction` (`type = TYPE_SCORES`). The [exponential integrator](../../packages/integrator/exponential.md) forgets the past with a
 decaying weight. The one you write here, **MovingAverage**, uses a different rule: the output is the mean of the
 last `window` predictions, and anything older counts for nothing.
 
@@ -24,7 +24,7 @@ and it is compiled by the CI of the repository.
 
 | The integrator node ([`ros2neuro_integrator`](../../packages/integrator/index.md)) | Your plugin |
 |---|---|
-| subscribes to `NeuroPrediction`, publishes `NeuroControl` | computes the integrated values from one prediction |
+| subscribes to `NeuroPrediction`, publishes a `NeuroPrediction` of type `TYPE_SCORES` | computes the integrated values from one prediction |
 | holds the previous output when the input confidence is below `integrator.rejection` | says what the neutral state is after a reset |
 | offers the `reset` service and resets on `integrator.reset_event` | forgets its history when `reset()` is called |
 | loads the plugin by `integrator.type` and passes it `integrator.params.*` | reads its parameters in `configure()` |
@@ -49,7 +49,7 @@ struct IntegrationResult {
 
 !!! note "After a reset the output is 1/K"
     Every reset must return the **neutral vector** with all values equal to `1/K`. The
-    [manager](../../concepts/protocols.md#reset) waits for exactly that message to know that the reset
+    [control](../../concepts/protocols.md#reset) waits for exactly that message to know that the reset
     happened.
 
 ## 2. Package layout

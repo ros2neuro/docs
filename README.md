@@ -9,8 +9,8 @@ acquisition, processing, decoding and closed-loop BCI. The site is built with
 ```text
 docs/
 ├── index.md             home
-├── assets/              figures (architecture.svg)
-├── concepts/            architecture, messages and data types, topics, plugins, protocols
+├── assets/              figures (the four ros2neuro_*.png / .svg of the architecture)
+├── concepts/            architecture, messages and data types, topics, plugins, protocols, shared parameters
 ├── packages/            one page per package and per plugin
 └── tutorials/           one folder per tutorial: the page (index.md) and its ROS 2 package (tutorial_*/)
 ```
@@ -54,7 +54,8 @@ Markdown files in the repository, or run `mkdocs serve`.
 ## Tutorial packages
 
 The packages `docs/tutorials/*/tutorial_*/` are ordinary ROS 2 packages, shown and explained in the
-tutorial pages. They depend on `ros2neuro_msgs`, `ros2neuro_filters` and `ros2neuro_integrator`. To build one by
+tutorial pages. They are **not part of the ROS2neuro stack** and are not released with it: the file `COLCON_IGNORE` in the root of this
+repository makes a `colcon build` run from a workspace that contains it skip all of them (the same marker as `src/ppa`). They depend on `ros2neuro_msgs`, `ros2neuro_filters` and `ros2neuro_integrator`. To build one by
 hand, from your ROS2neuro workspace:
 
 ```bash

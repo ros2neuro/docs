@@ -11,7 +11,8 @@ real ROS 2 package that is compiled and tested by the CI of this repository, so 
 | 4 | [Writing an integrator plugin](integrator-plugin/index.md) | the integrator interface, state and reset, runtime parameters | `tutorial_integrator_plugin` |
 | 5 | [Raising an event when a channel power crosses a threshold](power-threshold-event/index.md) | read a `NeuroFrame`, compute power, hysteresis, publish a `NeuroEvent` aligned with the data | `tutorial_power_threshold` |
 | 6 | [Checking the EOG with frontal channels](eog-check/index.md) | detect eye blinks on Fp1 and Fp2 and publish them as events | `tutorial_eog_check` |
-| 7 | [Showing the feedback in virtual reality](vr-feedback/index.md) | send the manager's flow to a WebXR page (tested) and to Unity (example) through rosbridge | `webxr/`, `unity/` |
+| 7 | [Showing the feedback in virtual reality](vr-feedback/index.md) | send the flow of the feedback to a WebXR page (tested) and to Unity (example) through rosbridge | `webxr/`, `unity/` |
+| 8 | [Controlling a robot in step with the feedback](robot-control/index.md) | write a control plugin for a robot (it takes a `NeuroPrediction`) and a node that synchronizes it with the feedback by the header of the messages | `tutorial_robot_control` |
 
 ## Prerequisites
 

@@ -3,7 +3,7 @@
 The names below are the **defaults** of each node. Launch files remap them, so the real names depend on the
 node name you give: a node called `acquisition` publishes `~/neurodata` as `/acquisition/neurodata`.
 
-![Topics and message types: the nodes of the chain, with the topic and the message type of every arrow](../assets/topics.svg)
+[![Topics and message types: the nodes of the chain, with the plugins and the topic and message type of every arrow](../assets/ros2neuro_2_topics.png)](../assets/ros2neuro_2_topics.png)
 
 The diagram uses the topic names of the [`ros2neuro_devel_test`](../packages/devel-test.md) launchers. Click a message type in the tables below to read its description.
 
@@ -24,13 +24,15 @@ The diagram uses the topic names of the [`ros2neuro_devel_test`](../packages/dev
 | decoder | subscribes | `/features` | [`NeuroFeature`](messages.md#neurofeature) | feature to classify: a PSD (classic decoders) or a window (deep learning) |
 | decoder | publishes | `~/prediction` | [`NeuroPrediction`](messages.md#neuroprediction) | class values |
 | integrator | subscribes | `/prediction` (`input_topic`) | [`NeuroPrediction`](messages.md#neuroprediction) | decoder output |
-| integrator | publishes | `~/control` (`output_topic`) | [`NeuroControl`](messages.md#neurocontrol) | integrated values |
+| integrator | publishes | `~/control` (`output_topic`) | [`NeuroPrediction`](messages.md#neuroprediction) | integrated values (`type = TYPE_SCORES`, `decoder` = name of the integrator) |
 | integrator | subscribes | `/neuroevent` (`event_topic`) | [`NeuroEvent`](messages.md#neuroevent) | optional reset on an event |
-| manager | subscribes | `/integrated/raw` (`integrated_topic`) | [`NeuroControl`](messages.md#neurocontrol) | integrator output |
-| manager | publishes | `/manager_control/probabilities` (`control_topic`) | [`NeuroControl`](messages.md#neurocontrol) | flow for the feedback |
-| manager | publishes | `/neuroevent` (`event_topic`) | [`NeuroEvent`](messages.md#neuroevent) | trial events |
-| manager (Training plugin) | publishes | `/protocol_ended` | `std_msgs/Empty` | end of the protocol (`transient_local`) |
-| feedback | subscribes | `/manager_control/probabilities` (`control_topic`) | [`NeuroControl`](messages.md#neurocontrol) | what to draw |
+| control | subscribes | `/integrated/raw` (`input_topic`) | [`NeuroPrediction`](messages.md#neuroprediction) | integrator output |
+| control (Feedback plugin) | publishes | `/control_feedback/probabilities` (`control_topic`) | [`NeuroControl`](messages.md#neurocontrol) | flow for the feedback: the values and the thresholds in force, with the header of the `NeuroPrediction` they come from |
+| control (Feedback plugin) | subscribes, publishes | `/neuroevent` (`event_topic`) | [`NeuroEvent`](messages.md#neuroevent) | hears the phases of the trials, writes only Hit / Miss / Timeout |
+| manager | subscribes, publishes | `/neuroevent` (`event_topic`) | [`NeuroEvent`](messages.md#neuroevent) | writes the phases of the trials, hears the outcome |
+| manager (Synchronous plugin) | publishes | `/protocol_ended` | `std_msgs/Empty` | end of the protocol (`transient_local`) |
+| feedback | subscribes | `/control_feedback/probabilities` (`control_topic`) | [`NeuroControl`](messages.md#neurocontrol) | the values and the thresholds to draw |
+| feedback | subscribes | `/neuroevent` (`event_topic`) | [`NeuroEvent`](messages.md#neuroevent) | the phases (manager) and the outcome (control): fixation, cue, boom |
 | feedback | publishes | `/neuroevent` | [`NeuroEvent`](messages.md#neuroevent) | display events, only with `publish_display_events` |
 | recorder | subscribes | `/neurodata`, `/neurodata_info`, `/neuroevent` | [`NeuroFrame`](messages.md#neuroframe), [`NeuroFrameInfo`](messages.md#neuroframeinfo), [`NeuroEvent`](messages.md#neuroevent) | what to write |
 | visualizer | subscribes | `/acquisition/neurodata` (selectable) | [`NeuroFrame`](messages.md#neuroframe) | scope |
@@ -41,7 +43,10 @@ The diagram uses the topic names of the [`ros2neuro_devel_test`](../packages/dev
 
 !!! note "Defaults vs launch files"
     The integrator defaults (`/prediction`, `~/control`) differ from the topics used in the test launchers
-    (`/classification/prediction`, `/integrated/raw`), which set them through parameters. Always check
+    (`/classification/prediction`, `/integrated/raw`), which set them through parameters. The same happens with the
+    features: `/features` is only the **default name** of the input of the decoder (and of the output of the buffer), and the Welch node
+    publishes `~/psd` by default. The test launchers remap them to one name per kind of feature: `/processing/psd` for the classic
+    decoders (Welch) and `/processing/buffered_features` for the deep-learning ones (buffer). Always check
     `ros2 topic list` and `ros2 node info` on a running system.
 
 ## Services
@@ -50,9 +55,7 @@ The diagram uses the topic names of the [`ros2neuro_devel_test`](../packages/dev
 |---|---|---|---|
 | acquisition | `~/start`, `~/stop`, `~/quit` | `std_srvs/Empty` | control the device |
 | integrator | `reset` (relative name, so `/reset`) | `std_srvs/Empty` | reset the integrated values to 1/K |
-| manager | client of the integrator reset (`reset_service`, default `/integrator/reset`) | `std_srvs/Empty` | ask for a reset |
-
-The launchers pass `reset_service:=/reset`.
+| control | client of the integrator reset (`reset_service`, default `/reset`) | `std_srvs/Empty` | ask for a reset (the Feedback plugin, protocol `control`) |
 
 ## Useful commands
 
@@ -60,6 +63,6 @@ The launchers pass `reset_service:=/reset`.
 ros2 topic list -t                      # topics and their types
 ros2 topic hz /acquisition/neurodata    # frame rate
 ros2 topic echo /neuroevent             # watch the events
-ros2 node info /manager                 # publishers, subscribers, services of a node
+ros2 node info /control                 # publishers, subscribers, services of a node
 ros2 param list /filters                # parameters of a node
 ```

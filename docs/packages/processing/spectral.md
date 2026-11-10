@@ -155,7 +155,7 @@ Units:
 
 With `welch.log: true` (the default) `welch_node` publishes the **natural logarithm** of the PSD, `ln(power/Hz)`: it does **not**
 publish decibels. This is the scale of the Matlab SMR Gaussian classifiers (they are trained on `log` of the PSD), so a classifier converted
-with `ros2neuro_decoder_converters` receives the features it was trained with. The unit written in the `NeuroFeature` is
+with [`ros2neuro_decoder_converters`](../decoder/converters.md) receives the features it was trained with. The unit written in the `NeuroFeature` is
 `ln(power/Hz)`, and a decoder refuses a model whose `input.unit` is different.
 
 - `welch.log: false` publishes the linear PSD (`power/Hz`).

@@ -16,22 +16,22 @@ back, without implementing it.)
 
 **You will learn**
 
-- what the manager sends to the feedback and how to read it from outside ROS;
+- what control sends to the feedback and how to read it from outside ROS;
 - how rosbridge turns ROS 2 topics into a WebSocket that any VR engine can read;
 - a WebXR page (A-Frame) that shows the feedback, and a Unity script that does the same idea;
 - where a marker from the VR would enter ROS2neuro.
 
 **You need** a built ROS2neuro workspace, a desktop browser (Firefox or Chrome) and, to try immersive mode, a headset with
-a WebXR browser. Read [Protocols](../../concepts/protocols.md) first if the manager and the feedback are new to you.
+a WebXR browser. Read [Protocols](../../concepts/protocols.md) first if control, the manager and the feedback are new to you.
 About 30 minutes.
 
 ## 1. The idea
 
 ```mermaid
 flowchart LR
-    MAN["manager<br/>(protocol plugin)"] -->|"/manager_control/probabilities<br/>NeuroControl"| RB["rosbridge<br/>WebSocket, JSON"]
+    MAN["control<br/>(control_feedback plugin)"] -->|"/control_feedback/probabilities<br/>NeuroControl"| RB["rosbridge<br/>WebSocket, JSON"]
     RB -->|"ws://localhost:9090"| VR["VR client<br/>WebXR page or Unity"]
-    MAN -->|"/manager_control/probabilities"| FB["feedback<br/>(neurodraw window)"]
+    MAN -->|"/control_feedback/probabilities"| FB["feedback<br/>(neurodraw window)"]
 ```
 
 The [manager](../../packages/manager/index.md) already publishes everything a feedback needs, on one topic, the
@@ -41,7 +41,7 @@ WebSocket clients.
 
 ### What is in the flow
 
-The flow is a `NeuroControl` message published on `/manager_control/probabilities`:
+The flow is a `NeuroControl` message published on `/control_feedback/probabilities`:
 
 | Field | Content |
 |---|---|
@@ -57,7 +57,7 @@ what we read in the VR.
 You can see it live. With a pipeline running (step 3):
 
 ```bash
-ros2 topic echo /manager_control/probabilities
+ros2 topic echo /control_feedback/probabilities
 ```
 
 ## 2. Install and start rosbridge
@@ -106,7 +106,7 @@ How it works:
 
 1. **Connection.** `ROSLIB.Ros` opens the WebSocket to `ws://<host>:<port>` and reconnects every two seconds if it
    drops. The text above the bars says whether it is connected.
-2. **Subscription.** It subscribes to `/manager_control/probabilities` as `ros2neuro_msgs/msg/NeuroControl`.
+2. **Subscription.** It subscribes to `/control_feedback/probabilities` as `ros2neuro_msgs/msg/NeuroControl`.
 3. **Bars.** At the first message it builds one bar per entry of `fields`, coloured by **position** (blue, red, green,
    purple...), never by code, with the rest (`783`) in yellow: the same rule as the feedback of the stack. Every message
    sets the height of each bar to its `value`.
@@ -116,7 +116,7 @@ How it works:
    `outcome` writes *Hit*, *Miss* or *Timeout* above the bars. This is the same logic as `feedback_controller.cpp`.
 
 !!! warning "Do not throttle the subscription"
-    roslibjs can limit the rate of a subscription with `throttle_rate`. Do not use it here: the manager sends an event
+    roslibjs can limit the rate of a subscription with `throttle_rate`. Do not use it here: control sends an event
     (fixation, cue, outcome) in the same instant as another message, and a throttle would drop the second one, so you
     would never see the cross or the cue.
 
@@ -234,12 +234,12 @@ Points to decide when you implement it:
 | connected, but nothing moves | the pipeline is not running or has ended (a calibration lasts about a minute), or the topic differs: check `ros2 topic list` |
 | rosbridge says it cannot find the type `ros2neuro_msgs/msg/NeuroControl` | rosbridge was started in a terminal where the workspace is not sourced |
 | the bars move but there is no cross or cue | the subscription is throttled (`throttle_rate`): remove it |
-| a bar never reaches its threshold line | the thresholds in the URL do not match the ones of the manager (`layout.yaml`) |
+| a bar never reaches its threshold line | the thresholds in the URL do not match the ones of control (`layout.yaml`) |
 | no *Enter VR* button on the headset | the page is not in a secure context: see "On a headset" |
 
 ## What you learned
 
-- the manager's flow carries everything a feedback needs, and any program can read it;
+- control's flow carries everything a feedback needs, and any program can read it;
 - rosbridge exposes it as JSON over a WebSocket, so a browser or a game engine can be a feedback;
 - a passive VR feedback is the same few lines as the feedback of the stack: bars from `values`, phases from `event`,
   result from `outcome`.

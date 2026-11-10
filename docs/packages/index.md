@@ -25,7 +25,8 @@ own page.
 
 | Base package | Plugins |
 |---|---|
-| [Manager](manager/index.md) | [synchronous](manager/synchronous.md) (`Training`), [asynchronous](manager/asynchronous.md) (`Control`) |
+| [Control](control/index.md) | [feedback](control/feedback.md) (`Feedback`: calibration with autopilot, evaluation, free control) |
+| [Manager](manager/index.md) | [synchronous](manager/synchronous.md) (`Synchronous`: runs the trials), [asynchronous](manager/asynchronous.md) (`Asynchronous`: writes nothing) |
 | [Feedback](feedback/index.md) | [wheel](feedback/wheel.md), [bar](feedback/bar.md). Both need the [neurodraw](feedback/neurodraw.md) library |
 
 ## Tools
@@ -44,7 +45,7 @@ own page.
 | record a session | recorder [xdf](recorder/xdf.md) |
 | classify motor imagery from a PSD | [spectral](processing/spectral.md) Welch, a [gaussian](decoder/gaussian.md) or [qda](decoder/qda.md) model, an [exponential](integrator/exponential.md) integrator |
 | classify with a deep-learning model | [buffer](processing/buffer.md) instead of Welch, then the [Python decoder](decoder/python.md) |
-| run a calibration or an evaluation | manager [synchronous](manager/synchronous.md) |
-| run a free-control session | manager [asynchronous](manager/asynchronous.md) |
+| run a calibration or an evaluation | manager [synchronous](manager/synchronous.md) + [control_feedback](control/feedback.md) (`protocol: calibration` or `evaluation`) |
+| run a free-control session | [control_feedback](control/feedback.md) (`protocol: control`) |
 | show two classes | feedback [wheel](feedback/wheel.md) |
 | show two or more classes | feedback [bar](feedback/bar.md) |

@@ -3,8 +3,8 @@
 !!! info ""
     Package: [`ros2neuro_integrator`](https://github.com/ros2neuro/ros2neuro_integrator)
 
-The integrator turns the noisy stream of `NeuroPrediction` values into a smoother `NeuroControl`, so that a
-single wrong prediction does not move the feedback. The package provides the `Integrator` plugin interface and
+The integrator turns the noisy stream of `NeuroPrediction` values of the decoder into a smoother `NeuroPrediction`
+(`type = TYPE_SCORES`), so that a single wrong prediction does not move the feedback. The package provides the `Integrator` plugin interface and
 `integrator_node`.
 
 !!! important "Select one plugin"
@@ -19,8 +19,9 @@ single wrong prediction does not move the feedback. The package provides the `In
 
 ## Node behaviour
 
-- Subscribes to a `NeuroPrediction` topic (`input_topic`, default `/prediction`) and publishes a `NeuroControl`
-  (`output_topic`, default `~/control`).
+- Subscribes to a `NeuroPrediction` topic (`input_topic`, default `/prediction`) and publishes a `NeuroPrediction`
+  of type `TYPE_SCORES` (`output_topic`, default `~/control`): `decoder` is the name of the integrator, `fields` are the
+  ones of the input, `values` the integrated values. It publishes no decision: whoever reads it takes the highest value.
 - **Rejection** (`integrator.rejection`): when the confidence of the input is below the value, the previous
   output is held. `-1` disables it.
 - **Reset**: a service named `reset` (so `/reset`) and an optional reset on an event
@@ -67,7 +68,7 @@ Default node name: `integrator`.
 |---|---|---|---|
 | subscribes | `/prediction` | `NeuroPrediction` | `input_topic` |
 | subscribes | `/neuroevent` | `NeuroEvent` | `event_topic` (only used for `integrator.reset_event`) |
-| publishes | `~/control` | `NeuroControl` | `output_topic` |
+| publishes | `~/control` | `NeuroPrediction` | `output_topic` |
 
 | | Service | Type | Note |
 |---|---|---|---|
@@ -76,7 +77,7 @@ Default node name: `integrator`.
 Messages used:
 
 - `NeuroPrediction`: read
-- `NeuroControl`: published
+- `NeuroPrediction`: published (the integrated values)
 - `NeuroEvent`: read, to reset on an event
 - `std_srvs/Empty`: the reset service
 
@@ -84,15 +85,16 @@ Messages used:
 ## How it works
 
 `integrator_node` (node name `integrator`) loads one integrator plugin and, for every `NeuroPrediction` it receives, asks the
-plugin to update its integrated values and publishes them as a `NeuroControl`.
+plugin to update its integrated values and publishes them as a `NeuroPrediction`.
 
 The published message has:
 
-- `source`: the name of the integrator (`integrator.name`);
+- `decoder`: the name of the integrator (`integrator.name`);
 - `fields`: copied from the prediction (the class names or codes);
 - `values`: the integrated values, one per class;
-- `actions = ["selection"]` and `commands = [i]`, where `i` is the index of the winning class (the decision of the plugin, or
-  the highest value if the plugin gives none).
+- `type`: always `TYPE_SCORES` (the values are accumulators or smoothed scores, not guaranteed probabilities).
+
+There are no `actions`/`commands`: the winning class is not published, whoever reads the message takes the highest value.
 
 ### Rejection
 
@@ -105,11 +107,11 @@ predictions the decoder is unsure about. It is disabled by default (`-1`), and i
 The integrated values can be reset in two ways:
 
 - the service `reset` (`std_srvs/srv/Empty`), created with a **relative name**, so with the node at the root it is `/reset`;
-- an event: when a `NeuroEvent` with `event_id == integrator.reset_event` arrives on `event_topic`. In a training protocol the
+- an event: when a `NeuroEvent` with `event_id == integrator.reset_event` arrives on `event_topic`. In a calibration or evaluation (trials) the
   launchers use `781` (CFeedback), so every trial starts from the neutral state.
 
 A reset puts the plugin in its neutral state (`1/K` for every class, `K` being the number of classes of the last prediction) and
-**publishes a message with those values**. The manager relies on that message to know that the reset has happened. Before the
+**publishes a message with those values**. [`ros2neuro_control_feedback`](../control/feedback.md) relies on that message to know that the reset has happened. Before the
 first prediction there is nothing to reset.
 
 ## Parameters
@@ -117,10 +119,10 @@ first prediction there is nothing to reset.
 | Parameter | Default | Meaning |
 |---|---|---|
 | `input_topic` | `/prediction` | the `NeuroPrediction` topic of the decoder |
-| `output_topic` | `~/control` | where the `NeuroControl` is published |
+| `output_topic` | `~/control` | where the integrated `NeuroPrediction` is published |
 | `event_topic` | `/neuroevent` | the topic read for `integrator.reset_event` |
 | `integrator.type` | (required) | pluginlib class of the integrator, for example [`ros2neuro::integrator::Exponential`](exponential.md) |
-| `integrator.name` | `integrator` | written in `NeuroControl.source` |
+| `integrator.name` | `integrator` | written in `NeuroPrediction.decoder` |
 | `integrator.rejection` | `-1` (off) | confidence below which a prediction is not integrated, in `[0, 1]` |
 | `integrator.reset_event` | `-1` (off) | event id that resets the integrator |
 | `integrator.params.*` | | parameters of the plugin (for example `integrator.params.alpha`) |
@@ -152,7 +154,7 @@ Derive from `ros2neuro::integrator::Integrator` and implement:
 
 - `configure()`: read the parameters with `getParam`, return `false` if they are invalid;
 - `apply(prediction)`: update the state with one prediction and return an `IntegrationResult` (the integrated values and the
-  decision, `-1` if none);
+  decision, `-1` if none; the node does not publish the decision);
 - `reset(class_count)`: go back to the neutral state (`1/K`) and return it;
 - optionally `set_runtime_parameter(parameter)` to accept parameter changes while running.
 

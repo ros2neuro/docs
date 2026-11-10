@@ -1,0 +1,8 @@
+<library path="tutorial_robot_control">
+  <class
+      name="tutorial::control::RobotControl"
+      type="tutorial::control::RobotControl"
+      base_class_type="ros2neuro::control::Control">
+    <description>Drives a robot from the NeuroPrediction of the integrator, with its own commands.</description>
+  </class>
+</library>

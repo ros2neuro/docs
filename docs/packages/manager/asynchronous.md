@@ -1,68 +1,58 @@
-# Asynchronous manager (Control)
+# Asynchronous manager (Asynchronous)
 
 !!! info ""
-    Package: [`ros2neuro_manager_asynchronous`](https://github.com/ros2neuro/ros2neuro_manager_asynchronous) · pluginlib class: `ros2neuro::manager::Control` · part of [Manager](index.md)
+    Package: [`ros2neuro_manager_asynchronous`](https://github.com/ros2neuro/ros2neuro_manager_asynchronous) · pluginlib class: `ros2neuro::manager::Asynchronous` · part of [Manager](index.md)
 
-Plugin `ros2neuro::manager::Control` of [`ros2neuro_manager`](index.md): continuous control. It does **not** run the
-game: no `/game/command`, no command map, no cooldown, no dead zone, no trial events.
+Plugin `ros2neuro::manager::Asynchronous` of [`ros2neuro_manager`](index.md): continuous control. It does **not** run the game: no trials, no
+cues, no events. There is nothing for the manager to write here: the feedback follows the values of the integrator, and
+the thresholds and the reset of the integrator belong to the control layer ([`ros2neuro_control`](../control/index.md), plugin
+[`ros2neuro_control_feedback`](../control/feedback.md), protocol `control`), which is the node that knows the thresholds.
+
+The plugin exists so that every protocol is launched the same way (a manager node with a plugin); it logs one line and writes nothing.
 
 | | |
 |---|---|
 | **Layer** | Manager (protocol) |
-| **Kind** | Plugin of [`ros2neuro_manager`](index.md) (pluginlib class `ros2neuro::manager::Control`) |
-| **Reads** | the integrator values, through the manager node |
-| **Publishes** | the control flow, through the manager node; calls the integrator `reset` service |
-| **Run** | `ros2 launch ros2neuro_manager_asynchronous asynchronous.launch.xml` |
+| **Kind** | Plugin of [`ros2neuro_manager`](index.md) (pluginlib class `ros2neuro::manager::Asynchronous`) |
+| **Reads** | nothing (it only hears the bus, through the manager node) |
+| **Publishes** | nothing |
+| **Run** | `ros2 launch ros2neuro_manager_asynchronous asynchronous.launch.xml` (together with [`ros2neuro_control_feedback`](../control/feedback.md), `protocol:=control`) |
 
 <!-- interfaces -->
 ## Dependencies
 
-- **ROS 2 packages** (build and run): `pluginlib`, `rclcpp`, [`ros2neuro_manager`](index.md)
-- **ROS 2 packages** (run only): [`ros2neuro_feedback`](../feedback/index.md), [`ros2neuro_feedback_wheel`](../feedback/wheel.md), [`ros2neuro_feedback_bar`](../feedback/bar.md)
+- **ROS 2 packages** (build and run): `pluginlib`, `rclcpp`, [`ros2neuro_manager`](index.md), [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs)
+- **ROS 2 packages** (run only): [`ros2neuro_control_feedback`](../control/feedback.md), [`ros2neuro_feedback`](../feedback/index.md), [`ros2neuro_feedback_wheel`](../feedback/wheel.md), [`ros2neuro_feedback_bar`](../feedback/bar.md)
 
 ## Messages and topics
 
-Default node name: `manager` (the node of [`ros2neuro_manager`](index.md)).
-
-Messages used:
-
-- `NeuroControl`: the flow, through the manager node
-- `std_srvs/Empty`: the reset request, through the manager node
+Default node name: `manager` (the node of [`ros2neuro_manager`](index.md)). The plugin publishes and reads nothing by itself.
 
 ## Example configuration
 
-The control protocol of the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md) (`config/manager_control.yaml`; the layout, with the thresholds, is in `layout.yaml`):
+The control protocol of the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md) (`config/protocol_control.yaml`, `/manager` part; the
+`/control` part is for [`ros2neuro_control_feedback`](../control/feedback.md); the layout, with the thresholds, is in `layout.yaml`):
 
 ```yaml
-# Manager, control protocol. The layout (classes, rest_mode, thresholds) comes from layout.yaml.
 /manager:
     ros__parameters:
-        integrated_topic: /integrated/raw
-        control_topic: /manager_control/probabilities    # what the feedback reads
+        plugin: ros2neuro::manager::Asynchronous
         event_topic: /neuroevent
-        # the integrator creates its reset service as the relative name "reset"
-        reset_service: /reset
-        plugin: ros2neuro::manager::Control
-        # Control asks the integrator for a reset when a class reaches its threshold, then waits for the integrator's
-        # neutral (all 1/K) message before forwarding again; no message within 1 s -> error and the session is shut down.
-        # Thresholds can be changed while running:  ros2 param set /manager thresholds "[0.8, 0.8]"
 ```
 
 <!-- /interfaces -->
-* The core publishes every valid normalized vector on the flow (`/manager_control/probabilities`), so the feedback moves.
-* The plugin compares each class with its own threshold (`thresholds`, K values). When a class reaches it
-  (value >= threshold, highest wins) it calls `request_reset()` on the integrator (a service call). From then on the manager
-  forwards and decides on nothing until the integrator's reset message (all values 1/K) arrives, so the same saturated value
-  cannot trigger repeated resets; if it does not arrive within 1 s an error is logged and the session is shut down. See the manager README.
-* Thresholds can be changed at runtime, validated (K values in (0, 1]):
-  `ros2 param set /manager thresholds "[0.7, 0.7]"`. The feedback markers follow only the feedback's own parameters.
-* With 783 in `classes` the plugin needs `rest_mode` set to `timeout` or `class` (default `none` is refused).
-* Resets are only logged; nothing is published on `/neuroevent`.
+What happens in control, and where:
+
+* [`ros2neuro_control_feedback`](../control/feedback.md) (`protocol: control`) forwards every normalized vector of the integrator to the feedback.
+* It compares each class with its own threshold. When a class reaches it (value >= threshold, highest wins) it asks the integrator for
+  a reset through the control node, and waits for the integrator's neutral message (all values 1/K) before forwarding again; no
+  message within 1 s -> error and the session is shut down. Thresholds can be changed at runtime:
+  `ros2 param set /control thresholds "[0.7, 0.7]"`.
+* Nothing is written on `/neuroevent`.
 
 ```bash
 ros2 launch ros2neuro_manager_asynchronous asynchronous.launch.xml
-ros2 launch ros2neuro_manager_asynchronous asynchronous.launch.xml feedback_plugin:=ros2neuro::feedback::Bar \
-    classes:="[773, 771, 783]" rest_mode:=class thresholds:="[0.6, 0.6, 0.6]"
+ros2 launch ros2neuro_control_feedback control_feedback.launch.xml protocol:=control
 ```
 
-Tests: `colcon test --packages-select ros2neuro_manager_asynchronous`.
+Tests: `colcon test --packages-select ros2neuro_manager_asynchronous` (`test_asynchronous_plugin`: the plugin loaded by the manager node writes nothing on the bus).

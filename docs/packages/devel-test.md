@@ -3,12 +3,12 @@
 !!! info ""
     Package: [`ros2neuro_devel_test`](https://github.com/ros2neuro/ros2neuro_devel_test) · part of [Packages](index.md)
 
-Launch files, parameter files and example models to run the whole stack end to end. It has no code: `mi_loop` runs a motor-imagery loop with an ANT Neuro amplifier, and the hardware-free launchers replay a GDF file through the full chain, from the acquisition to the wheel or the bars, with the Gaussian, QDA or EEGNet decoders.
+Launch files, parameter files and example models to run the whole stack end to end. It has almost no code (only the node that saves the topics for the MATLAB check, and the check itself): `mi_loop` runs a motor-imagery loop with an ANT Neuro amplifier, and the hardware-free launchers replay a GDF file through the full chain, from the acquisition to the wheel or the bars, with the Gaussian, QDA or EEGNet decoders.
 
 | | |
 |---|---|
 | **Layer** | Tools |
-| **Kind** | Launchers and example assets (no code) |
+| **Kind** | Launchers and example assets (plus one capture script and the MATLAB check of the whole chain) |
 | **Reads** | a GDF file, or an ANT Neuro amplifier for `mi_loop` |
 | **Publishes** | the whole pipeline, up to the feedback window |
 | **Run** | `ros2 launch ros2neuro_devel_test gaussian_bars.launch.xml protocol:=calibration`<br>`ros2 launch ros2neuro_devel_test mi_loop.launch.xml` (hardware) |
@@ -62,11 +62,18 @@ Notes:
 
 Hardware-free launchers to test the whole chain, **from the acquisition of a GDF file to the wheel or the bars**, with the
 Gaussian, QDA and EEGNet (deep-learning) decoders. These launchers live in `launch/<folder>/` next to `mi_loop`: launch files (`.xml`), their yaml parameter files and the decoder models
-(`manifest.yaml` + `.r2nd`): no scripts, no code. Every launcher starts **every node explicitly**:
+(`manifest.yaml` + `.r2nd`). The only code is the node that saves the topics as CSV for the MATLAB check (`scripts/topic_csv_recorder.py`) and the MATLAB check itself (`matlab/`). Every launcher starts **every node explicitly**:
 
 ```
-acquisition -> filters -> welch -> decoder -> integrator -> manager -> feedback (wheel | bars)      (+ recorder)
+acquisition -> filters -> welch -> decoder -> integrator -> control (plugin Feedback) -> feedback (wheel | bars)      (+ recorder)
+                                                               ^   |
+                                           manager (trials) <--+---+--> /neuroevent
 ```
+
+The **control** node ([`ros2neuro_control`](control/index.md) with the plugin [`ros2neuro_control_feedback`](control/feedback.md)) reads the integrator, knows the thresholds and
+builds the flow of the feedback; the **manager** runs the trials of a calibration / evaluation and writes the phases on the event bus
+(`/neuroevent`). They talk through the bus: the manager writes Start, Fixation, cue and CFeedback; control hears them, drives the feedback
+and writes the outcome (Hit / Miss / Timeout), which the manager hears to close the trial.
 
 With a classic decoder (Gaussian, QDA) the processing between the filters and the decoder is a `welch_node`; with the EEGNet decoder
 it is a `buffer_node` (a window of the signal) and the decoder is the Python one ([`ros2neuro_decoder_py`](decoder/python.md)).
@@ -74,20 +81,23 @@ it is a `buffer_node` (a window of the signal) and the decoder is the Python one
 ## Layout
 
 ```
+scripts/               topic_csv_recorder.py   (saves the topics of the chain as CSV, for the MATLAB check)
+matlab/                check_evaluation.m (one file), README.md   (data/ and results/ are not pushed)
 launch/
   gaussian/            gaussian_wheel.launch.xml   gaussian_bars.launch.xml
-    config/            pipeline.yaml  layout.yaml  manager_calibration.yaml  manager_evaluation.yaml  manager_control.yaml
+    config/            pipeline.yaml  layout.yaml  protocol_calibration.yaml  protocol_evaluation.yaml  protocol_control.yaml
                        feedback_wheel.yaml  feedback_bars.yaml  recorder.yaml
     (no model/)        uses extra/b4_bhbf_20230706.smr/               (BOTH_HANDS / BOTH_FEET)
   qda/                 qda_wheel.launch.xml        qda_bars.launch.xml
     config/            (same files)
     model/             manifest.yaml  qda_test_gdf.r2nd
   qda_custom_codes/    qda_custom_codes_wheel.launch.xml   qda_custom_codes_bars.launch.xml   (classes 501 / 502, only config/layout.yaml)
-  gaussian_rest/       gaussian_rest_wheel.launch.xml   gaussian_rest_bars.launch.xml   (classes 773 / 771 + REST 783, rest_mode timeout; only layout.yaml + manager_*.yaml)
+  gaussian_rest/       gaussian_rest_wheel.launch.xml   gaussian_rest_bars.launch.xml   (classes 773 / 771 + REST 783, rest_mode timeout; only layout.yaml + protocol_*.yaml)
   gaussian_4class/     gaussian_4class_bars.launch.xml        (4 bars, a different threshold each)
+                       gaussian_4class_matlab.launch.xml      (the same in evaluation, with a GDF and a CSV of every topic: for matlab/check_evaluation.m)
     config/            (same files, no wheel)
     model/             manifest.yaml  fake_4class_gaussian.r2nd
-  gaussian_4class_rest/  gaussian_4class_rest_bars.launch.xml   (the 4-class launcher with the REST, rest_mode timeout; only layout.yaml + manager_*.yaml)
+  gaussian_4class_rest/  gaussian_4class_rest_bars.launch.xml   (the 4-class launcher with the REST, rest_mode timeout; only layout.yaml + protocol_*.yaml)
   eegnet/              eegnet_wheel.launch.xml   eegnet_bars.launch.xml   (deep-learning model of ros2neuro_decoder_py, buffer_node instead of welch)
   eegnet_rest/         eegnet_rest_wheel.launch.xml   eegnet_rest_bars.launch.xml   (the EEGNet launchers with the REST)
   timing_check/        timing_check.launch.py   (see below)
@@ -113,31 +123,105 @@ ros2 launch ros2neuro_devel_test gaussian_bars.launch.xml  protocol:=evaluation
 ros2 launch ros2neuro_devel_test qda_wheel.launch.xml      protocol:=control
 ros2 launch ros2neuro_devel_test qda_bars.launch.xml       protocol:=evaluation record:=false
 ros2 launch ros2neuro_devel_test gaussian_4class_bars.launch.xml protocol:=control
-ros2 launch ros2neuro_devel_test gaussian_rest_wheel.launch.xml protocol:=evaluation   # with the REST (rest_timeout 6 s in manager_evaluation.yaml)
+ros2 launch ros2neuro_devel_test gaussian_rest_wheel.launch.xml protocol:=evaluation   # with the REST (rest_timeout in protocol_evaluation.yaml)
 ros2 launch ros2neuro_devel_test gaussian_rest_bars.launch.xml  protocol:=calibration
 ros2 launch ros2neuro_devel_test qda_custom_codes_wheel.launch.xml protocol:=evaluation   # classes 501 / 502 instead of 773 / 771
 ```
 
-| protocol | manager plugin | what drives the feedback |
-|---|---|---|
-| `calibration` | `Training` | the autopilot (the classifier runs but is not read) |
-| `evaluation` | `Training` | the real classifier output |
-| `control` | `Control` | the real classifier output; the manager resets the integrator when a class reaches its threshold |
+| protocol | manager plugin | control (plugin `Feedback`) | what drives the feedback |
+|---|---|---|---|
+| `calibration` | `Synchronous` | autopilot, writes Hit | the autopilot (the classifier runs but is not read) |
+| `evaluation` | `Synchronous` | thresholds, writes Hit / Miss / Timeout | the real classifier output |
+| `control` | `Asynchronous` (writes nothing) | forwards the values, resets the integrator at the threshold | the real classifier output |
 
-The manager is started with `on_exit="shutdown"`: when the protocol ends (or, in control, if the integrator's reset message does
-not arrive within 1 s) the whole session ends. Remove the attribute in the launch file to keep the other nodes up.
+Manager and control are started with `on_exit="shutdown"`: when the protocol ends (manager), if nobody writes the outcome of a trial
+within `duration.outcome_wait`, or, in control, if the integrator's reset message does not arrive within 1 s, the whole session ends.
+Remove the attribute in the launch file to keep the other nodes up.
+
+## How to test everything, step by step
+
+**1. Build** (in the `ros2neuro` container; the first time it takes a while):
+
+```bash
+distrobox enter ros2neuro
+cd ~/ros2neuro_ws
+source /opt/ros/jazzy/setup.bash
+colcon build                                    # the whole workspace (or --packages-select <package>)
+source install/setup.bash
+```
+
+After editing a yaml or launch file of this package: `colcon build --packages-select ros2neuro_devel_test` (delete `build/` and `install/` of the
+package after removing files from it).
+
+**2. Launch the Gaussian 4-class pipeline** and watch it (four bars, no hardware):
+
+```bash
+ros2 launch ros2neuro_devel_test gaussian_4class_bars.launch.xml protocol:=evaluation record:=false
+```
+
+What to see: Start, Fixation, a cue, the bars moving, Hit / Miss / Timeout, and at the end `Summary: hit=.. miss=.. timeout=..` in the log (the
+session ends by itself). With `protocol:=calibration` an autopilot moves the bars; with `protocol:=control` there are no trials and the control log says
+`Reset requested: ... reached 0.7 (threshold ...)` each time a class reaches its threshold. In a second terminal (same `source`, same `ROS_DOMAIN_ID`):
+
+```bash
+ros2 topic echo /neuroevent --field event_id                           # the phases (manager) and the outcome (control)
+ros2 topic echo /control_feedback/probabilities --field header.stamp   # the flow: same stamp as the NeuroPrediction it comes from
+ros2 topic echo /integrated/raw --field header.stamp                   # ... compare: they are the same
+ros2 param set /control thresholds "[0.5, 0.5, 0.5, 0.5]"              # the markers of the bars move
+ros2 param list /manager ; ros2 param list /control ; ros2 param list /feedback     # every node has its own parameters
+```
+
+**3. The launcher that leaves everything to check in MATLAB** (the same pipeline, in evaluation, 8 trials, about 2 minutes, it ends by itself):
+
+```bash
+ros2 launch ros2neuro_devel_test gaussian_4class_matlab.launch.xml
+```
+
+It saves a GDF (raw EEG and events) in `recordings/` and a CSV of every topic in `matlab/data/run_<date>/`. Then, in MATLAB:
+
+```matlab
+cd ~/ros2neuro_ws/src/ros2neuro_devel_test/matlab
+check_evaluation
+```
+
+One file: loads the GDF and the yaml of the launcher, applies the filters, the decoder and the integrator (reset at every trial), draws every step
+with the thresholds and the Fixation / cue / CFeedback / Hit / Miss marked, and compares with ROS 2. See `matlab/README.md` (in the package).
+
+**4. The unit and integration tests** of the packages (no display; about 3 minutes; not at the same time as a launcher in the same ROS domain: `export ROS_DOMAIN_ID=<n>`):
+
+```bash
+colcon test --packages-select ros2neuro_control ros2neuro_manager ros2neuro_manager_synchronous ros2neuro_manager_asynchronous \
+    ros2neuro_control_feedback ros2neuro_feedback ros2neuro_feedback_wheel ros2neuro_feedback_bar ros2neuro_integrator
+colcon test-result --verbose            # every package with 0 failures
+```
+
+**5. The other launchers** (`gaussian_*`, `qda_*`, `eegnet_*`, with the rest, with other class codes) are the same pipeline with another model or other classes:
+launch each one with each protocol (`protocol:=calibration | evaluation | control`, `record:=false`) and look for the same things.
+
+## Check an evaluation in MATLAB (`matlab/`)
+
+`gaussian_4class_matlab.launch.xml` records an evaluation of the 4-class pipeline (a GDF with the raw EEG and the events, and a CSV of every topic written by
+`scripts/topic_csv_recorder.py`), and **`matlab/check_evaluation.m`, a single file, redoes it in MATLAB**: it loads the GDF and the yaml used by the launcher,
+applies the Laplacian, the Welch PSD, the Gaussian decoder and the exponential integrator with the reset at the start of every trial, recomputes the outcome of
+every trial and compares every step with what ROS 2 published. Four figures, ROS 2 against MATLAB, each with Start, Fixation, cue, CFeedback and Hit / Miss / Timeout marked:
+filters (C3 and C4: raw, filtered by ROS 2 and by MATLAB, their difference), the features of `/processing/psd`, the classification, the integration with the thresholds.
+
+On the reference run (8 trials) all the outcomes recomputed from the integrated values are the ones of ROS 2 (8 of 8), the Laplacian differs by one float32 ULP, the PSD by 2e-4
+(ln units), the probabilities by 4e-5, the integrator by 9e-6, and the 8 resets are where ROS 2 puts them. The CSV and the results are **not pushed** (`.gitignore`).
+What it does, how to run it and the things to know about the reset: `matlab/README.md` (in the package).
 
 ## The yaml files (`<folder>/config/`)
 
 | file | node(s) | what |
 |---|---|---|
 | `pipeline.yaml` | acquisition, filters, welch, decoder, integrator | the processing chain (framerate, Laplacian, PSD 4:2:48 Hz, integrator `alpha` / `rejection` / `reset_event`). Two values come from the launcher: the GDF file and the model manifest |
-| `layout.yaml` | manager **and** feedback (key `/**`) | `classes`, `rest_mode`, `thresholds` (+ `input_fields`, read by the manager only), declared once so both build the same layout |
-| `manager_<protocol>.yaml` | manager | plugin, topics, durations, number of `trials`; the evaluation one documents `rest_timeout` |
-| `feedback_wheel.yaml` / `feedback_bars.yaml` | feedback | plugin, fps, window title, topics |
+| `layout.yaml` | every node that needs it (`/**`) and `/control` | `/**`: `classes`, `rest_mode`, `thresholds`, the same for the manager, control and the feedback, which **all load this file** (nobody asks anybody). `/control`: `input_fields` (control's, when present) |
+| `protocol_<protocol>.yaml` | `/manager` and `/control` | two sections in one file. `/manager`: plugin, durations of the trials, number of `trials`, `outcome_wait`. `/control`: plugin `Feedback`, `protocol`, topics, the length of the continuous feedback (`feedback_min/max`, `timeout`: control's own parameters); the evaluation one documents `rest_timeout` |
+| `feedback_wheel.yaml` / `feedback_bars.yaml` | feedback | plugin, fps, window title, topics (the layout comes from `layout.yaml`) |
 | `recorder.yaml` | recorder | output folder, subject, GDF type |
 
-Edit them and relaunch (rebuild `ros2neuro_devel_test` after editing: the launch files use the installed copies). Rules that bite:
+Edit them and relaunch (rebuild `ros2neuro_devel_test` after editing: the launch files use the installed copies). The thresholds can also be changed
+**while running**, and the markers of the feedback follow: `ros2 param set /control thresholds "[0.8, 0.8]"`. Rules that bite:
 - `thresholds` has one value per class **with a classifier output**, in the order of `classes`. These models have 2 outputs (4 in
   `gaussian_4class`), so a rest (783) in `classes` can only be `rest_mode: timeout` (no output, no threshold).
 - With `rest_mode: timeout` an evaluation REQUIRES `rest_timeout` (seconds the rest must last without touching a threshold to be a
@@ -148,10 +232,10 @@ Edit them and relaunch (rebuild `ros2neuro_devel_test` after editing: the launch
 ## Other class codes
 
 Class codes are free (any code in 1..16383 that is not an event id; only the rest, 783, is special) and the colors never depend on them: a class is
-colored by its position in `classes`. To try other codes **edit `classes` in `layout.yaml`** (and the length of `trials` in the manager yaml):
+colored by its position in `classes`. To try other codes **edit `classes` in `layout.yaml`** (and the length of `trials` in the `/manager` section of `protocol_*.yaml`):
 - **calibration**: nothing else (the autopilot needs no classifier);
 - **evaluation / control**: the model publishes ITS codes (773/771 here). Add `input_fields` to `layout.yaml`: the model code of each class, in the same
-  order as `classes`, e.g. `classes: [501, 502]` + `input_fields: [773, 771]`. Without it the manager says which codes the model sends.
+  order as `classes`, e.g. `classes: [501, 502]` + `input_fields: [773, 771]`. Without it control says which codes the model sends.
 `launch/qda_custom_codes/` is exactly that, ready: the QDA launchers with only `config/layout.yaml` different.
 
 ## The models
@@ -174,8 +258,8 @@ QDA: linear weights × 4.343, quadratic weights × 4.343², bias unchanged), whi
 
 ## Timing check (`launch/timing_check/`)
 
-Checks whether the durations written in the events (what the recorder puts in the GDF) match the planned ones. The manager runs a calibration with
-**every duration fixed and known** (`config/manager_timing.yaml`: start, fixation, cue, boom 500 ms, iti 100 ms, continuous
+Checks whether the durations written in the events (what the recorder puts in the GDF) match the planned ones. The manager and control run a calibration with
+**every duration fixed and known** (`config/protocol_timing.yaml`: start, fixation, cue, boom 500 ms, iti 100 ms, continuous
 feedback (CF, 781) exactly **4000 ms** for every trial, rest included) and `timing_monitor.py` listens to `/neuroevent` (the same stamps the recorder
 uses for `POS`). When the protocol ends it prints, per trial and per phase, the measured duration, the error against the planned one and the same
 duration in samples at 512 Hz, which is what `h.EVENT.DUR` gives in MATLAB (BioSig's `sopen` builds `DUR` from the On/Off pairs `TYP` / `TYP + 0x8000`:
@@ -187,17 +271,18 @@ ros2 launch ros2neuro_devel_test timing_check.launch.py feedback:=wheel         
 ros2 launch ros2neuro_devel_test timing_check.launch.py feedback:=wheel record:=true     # also leaves a GDF in recordings_dir to load with sload
 ```
 A `FAIL` verdict makes the monitor exit with code 1, which the launch prints as `process has died ... exit code 1`: it is the verdict, not a crash.
-Edit `config/layout.yaml` / `config/manager_timing.yaml` (then rebuild `ros2neuro_devel_test`) to try other classes or durations.
+Edit `config/layout.yaml` / `config/protocol_timing.yaml` (then rebuild `ros2neuro_devel_test`) to try other classes or durations.
 
 Result on this workspace (calibration, linear autopilot): every phase is within 1 ms of the planned value, the CF of the classes with a classifier output included
 (+0.6 ms on 4000 ms). The autopilot follows the clock (one step per 10 ms elapsed, absolute tick deadlines): with
 a relative `sleep` per step the CF lasted ~3 % more than planned (+130 ms on 4000), and that was the difference between the console and `h.EVENT.DUR`.
-The outcome event has the same instant as CF+Off (no pause between them). Mind that `POS(next event) - POS(current)` after the boom is boom + `duration.iti`
+The end of the continuous feedback and the outcome are written by control; the manager closes the outcome after the boom. Mind that `POS(next event) - POS(current)` after the boom is boom + `duration.iti`
 (the ITI starts after the boom's Off), while `DUR` is the boom alone.
 
 ## Things to know
 - Evaluation hit/miss on a looped GDF only shows that the chain works: the file is not synchronized with the cues.
-- The integrator's reset service is `/reset` (a relative name), set in `manager_*.yaml`.
+- The integrator's reset service is `/reset` (a relative name), set in the `/control` section of `protocol_*.yaml`.
+- Hard to see in the logs but important: the feedback reads `/control_feedback/probabilities`, the flow that control builds from the integrator values and the events of the bus.
 - A low threshold on the exponential integrator is crossed again a few predictions after each reset, so the control resets often.
 - The feedback does not print its latency (`latency_log_period_s: 0.0` in `feedback_*.yaml`; set seconds to see `Latency stamp->draw` lines).
 - Close a feedback window with ESC. Watch the events with `ros2 topic echo /neuroevent`.
