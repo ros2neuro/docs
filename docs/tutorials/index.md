@@ -1,7 +1,7 @@
 # Tutorials
 
 Step-by-step guides. Each tutorial has its explanation and its code **in the same folder**, and the code is a
-real ROS 2 package that is compiled and tested by the CI of this repository, so what you read is what builds.
+real ROS 2 package that you can build and test yourself (see below). The code shown in each page is included from that package, so what you read is what builds.
 
 | # | Tutorial | You will learn | Code |
 |---|---|---|---|
@@ -13,6 +13,7 @@ real ROS 2 package that is compiled and tested by the CI of this repository, so 
 | 6 | [Checking the EOG with frontal channels](eog-check/index.md) | detect eye blinks on Fp1 and Fp2 and publish them as events | `tutorial_eog_check` |
 | 7 | [Showing the feedback in virtual reality](vr-feedback/index.md) | send the flow of the feedback to a WebXR page (tested) and to Unity (example) through rosbridge | `webxr/`, `unity/` |
 | 8 | [Controlling a robot in step with the feedback](robot-control/index.md) | write a control plugin for a robot (it takes a `NeuroPrediction`) and a node that synchronizes it with the feedback by the header of the messages | `tutorial_robot_control` |
+| 9 | [Filter bank CSP: train it in MATLAB, run it in ROS2neuro](fbcsp/index.md) | train a filter bank CSP and an LDA offline, write a node that applies it online and publishes a feature the existing decoder reads, and check it against MATLAB | `tutorial_fbcsp`, `train_fbcsp.m` |
 
 ## Prerequisites
 

@@ -27,7 +27,7 @@ Default node name: `feedback` (the node of [`ros2neuro_feedback`](index.md)).
 
 Messages used:
 
-- `NeuroControl`: read through the feedback node
+- `NeuroControl` (the flow) and `NeuroEvent` (the event bus): read through the feedback node
 
 ## Example configuration
 
@@ -54,7 +54,8 @@ The build needs the [`neurodraw`](neurodraw.md) library: see the README of [`ros
 ## Behaviour
 
 * Two active classes (`K == 2`): `output_classes[0]` on the left, `[1]` on the right; the position is the normalized
-  value of the first. A rest is allowed only with `rest_mode=timeout`; `rest_mode=class` (K=3) is rejected.
+  value of the first. A rest next to two classes needs `rest_mode=timeout` (or `none`): with `rest_mode=class` it is one more output
+  (K=3) and the layout is rejected; with `rest_mode=class` the rest can only be one of the two sides (see below).
 * Threshold markers (they follow the thresholds while running: `set_thresholds`): first class at `th0`, second at `1 - th1` (with `[0.8, 0.8]`: 0.8 and 0.2); the one closest to 0 is
   red, the one closest to 1 blue.
 * Colors as in the existing wheel: first class blue, second red; **the rest is always yellow**; timeout boom neutral grey.

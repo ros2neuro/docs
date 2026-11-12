@@ -52,12 +52,18 @@ ros2neuro::acquisition::LSLDevice
 
 **Frame assembly** — the main acquisition thread calls `read()` at the configured `framerate`. It dequeues exactly `samples_per_frame = floor(samplerate / framerate)` samples from the ring buffer and copies them into the `NeuroFrame`.
 
+**Stream loss and stalls** — the inlet is created with `recover=false`, so when the LSL source disappears the reader thread gets a `lost_error` immediately (instead of waiting forever for a silent auto-recovery), flags the stream as lost and `read()` fails. The acquisition node then closes the device and, with `acquisition.reopen: true`, resolves the stream again. `read()` waits up to 1 s for a full frame (the node timer and the arrival of LSL chunks are not synchronised); if nothing arrives in that time the stream is considered stalled and `read()` fails the same way. If the ring buffer overflows, `read()` logs a warning with the number of dropped samples.
+
 **Channel layout resolution** — how the LSL stream's flat channel array is split into EEG sensor channels, EXG sensor channels, and trigger channels is resolved once in `setup()`, with the following precedence:
 
 1. **Explicit YAML labels** (`sensors.eeg.labels`, `sensors.exg.labels`, `triggers.trigger.labels`) always win over anything the stream declares about itself. If any enabled block has a non-empty `labels` list, the plugin falls back to the manual/legacy layout: the stream's flat channel array is split *in order* into contiguous EEG, then EXG, then trigger blocks, with each block's channel count equal to its configured label count. If no labels are given at all across every enabled block **and** the stream provides no usable per-channel metadata either, every channel is assigned to EEG (fallback labels `CH1`, `CH2`, …) — this is the plugin's historical behavior, preserved for streams/configs that never described their channels individually.
 2. **Stream-declared channel metadata** — if no block has explicit YAML labels, and the LSL stream's `stream_info::desc()` XML fully describes every physical channel with a `<channels><channel><label/><type/></channel>…</channels>` block (the de-facto LSL convention used by many real acquisition devices), the plugin classifies each channel by its declared `<type>`: `EEG` → EEG block, `Trigger`/`Triggers`/`Marker`/`Markers`/`Stim`/`Stimulus` → trigger block, and **everything else non-EEG lands in the EXG ("other") block** — so auxiliary/misc channels are no longer silently folded into EEG. Channels whose block is disabled (`enable: false`) are dropped. A channel with an empty `<label>` still gets a fallback name (`CH`/`EXG`/`TRI` + its position within its block).
 
 Either way, the resulting channels need not be contiguous in the raw LSL sample array — the plugin gathers each block by its actual physical channel indices when filling the `NeuroFrame`.
+
+**Block types** — the EEG block is published as `TYPE_EEG`, the EXG block as `TYPE_MISC`.
+
+**Timestamps** — `header.stamp` of each frame is the node clock when `read()` assembles it (the LSL sample timestamps are not used).
 
 **Trigger quantization** — trigger values are cast from `float32` (the LSL sample format) to `int32` when filling the `NeuroTrigger` block.
 
@@ -128,33 +134,24 @@ All parameters are declared under the prefix that `NeuroAcquisitionNode` passes 
 ### Example configuration
 
 ```yaml
-acquisition:
+/acquisition:
   ros__parameters:
     acquisition.plugin: "ros2neuro::acquisition::LSLDevice"
-
-    device:
-      stream_type: "EEG"
-      stream_name: ""
-      framerate: 16.0
-      max_buffered_samples: 5120
-
-      sensors:
-        eeg:
-          enable: true
-          name: "EEG"
-          labels: ["CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7", "CH8",
-                   "CH9", "CH10", "CH11", "CH12", "CH13", "CH14", "CH15", "CH16",
-                   "CH17", "CH18", "CH19", "CH20", "CH21", "CH22", "CH23", "CH24",
-                   "CH25", "CH26", "CH27", "CH28", "CH29", "CH30", "CH31"]
-        exg:
-          enable: false
-          name: "EXG"
-
-      triggers:
-        trigger:
-          enable: true
-          name: "TRI"
-          labels: ["TRIG"]
+    acquisition.stream_type: "EEG"
+    acquisition.stream_name: ""
+    acquisition.framerate: 16.0
+    acquisition.max_buffered_samples: 5120
+    acquisition.sensors.eeg.enable: true
+    acquisition.sensors.eeg.name: "EEG"
+    acquisition.sensors.eeg.labels: ["CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7", "CH8",
+                                     "CH9", "CH10", "CH11", "CH12", "CH13", "CH14", "CH15", "CH16",
+                                     "CH17", "CH18", "CH19", "CH20", "CH21", "CH22", "CH23", "CH24",
+                                     "CH25", "CH26", "CH27", "CH28", "CH29", "CH30", "CH31"]
+    acquisition.sensors.exg.enable: false
+    acquisition.sensors.exg.name: "EXG"
+    acquisition.triggers.trigger.enable: true
+    acquisition.triggers.trigger.name: "TRI"
+    acquisition.triggers.trigger.labels: ["TRIG"]
 ```
 
 ---
@@ -169,8 +166,10 @@ acquisition:
 | `test_config.yaml` | Parameter file for the acquisition node: plugin `LSLDevice`, stream name `TestStream`, 31 EEG channels + 1 trigger channel, framerate 16 Hz. |
 | `lsl_csv_streamer.py` | ROS2 node that reads `rawdata.csv` and publishes it block-by-block as a real LSL Outlet (type `EEG`, name `TestStream`, 512 Hz, 32 samples/block at 16 Hz) to emulate a real EEG device. Prints `Finished streaming CSV data via LSL.` when the file ends. |
 | `topic_saver.py` | ROS2 node that subscribes to `/acquisition/neurodata`, unpacks each `NeuroFrame` sample by sample, and appends every row (EEG channels then trigger channel) to a CSV file. |
+| `test_lsl_device.cpp` | gtest. Besides the configuration/state tests it opens a real in-process LSL outlet and checks that frames are read continuously and that `read()` fails (`is_stream_lost()`) once the outlet disappears; also checks that destroying a never-configured device does not crash. |
+| `test_config_yaml.py` | pytest: the shipped `config/lsl_configuration.yaml` contains no unresolved launch substitutions and has a numeric `framerate`. |
 | `compare_acquisition.m` | MATLAB script for visual and numerical verification (see below). |
-| `test_acquisition_lsl.launch.py` | Launch file (in `launch/`) that starts the full test pipeline (see below). |
+| `test_acquisition_lsl.launch.py` | Launch file (in `test/`, installed to the package `launch/` directory) that starts the full test pipeline (see below). |
 
 ---
 

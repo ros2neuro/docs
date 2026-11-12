@@ -53,7 +53,7 @@ The plugin is loaded through:
 
 and expects one plugin parameter:
 
-- preferred: `decoder.manifest_path` pointing to a decoder folder entrypoint
+- preferred: `decoder.manifest_path` (or `decoder.manifest`) pointing to the `manifest.yaml` of a decoder folder
 - legacy fallback: `decoder.params.model_path` pointing directly to a `.r2nd` model artifact
 
 The package also installs a small helper executable:
@@ -82,7 +82,7 @@ The optional `training` block is supported for traceability and can contain fiel
 - `training.source`
 
 These values document the training procedure only. The runtime decoder does not rebuild
-QDA statistics from them.
+QDA statistics from them. The QDA reader accepts only version 2 `.r2nd` files.
 
 ### QDA parameter semantics
 

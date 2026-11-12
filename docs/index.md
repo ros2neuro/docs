@@ -9,40 +9,23 @@ Every stage of the pipeline is a ROS 2 node whose behaviour is chosen at launch 
 the amplifier, the filters, the decoder, the integrator, the recorder, the protocol and the feedback are all
 interchangeable pieces that talk through a small set of messages.
 
-## The system in four figures
+## The loop
 
-The same system, with more detail each time. Click a figure to open it at full size; the same figures, with a guide to read them, are in
-[Architecture](concepts/architecture.md).
+[![The ROS2neuro loop](assets/fig_loop.png)](assets/fig_loop.png)
 
-### 1. Overview: what is connected to what
+The **signal chain** (acquisition, filters, features, decoder, integrator) turns the amplifier signal into class probabilities. **Control**
+decides what to do with them (thresholds, outcome of a trial, reset of the integrator) and sends the values to the **feedback**, which the subject
+sees: that closes the loop. The **manager** runs the trials of an experiment and writes their phases on an event bus, which the recorder stores
+next to the signal. The dashed boxes are extensions that are not part of the stack: the *Robot Control* is **your** plugin, to drive a robot.
+Click the figure to enlarge it; it is explained in [Architecture](concepts/architecture.md).
 
-The signal chain (acquisition, filters, processing, decoder, integrator) turns the amplifier signal into class probabilities. **Control**
-decides what to do with them, the **manager** runs the trials of an experiment and the **feedback** shows the result; the recorder and
-the visualizer only listen.
+## The plugins
 
-[![ROS2neuro, overview](assets/ros2neuro_1_overview.png)](assets/ros2neuro_1_overview.png)
+[![The plugin families of ROS2neuro](assets/fig_plugins.png)](assets/fig_plugins.png)
 
-### 2. Topics and plugins: what travels and who can be swapped
-
-Every package that has plugins lists them (the amplifier, the filters, the decoder, the integrator, the protocol, the drawing...), and every
-arrow says which **topic** and which **message** it carries. The event bus `/neuroevent` links the manager, control, the feedback and the
-recorder. The dashed plugin in [`ros2neuro_control`](packages/control/index.md) is where **your** code goes to connect a robot.
-
-[![ROS2neuro, topics and plugins](assets/ros2neuro_2_topics.png)](assets/ros2neuro_2_topics.png)
-
-### 3. Services: the few calls between nodes
-
-Only two kinds of service call exist: starting and stopping the acquisition, and the integrator **reset** that control asks for. There are no
-ROS actions, and no node asks another one for parameters.
-
-[![ROS2neuro, services](assets/ros2neuro_3_services.png)](assets/ros2neuro_3_services.png)
-
-### 4. Parameters: own and global
-
-Every node reads **its own parameters**. What several nodes share (`classes`, `rest_mode`, the ids of the events, the thresholds) is one
-global `/**` section of the parameter file that each of them loads: see [Shared parameters](concepts/shared-parameters.md).
-
-[![ROS2neuro, parameters](assets/ros2neuro_4_parameters.png)](assets/ros2neuro_4_parameters.png)
+Every colour is a **family**: a package that defines a base class, and under it the plugins available (the amplifier, the filters, the decoder, the
+integrator, the recorder, the control, the protocol, the drawing). You pick one with a parameter and nothing else changes. The package of every family
+is written in its header; see [Plugins](concepts/plugins.md) for the classes and how to write your own.
 
 !!! info "Which BCIs"
     ROS2neuro has been tested with motor imagery (MI). It should work for any BCI paradigm: the processing stage has no

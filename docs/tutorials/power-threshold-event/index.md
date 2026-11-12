@@ -19,7 +19,7 @@ GDF/BDF file next to the signal, with no extra work.
 Read [Messages and data types](../../concepts/messages.md) first if the message layout is new to you.
 
 The complete package is in the repository, under `docs/tutorials/power-threshold-event/tutorial_power_threshold/`,
-and it is compiled by the CI of the repository.
+and the page includes its files, so the code below is the code that builds (with `colcon build` and `colcon test`).
 
 ## 1. The design
 
@@ -102,7 +102,7 @@ Things to notice:
   acquisition time instead of `now()` keeps the event aligned with the data even when processing is delayed.
 - **The end of the event** is published as `event_id + 32768`, the ROS2neuro convention for *Off*
   (see the [event codes](../../concepts/protocols.md#event-codes)). The default id 2001 does not collide with the
-  ids reserved by the stack (1, 781, 786, 897, 898, 899, 1024).
+  ids reserved by the stack (1, 781, 786, 897, 898, 899, the class codes of the cues such as 769-773 and 783, and the offsets 16384 and 32768).
 - **The threshold can be changed at runtime** through the parameter callback, which also rejects invalid values.
 
 ## 5. The test

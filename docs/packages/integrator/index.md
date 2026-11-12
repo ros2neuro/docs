@@ -128,7 +128,9 @@ first prediction there is nothing to reset.
 | `integrator.params.*` | | parameters of the plugin (for example `integrator.params.alpha`) |
 
 `integrator.rejection` and the `integrator.params.*` parameters can be changed while the node runs
-(`ros2 param set /integrator integrator.params.alpha 0.9`). The older names `rejection` and `reset_event` are still accepted.
+(`ros2 param set /integrator integrator.params.alpha 0.9`). The node declares every `integrator.params.*` it is given at start
+(parameter file or `-p`) and passes all of them to the plugin, at start and when they change; a plugin parameter that was not
+given at start cannot be set later (ROS refuses an undeclared parameter). The older names `rejection` and `reset_event` are still accepted.
 
 ```yaml
 /integrator:

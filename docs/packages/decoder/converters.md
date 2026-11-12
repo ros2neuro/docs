@@ -16,7 +16,8 @@ Offline tools that convert decoder models trained elsewhere into the ROS2neuro f
 <!-- interfaces -->
 ## Dependencies
 
-- **ROS 2 packages**: none
+- **ROS 2 packages**: none for the converter; the check in `test/` runs the pipeline (`ros2neuro_acquisition` with the XDF plugin,
+  `ros2neuro_filters` with the Laplacian, `ros2neuro_processing_spectral`, `ros2neuro_decoder` with the Gaussian plugin) and needs `rclpy`, `PyYAML` and `mne`
 - **External libraries**:
     - `PyQt5`, `numpy`, `scipy`: the graphical tool and the reading of the Matlab file (`python3-pyqt5`, `python3-numpy`, `python3-scipy`)
 
@@ -39,25 +40,55 @@ Current converters:
 
 The GUI is implemented with PyQt5 and supports native file drag-and-drop, Browse, and Paste Path input selection.
 
-### Feature scale and unit
+### Feature unit
 
-A Matlab SMR Gaussian classifier is trained on the **natural logarithm** of the Welch PSD, and the `welch_node` of
-[`ros2neuro_processing_spectral`](../processing/spectral.md) publishes exactly that (`ln(power/Hz)`). The converter writes the **feature unit** in the model:
-the GUI field **Feature unit** (default `ln(power/Hz)`) or `--feature-unit` on the command line, in both `manifest.yaml` (`input.unit`) and
-the `.r2nd`. The decoder refuses a feature whose unit differs from the one of the model, so a model converted with another unit
-(for example the old default `dB/Hz`, which was a `10*log10` scale) does not run on the Welch node until it is converted again.
+The Gaussian classifier works on the natural logarithm of the Welch PSD, which is what the `welch_node` of [`ros2neuro_processing_spectral`](../processing/spectral.md) publishes (`ln(power/Hz)`).
+The converter writes this unit in the model (field **Feature unit** of the GUI, or `--feature-unit` of the command-line backend `converters/gaussian.py`), and the decoder refuses a feature with another
+unit: a model converted with a different one (for example the old `dB/Hz`) has to be converted again.
 
 ### What it converts, and what it does not
 
 - It converts **only the Matlab SMR Gaussian classifier** (a `.smr.mat` with a top-level `settings` struct, with `settings.bci.smr.gau.M` and `.C`). There is no
   converter for LDA, QDA or SVM, and none for classifiers of other toolboxes: a classifier from elsewhere works only if its `.mat` has the same `settings`
   structure (see below).
-- Centers and diagonal covariances are copied unchanged, with uniform priors. The classifier is valid only on the scale it was trained on: `ln` of the
-  Welch PSD, which is what `welch_node` publishes.
+- Centers and diagonal covariances are copied unchanged, with uniform priors.
 - `settings.modules.smr.options.classification.norm` (division of the features by `sum(abs(.))`) is **not** carried: a classifier trained with `norm = 1`
   would not give the same output.
 - The spatial filter is not part of the model: the Laplacian matrix is only copied as metadata in the `training` section of the manifest, and the filter
   chain, the window, the PSD window and overlap, and the frequencies of the pipeline must be set to the same values the classifier was trained with.
+
+### What we expect from the classifier
+
+The converter copies numbers: it does not train the classifier and it cannot know how it was trained. The result is right when the classifier and the
+pipeline that will feed it agree on the points below. The decoder checks what it can: that the model is consistent when it loads it, and the axes of every
+feature it receives (point 3), stopping with a clear message if they differ. It cannot check the order of the features (point 2), the processing before it
+(point 4) or the classes (point 5), so those are yours to set.
+
+1. **The model.** A Gaussian classifier with diagonal covariances and prototypes: centers `M` and variances `C` of shape `[class, prototype, feature]`,
+   all variances positive. The class probabilities are computed in the log domain and the priors are uniform (the priors of the training are not carried).
+   A classifier trained with the `norm` option (features divided by `sum(abs(.))`) is not supported: the decoder would give another output.
+2. **The features.** The (log) Welch PSD, a tensor `[channels, frequency]`, of which the classifier uses a subset chosen channel by channel (`bands`).
+   The third axis of `M` and `C` must follow the order the converter reads `bands`: the EEG channels in the order of `acq.channel_lbl`, and inside a
+   channel the frequencies in the order they are listed. If your trainer orders the features differently, reorder `M` and `C` before converting.
+3. **The axes.** Every selected frequency must be **exactly** one of `modules.smr.psd.freqs` (the converter compares the numbers, not the nearest one),
+   and the PSD that reaches the decoder must have the same channel labels in the same order, and the same frequencies, as the model. The decoder compares them.
+4. **The processing before the decoder.** The model carries these only as metadata (`training` section of the manifest), so set the pipeline to the values of the
+   training:
+
+   | In the training | Where it is set in ROS2neuro |
+   |---|---|
+   | sample rate `acq.sf` | the acquisition |
+   | analysis window `modules.smr.win.size`, shift `.shift` | `welch.buffer` (samples) and the frame size of the acquisition (shift = frame / sample rate) |
+   | PSD window and overlap `modules.smr.psd.win`, `.ovl` (fractions of a second and of the window) | `welch.wlength`, `welch.overlap`, `welch.wtype` |
+   | PSD frequencies `modules.smr.psd.freqs` | `welch.frequencies` |
+   | spatial filter (DC, CAR, Laplacian) | the filter chain (`ros2neuro_filters`) |
+
+5. **The classes.** The first axis of `M` is in the order of `bci.smr.taskset.classes`. The output fields of the decoder are those codes as text, and the
+   `classes` of the manager, control and feedback use the same codes (or `input_fields` of control maps the codes of the model onto them).
+
+The way to know that all of this is right for **your** classifier is to run the check below on it: it replays a recording through the ROS 2 pipeline and compares
+the probabilities with the Matlab classifier, window by window. On the example of the package (16 channels, 13 selected features, 2 classes, 3975 windows) the
+decision is the same in all of them and the probabilities differ by about 1e-5.
 
 ### Checking a converted classifier against Matlab
 
@@ -182,11 +213,12 @@ Only `r2n_decoder_converter` should be installed as an executable program. Decod
    scripts/r2n_decoder_converters/gui/<decoder>.py
    ```
 
-   The GUI class should accept a parent widget:
+   The GUI class is a PyQt5 `QWidget` built without arguments (the main window puts it in a tab):
 
    ```python
-   class MyDecoderConverterGui:
-       def __init__(self, root: tk.Misc) -> None:
+   class MyDecoderConverterGui(QWidget):
+       def __init__(self) -> None:
+           super().__init__()
            ...
    ```
 
@@ -197,8 +229,8 @@ Only `r2n_decoder_converter` should be installed as an executable program. Decod
    ```python
    from r2n_decoder_converters.gui.my_decoder import MyDecoderConverterGui
 
-   def _my_decoder_gui(parent: tk.Misc) -> MyDecoderConverterGui:
-       return MyDecoderConverterGui(parent)
+   def _my_decoder_gui() -> MyDecoderConverterGui:
+       return MyDecoderConverterGui()
 
    CONVERTERS = (
        ...,

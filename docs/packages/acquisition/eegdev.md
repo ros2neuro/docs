@@ -66,7 +66,7 @@ The package currently provides:
 Use the plugin with:
 
 ```yaml
-plugin: "ros2neuro::acquisition::EGDDevice"
+acquisition.plugin: "ros2neuro::acquisition::EGDDevice"
 ```
 
 ## Parameters
@@ -92,27 +92,30 @@ Supported parameters:
 Example:
 
 ```yaml
-device:
-  device: "gtec"
-  open_options: "serial|UA-1234"
-  samplerate: 512
-  framerate: 16.0
-  sensors.eeg.enable: true
-  sensors.eeg.name: "EEG"
-  sensors.eeg.labels: []
-  sensors.exg.enable: true
-  sensors.exg.name: "EXG"
-  sensors.exg.labels: []
-  triggers.trigger.enable: true
-  triggers.trigger.name: "TRI"
-  triggers.trigger.labels: []
+/acquisition:
+  ros__parameters:
+    acquisition.plugin: "ros2neuro::acquisition::EGDDevice"
+    acquisition.device: "gtec"                    # driver name, or the path of a .gdf / .bdf file (default "eegdev")
+    acquisition.open_options: "gtec|deviceid|any" # optional full eegdev open string (default "")
+    acquisition.samplerate: 512                   # default 0
+    acquisition.framerate: 16.0                   # default 16.0
+    acquisition.sensors.eeg.enable: true          # default true
+    acquisition.sensors.eeg.name: "EEG"
+    acquisition.sensors.exg.enable: true          # default true
+    acquisition.sensors.exg.name: "EXG"
+    acquisition.triggers.trigger.enable: true     # default true
+    acquisition.triggers.trigger.name: "TRI"
 ```
 
 Behavior notes:
 
-- `samplerate = 0` means "accept the device default"
+- `samplerate = 0` means "accept the device default"; a non-zero value must match the rate the device reports,
+  otherwise `setup()` fails (it is passed to the driver only for `gtec`)
 - `framerate` is the requested publication rate
-- `samples_per_frame` is derived internally from `samplerate / framerate`
+- `samples_per_frame` is derived internally as `round(samplerate / framerate)`
+- `labels`, when set, must have exactly as many entries as the channels of the block (otherwise `setup()` fails);
+  when empty, the labels reported by eegdev are used, or `eeg:1`, `eeg:2`, ... (the lower-case block name) if eegdev
+  reports none
 
 ## libeegdev backend options
 
@@ -215,23 +218,26 @@ options are not documented here yet.
 
 ## Open-string handling
 
-The plugin accepts a driver/file name plus an optional eegdev option tail.
+The plugin takes a driver/file name (`acquisition.device`) and an optional full eegdev open string
+(`acquisition.open_options`, `name|key1|value1|key2|value2|...`: an odd number of tokens, otherwise `configure()`
+fails). When `open_options` has a name, it replaces `acquisition.device`.
 
 Example:
 
 ```yaml
-device:
-  name: "gtec"
-  open_options: "port|usb0|serial|UA-1234"
+acquisition.device: "gtec"
+acquisition.open_options: "gtec|deviceid|any"
+acquisition.samplerate: 512
 ```
 
-This becomes an eegdev open string like:
+This becomes an eegdev open string like (options are written in alphabetical order):
 
 ```text
-gtec|port|usb0|serial|UA-1234|samplerate|512
+gtec|deviceid|any|samplerate|512
 ```
 
-For `.gdf` and `.bdf` paths, it switches to the `datafile|path|...` backend.
+For `.gdf` and `.bdf` paths, it switches to the `datafile|path|...` backend (the file must exist; any other
+extension is rejected).
 
 ## Launch file
 
@@ -247,13 +253,14 @@ ros2 launch ros2neuro_acquisition_eegdev eegdev_file_acquisition.launch.py \
   file_path:=/path/to/data.gdf
 ```
 
-It accepts launch arguments such as:
+It accepts the launch arguments:
 
-- `file_path`
-- `framerate`
-- `samplerate`
-- `enable_exg`
-- `enable_trigger`
+- `file_path` (required)
+- `framerate` (default `16.0`)
+- `samplerate` (default `0`)
+- `eeg_name`, `exg_name`, `trigger_name` (defaults `EEG`, `EXG`, `TRI`)
+- `enable_exg`, `enable_trigger` (default `true`)
+- `acquisition.autostart` (default `true`), `acquisition.reopen` (default `false`)
 
 With the default acquisition node configuration, data are published on:
 
@@ -289,7 +296,9 @@ The package requires `libeegdev` development files to be installed.
 The package currently includes:
 
 - unit tests for `EGDOpenOptions`
-- a file-based integration test using `test/test_short.gdf`
+- a pluginlib loading test for `EGDDevice`
+- a file-based integration test using `test/test_short.gdf` (skipped when the `libeegdev` datafile backend cannot
+  open it)
 
 Run them with:
 
@@ -312,7 +321,7 @@ opening the file, because some `libeegdev` setups are sensitive to long file pat
 
 - `libeegdev` can expose richer metadata than the current [`ros2neuro_data`](../msgs-data.md#ros2neuro_data)
   containers store.
-- Transducer details, hardware filters, and min/max ranges are queried internally
-  where possible, but are not yet fully persisted in the published metadata model.
+- Units, labels and min/max ranges are queried from eegdev and reach `NeuroFrameInfo`;
+  transducer details and hardware filters are not queried, and `NeuroFrameInfo` carries them empty.
 - If you want those fields to reach `NeuroFrameInfo`, the next clean step is
   extending [`ros2neuro_data`](../msgs-data.md#ros2neuro_data) to carry them explicitly.

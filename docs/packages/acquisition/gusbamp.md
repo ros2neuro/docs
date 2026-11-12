@@ -87,10 +87,12 @@ ros2 launch ros2neuro_acquisition_gusbamp gusbamp_acquisition.launch.xml
 All parameters are expected under the acquisition node device prefix. With the
 current plugin runtime that prefix is `acquisition`.
 
-- `acquisition.samplerate`
-- `acquisition.framerate`
-- `acquisition.device`
-- `acquisition.channels`
+- `acquisition.name` (default `gusbamp`)
+- `acquisition.samplerate` (default `512`)
+- `acquisition.framerate` (default `16.0`; samples per frame = `round(samplerate / framerate)`)
+- `acquisition.device` (name of the amplifier as listed by the g.USBamp API; empty = the first one found)
+- `acquisition.channels` (1..16, default 16)
+- `acquisition.number_of_scans` (default: the API autoset value)
 - `acquisition.enable_trigger_line`
 - `acquisition.scan_dio`
 - `acquisition.slave_mode`
@@ -104,3 +106,6 @@ current plugin runtime that prefix is `acquisition`.
 - `acquisition.triggers.trigger.enable`
 - `acquisition.triggers.trigger.name`
 - `acquisition.triggers.trigger.labels`
+
+The EEG labels are cut or padded (`ch<N>`) to `acquisition.channels`. The trigger block is published only when both
+`acquisition.triggers.trigger.enable` and `acquisition.scan_dio` are true.

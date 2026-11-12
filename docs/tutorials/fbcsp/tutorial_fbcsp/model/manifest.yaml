@@ -1,0 +1,27 @@
+decoder:
+    name: fbcsp_lda
+    subject: tutorial
+    type: ros2neuro::decoder::LDA
+    path: fbcsp_lda.r2nd
+
+input:
+    name: fbcsp
+    type: NeuroFeature::TYPE_SPECTRUM
+    unit: ln(uV2)
+    order: row_major
+    axes:
+        - name: channels
+          labels: ["csp1", "csp2"]
+        - name: frequency
+          unit: Hz
+          values: [10, 14, 18, 23]
+
+features:
+    mode: selection
+    selection:
+        channels: ["csp1", "csp1", "csp1", "csp1", "csp2", "csp2", "csp2", "csp2"]
+        frequencies: [10, 14, 18, 23, 10, 14, 18, 23]
+
+output:
+    fields: [771, 773]
+    type: NeuroPrediction::TYPE_PROBABILITIES

@@ -49,7 +49,7 @@ Complete launch files for every protocol are in [`ros2neuro_devel_test`](../deve
 
 ## Writing a new protocol
 
-Derive from `ros2neuro::manager::ManagerPlugin` (`configure`, `start`, `stop`, `on_event`), use only
+Derive from `ros2neuro::manager::Manager` (`configure`, `start`, `stop`, `on_event`), use only
 `ManagerContext` (`emit_event`, `request_shutdown`, `now`...), and export it with
 `PLUGINLIB_EXPORT_CLASS` and `pluginlib_export_plugin_description_file(ros2neuro_manager plugins.xml)`. The
 asynchronous plugin is the smallest example.
@@ -108,7 +108,7 @@ manager <--CFeedback+Off, Hit / Miss / Timeout----------------- /neuroevent <-- 
 
 The manager decides **when** things happen (order and timing of the phases); [`ros2neuro_control_feedback`](../control/feedback.md) decides **what
 happens during the continuous feedback** (autopilot, thresholds, outcome) and closes the trial. A protocol is a **plugin** (pluginlib, base class
-`ros2neuro::manager::ManagerPlugin`): [`ros2neuro_manager_synchronous`](synchronous.md) (calibration/evaluation trials) or
+`ros2neuro::manager::Manager`): [`ros2neuro_manager_synchronous`](synchronous.md) (calibration/evaluation trials) or
 [`ros2neuro_manager_asynchronous`](asynchronous.md) (continuous control: nothing to write).
 
 ## The protocol parameters: the same value in every node
@@ -127,7 +127,7 @@ The durations of the trials (`duration.*`) are the manager's own; the ones of th
 
 ### The ids of the events
 
-Declared with `event.*` (checked at start: positive, all different, `event.off` and `event.shown` above the others) and available to the
+Declared with `event.*` (checked at start: positive, all different, `event.off` and `event.shown` above the others, `event.shown` a power of two because the display events are recognised by its bit; manager, control and feedback refuse other values) and available to the
 plugins as `ManagerContext::events()`. `event.off` is added to the id of the event it closes; `event.shown` is the flag of the display
 events of the feedback, and every class code is below it. To change an id give the same value to the manager, control and the feedback (a `/**` section does it).
 
@@ -140,7 +140,7 @@ only one with a color of its own: yellow, in the feedback). The names of the kno
 
 ### `rest_mode`
 
-`none` (default) | `timeout` | `class`. The manager keeps it and checks it: unsupported value, or `class` without 783 in
+`none` (default) | `timeout` | `class`. The manager reads it and checks it: unsupported value, or `class` without 783 in
 `classes`, is a configuration error. What it means is the classifier side's: with 783 in `classes`, `timeout` makes the rest a trial with
 a cue and no classifier output (in an evaluation it is a Hit if no threshold is touched for `rest_timeout`), `class` makes it a normal class
 with its own output and threshold; a calibration needs neither. Whether an evaluation or a control with 783 says `timeout` or `class` is
@@ -168,11 +168,11 @@ Number arrays accept both `[1, 1]` and `[0.8, 0.8]` spellings. `classes` and `re
 
 ## Writing a plugin
 
-Derive from `ManagerPlugin` (`configure/start/stop/on_event`), export it with `PLUGINLIB_EXPORT_CLASS` and
+Derive from `Manager` (`configure/start/stop/on_event`), export it with `PLUGINLIB_EXPORT_CLASS` and
 `pluginlib_export_plugin_description_file(ros2neuro_manager plugins.xml)`. The plugin may run its own thread; `ManagerContext` is
 thread-safe (`layout`, `events`, `emit_event`, `now`, `request_shutdown(failed)`). Never spin inside callbacks. A plugin that holds the
-`shared_ptr` of the node must let it go: the node calls `release_plugin()` before exiting. A plugin that has parameters other nodes need
-declares them on the node.
+`shared_ptr` of the node must let it go: the node calls `release_plugin()` before exiting. A plugin reads
+its own parameters from the node: nobody asks the manager for them.
 
 ## Tests
 

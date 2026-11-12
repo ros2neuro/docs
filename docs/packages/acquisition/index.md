@@ -102,7 +102,7 @@ The acquisition node reads its parameters from a YAML file. The plugin and the p
   ros__parameters:
     acquisition.plugin: ros2neuro::acquisition::XDFDevice   # the backend to load (required)
     acquisition.autostart: true                              # start streaming right after the setup
-    acquisition.reopen: true                                 # reopen the device after a read or setup failure
+    acquisition.reopen: true                                 # reopen the device after an open, setup, start or read failure
     acquisition.framerate: 16.0                              # NeuroFrame messages per second
     acquisition.topic_data: ~/neurodata                      # optional, these are the defaults
     acquisition.topic_info: ~/neurodata_info
@@ -214,9 +214,9 @@ Core node parameters:
 - `acquisition.topic_data`: runtime frame topic, defaults to `~/neurodata`
 - `acquisition.topic_info`: metadata topic, defaults to `~/neurodata_info`
 - `acquisition.prefix`: prefix of the plugin parameters, used **only** when no plugin class is set (the default is `device`); whenever `acquisition.plugin` / `plugin` is set the prefix is `acquisition`
-- `acquisition.autostart`: start streaming automatically after setup
-- `acquisition.reopen`: reopen the device after read/setup failures
-- `acquisition.framerate`: fallback frame rate if the plugin does not provide one
+- `acquisition.autostart`: start streaming automatically after setup (default `true`; otherwise call `~/start`)
+- `acquisition.reopen`: reopen the device after an open/setup/start/read failure (default `true`; `~/quit` disables it)
+- `acquisition.framerate`: fallback frame rate if the plugin does not provide one (default `16.0`); plugins that read the same name share it
 
 Legacy names such as `plugin`, `topic_data`, `topic_info`, `device_prefix`,
 `autostart`, `reopen`, and `framerate` are still accepted as
@@ -275,8 +275,10 @@ The same generic runtime is available through:
 
 ```bash
 ros2 launch ros2neuro_acquisition acquisition.launch.xml \
-  config_file:=/path/to/acquisition_configuration.yaml
+  config:=/path/to/acquisition_configuration.yaml
 ```
+
+The launch file also accepts `visualizer:=true` to start `neuroviz` next to the node.
 
 ## Notes
 

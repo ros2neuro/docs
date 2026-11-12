@@ -38,11 +38,12 @@ A support library for plugins. Its role is to keep acquisition code independent 
 
 | Type | Notes |
 |---|---|
-| `ros2neuro::data::NeuroSignal<T>` | common sampled-signal structure: `name`, `type`, `unit`, `samples`, `channels`, `labels`, `data` |
-| `NeuroSensor`, `NeuroTrigger` | the analog (`float`) and digital (`int32`) specialisations |
+| `ros2neuro::data::NeuroSignal<T>` | common sampled-signal structure: `name`, `samples`, `channels`, `min_value`, `max_value`, `data` (getters and setters) |
+| `NeuroSensor`, `NeuroTrigger` | the analog (`float`) and digital (`int32`) specialisations; `NeuroSensor` adds `type`, `unit`, `labels`, `NeuroTrigger` adds `unit`, `labels` |
 | `NeuroAxis` | one semantic axis of a feature |
-| `NeuroFeature` | tensor with `name`, `type`, `unit`, `shape`, `axes`, `data` |
+| `NeuroFeature` | tensor with `header`, `name`, `type`, `window_length`, `shape`, `axes`, `data`, `unit`, `description` |
 | `NeuroFrame` | the chunk with its sensors and triggers |
+| `NeuroEvent` | plain struct mirroring the `NeuroEvent` message |
 
 `NeuroFeature` is separate from `NeuroSignal<T>` because a feature is not limited to a time-by-channel matrix.
 
@@ -59,9 +60,10 @@ and 2 samples: `[s0c0, s0c1, s0c2, s1c0, s1c1, s1c2]`.
 | `validate(x)` | same check, throws on failure |
 | `to_msg(x)` | runtime type to ROS message |
 | `from_msg(msg)` | ROS message to runtime type |
+| `to_msg_info(x)` / `from_msg_info(msg, x)` | runtime type to/from `NeuroFrameInfo`, `NeuroSensorInfo`, `NeuroTriggerInfo` |
 
-They are overloaded for `NeuroAxis`, `NeuroSensor`, `NeuroTrigger`, `NeuroFeature` and `NeuroFrame`. The checks cover
-non-empty required fields, shape and data-size consistency, axis consistency and consistency between a frame and
+They are overloaded for `NeuroAxis`, `NeuroSensor`, `NeuroTrigger`, `NeuroFeature` and `NeuroFrame` (`to_msg` /
+`from_msg` also for `NeuroEvent`). The checks cover non-empty required fields, an axis with both `labels` and `values`, shape and data-size consistency, axis consistency and consistency between a frame and
 its signals.
 
 ### Example
@@ -71,22 +73,23 @@ its signals.
 #include "ros2neuro_data/NeuroSensor.h"
 #include "ros2neuro_data/NeuroDataConvert.h"
 #include "ros2neuro_data/NeuroDataValidate.h"
+#include "ros2neuro_msgs/msg/neuro_sensor_info.hpp"
 
 ros2neuro::data::NeuroFrame frame;
-frame.samples = 4;
-frame.framerate = 16.0f;
-frame.samplerate = 256.0f;
+frame.set_device_id("dev0");
+frame.set_samples(4);
+frame.set_samplerate(256.0f);
 
 ros2neuro::data::NeuroSensor eeg;
-eeg.name = "eeg";
-eeg.type = "EEG";
-eeg.unit = "uV";
-eeg.resize(4, 2);
-eeg.labels = {"C3", "C4"};
+eeg.set_name("eeg");
+eeg.set_type(ros2neuro_msgs::msg::NeuroSensorInfo::TYPE_EEG);
+eeg.set_unit("uV");
+eeg.resize(4, 2);        // samples, channels
+eeg.set_labels({"C3", "C4"});
 eeg.at(0, 0) = 1.0f;     // at(sample, channel)
 eeg.at(0, 1) = 2.0f;
 
-frame.sensors.push_back(eeg);
+frame.add_sensor(eeg);
 
 ros2neuro::data::validate(frame);
 auto msg = ros2neuro::data::to_msg(frame);

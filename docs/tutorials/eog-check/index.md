@@ -13,14 +13,14 @@ get a small simulator, so you can run everything without hardware and without fr
 - why a blink is easy to recognise on Fp1/Fp2 and how to detect it sample by sample;
 - how to separate the signal from slow drifts with a baseline, and avoid false events with hysteresis;
 - how to time-stamp an event with the exact sample that caused it;
-- how this ties in with the stack: the event ids `1024` (Blink) and `1024 + 32768` (Blink Off) are the ones the
-  [manager](../../packages/manager/index.md) already listens to.
+- how this ties in with the stack: the blink is a `NeuroEvent` on `/neuroevent` (id `1024`, and `1024 + 32768` for its end), so the
+  [recorder](../../packages/recorder/index.md) saves it next to the signal with no change.
 
 **You need** a built ROS2neuro workspace. Read the [power threshold tutorial](../power-threshold-event/index.md)
 first: this one builds on the same ideas.
 
 The complete package is in the repository, under `docs/tutorials/eog-check/tutorial_eog_check/`, and it is
-compiled by the CI of the repository.
+the page includes its files, so the code below is the code that builds (with `colcon build` and `colcon test`).
 
 ## 1. What a blink looks like
 
@@ -45,7 +45,7 @@ independent noise of the two electrodes.
 flowchart LR
     ACQ["acquisition<br/>NeuroFrame (EEG with Fp1, Fp2)"] --> N["eog_blink node"]
     N -->|"Blink 1024<br/>Blink Off 33792"| EV["/neuroevent"]
-    EV --> MAN[manager]
+    EV --> YOU["a node of yours<br/>(optional)"]
     EV --> REC[recorder]
 ```
 
@@ -108,10 +108,9 @@ Things to notice:
 - **Sample-accurate time stamps.** Unlike the previous tutorial, the event is stamped with
   `frame.header.stamp + s / samplerate`, the time of the sample that triggered it. A blink then lines up with
   the signal in the recorded file.
-- **Event ids.** `1024` is *Blink* in the ROS2neuro catalog and its end is `1024 + 32768`
-  ([event codes](../../concepts/protocols.md#event-codes)). The manager keeps track of whether a blink is in
-  progress by listening to these two ids, so you do not need to change the manager to make it aware of your
-  detector.
+- **Event ids.** `1024` is the id this tutorial chooses for *Blink*: it is not an id of the stack, and its end follows the
+  *Off* convention, `1024 + 32768` ([event codes](../../concepts/protocols.md#event-codes)). No node of the stack reacts to
+  it: the recorder saves it, and a node of yours can listen to it (for example to discard a trial with a blink).
 
 ## 6. The simulator
 

@@ -30,6 +30,7 @@ A step-by-step guide with screenshots is in the tutorial
 - **Time Scope** and **Spectrum** tabs, which can be shown side by side
 - automatic topic discovery for `ros2neuro_msgs/msg/NeuroFrame`
 - runtime channel labels from `NeuroSensor` and `NeuroTrigger`, with metadata fallback
+- the tabs are refreshed at most 30 times per second: at higher frame rates some frames are not passed to the tabs
 - multi-tab interface with tab rename and tab close
 - dock-like tab rearrangement
 - single-pane, left/right and top/bottom layouts
@@ -49,7 +50,7 @@ A step-by-step guide with screenshots is in the tutorial
 
 - `neuroviz`: main Qt executable
 - `launch/visualizer.launch.py`: minimal launch file
-- `config/visualizer.yaml`: basic configuration placeholder
+- `config/visualizer.yaml`: configuration placeholder (not read by the node)
 
 ## Build
 
@@ -234,6 +235,16 @@ This keeps tab-specific controls and rendering isolated while the main window co
 - expose more launch/config parameters
 - add more tests around GUI state transitions and docking behavior
 
+## Tests
+
+```bash
+colcon test --packages-select ros2neuro_visualizer
+```
+
+Three gtests cover the non-GUI helpers: `test_signal_buffer` (ring buffer order, zero padding, chunks larger than the
+window), `test_filter_pipeline` (CAR and single-channel reference) and `test_spectrum_averager` (off, rolling and
+cumulative averaging).
+
 <!-- interfaces -->
 ## Dependencies
 
@@ -251,7 +262,7 @@ Default node name: `neuroviz`.
 
 | | Default topic | Type | Changed by |
 |---|---|---|---|
-| subscribes | `/acquisition/neurodata` | `NeuroFrame` | the **Topic** box of the window (or `topic` in the YAML) |
+| subscribes | `/acquisition/neurodata` | `NeuroFrame` | the **Topic** box of the window (no ROS parameter) |
 | subscribes | `/acquisition/neurodata_info` | `NeuroFrameInfo` | the metadata topic is the data topic plus `_info`; change it in the **Info** dialog |
 
 Messages used:
@@ -260,11 +271,6 @@ Messages used:
 
 ## Example configuration
 
-`config/visualizer.yaml`:
-
-```yaml
-ros2neuro_visualizer:
-  ros__parameters:
-    topic: /acquisition/neurodata
-```
+None: the visualizer reads no ROS parameter. `config/visualizer.yaml` (a `topic` entry) is installed as a placeholder,
+but no code reads it and `visualizer.launch.py` does not load it; the topic is chosen in the window.
 <!-- /interfaces -->

@@ -18,7 +18,7 @@ last `window` predictions, and anything older counts for nothing.
 [Writing a filter plugin](../filter-plugin/index.md), because the registration steps are the same.
 
 The complete package is in the repository, under `docs/tutorials/integrator-plugin/tutorial_integrator_plugin/`,
-and it is compiled by the CI of the repository.
+and the page includes its files, so the code below is the code that builds (with `colcon build` and `colcon test`).
 
 ## 1. Who does what
 
@@ -184,8 +184,8 @@ Replace the integrator parameters of a launch file, for example the ones of the
 [`ros2neuro_devel_test`](../../packages/devel-test.md) launchers
 (`launch/gaussian/config/integrator_exponential.yaml`), with `integrator.type:
 tutorial::integrator::MovingAverage` and `integrator.params.window`. Keep `input_topic`, `output_topic`,
-`event_topic` and `integrator.reset_event` as they are, because the [manager](../../packages/manager/index.md)
-depends on them.
+`event_topic` and `integrator.reset_event` as they are, because [control](../../packages/control/index.md) reads that
+output and the trials rely on the reset at every CFeedback.
 
 ## Troubleshooting
 

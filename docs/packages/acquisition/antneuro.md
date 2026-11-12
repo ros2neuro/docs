@@ -55,6 +55,9 @@ The package also installs a convenience launch file that uses the generic
 ros2 launch ros2neuro_acquisition_antneuro eego_acquisition.launch.xml
 ```
 
+Launch arguments: `samplerate` (default `512`), `framerate` (default `16.0`), `config` (default: the installed
+`config/eego_configuration.yaml`, read with `allow_substs`), `visualizer` (default `false`: start `neuroviz`).
+
 ## Parameters
 
 Device parameters are read under the prefix passed by the acquisition runtime.
@@ -78,6 +81,10 @@ with a different prefix, use the same keys under that prefix.
 - `acquisition.triggers.trigger.enable`
 - `acquisition.triggers.trigger.name`
 - `acquisition.triggers.trigger.labels`
+
+Defaults: `samplerate` 512 (must be one of the rates the amplifier supports), `framerate` 16.0, `cap` `"200"` (the
+other supported cap is `"209"`; any other value is treated as `"200"`), `eeg_mask` and `bip_mask` empty,
+`max_buffered_samples` 4096, EEG and trigger blocks enabled, **EXG block disabled**, block names `EEG`, `EXG`, `TRI`.
 
 Example:
 

@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>tutorial_fbcsp</name>
+  <version>0.1.0</version>
+  <description>Tutorial: a filter bank CSP trained offline in MATLAB, run online as a node that publishes a NeuroFeature for the LDA decoder.</description>
+  <maintainer email="paolo.forin@phd.unipd.it">Paolo Forin</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>ros2neuro_msgs</depend>
+  <depend>ros2neuro_decoder_lda</depend>
+  <depend>yaml-cpp</depend>
+
+  <exec_depend>ros2neuro_decoder</exec_depend>
+  <exec_depend>ros2neuro_acquisition</exec_depend>
+  <exec_depend>ros2neuro_devel_test</exec_depend>
+  <exec_depend>ros2neuro_decoder_py</exec_depend>
+  <exec_depend>ros2neuro_integrator</exec_depend>
+  <exec_depend>ros2neuro_control</exec_depend>
+  <exec_depend>ros2neuro_manager</exec_depend>
+  <exec_depend>ros2neuro_feedback</exec_depend>
+
+  <test_depend>ament_cmake_gtest</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

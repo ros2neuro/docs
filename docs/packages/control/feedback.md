@@ -1,9 +1,9 @@
 # Control feedback (Feedback)
 
 !!! info ""
-    Package: [`ros2neuro_control_feedback`](https://github.com/ros2neuro/ros2neuro_control_feedback) · pluginlib class: `ros2neuro::control_feedback::Feedback` · part of [Control](index.md)
+    Package: [`ros2neuro_control_feedback`](https://github.com/ros2neuro/ros2neuro_control_feedback) · pluginlib class: `ros2neuro::control::Feedback` · part of [Control](index.md)
 
-Plugin of [`ros2neuro_control`](index.md) (pluginlib class `ros2neuro::control_feedback::Feedback`) that drives the feedback (wheel,
+Plugin of [`ros2neuro_control`](index.md) (pluginlib class `ros2neuro::control::Feedback`) that drives the feedback (wheel,
 bars). It is the node that knows the thresholds: it reads the `NeuroPrediction` of the integrator, maps and normalizes it,
 decides the outcome of a trial (Hit / Miss / Timeout) and builds the flow that [`ros2neuro_feedback`](../feedback/index.md) shows. The trials
 themselves (order, Start, Fixation, cue, CFeedback) are run by the manager, which this plugin listens to. **Every parameter is the
@@ -15,7 +15,7 @@ protocol: the plugin puts the ones in force in the flow, so the feedback follows
 | | |
 |---|---|
 | **Layer** | Control |
-| **Kind** | Plugin of [`ros2neuro_control`](index.md) (pluginlib class `ros2neuro::control_feedback::Feedback`) |
+| **Kind** | Plugin of [`ros2neuro_control`](index.md) (pluginlib class `ros2neuro::control::Feedback`) |
 | **Reads** | `NeuroPrediction` (through the control node, `input_topic`), `/neuroevent` (`NeuroEvent`, `event_topic`) |
 | **Publishes** | `/control_feedback/probabilities` (`NeuroControl`, `control_topic`: the flow of the feedback: values and thresholds, with the header of the `NeuroPrediction`), `/neuroevent` (the end of the continuous feedback and the outcome: Hit / Miss / Timeout) |
 | **Calls** | service `/reset` (`std_srvs/Empty`) of the integrator, through the control node |
@@ -45,7 +45,7 @@ The topics belong to the control node (the integrator input) and to the plugin (
 Messages used:
 
 - `NeuroPrediction`: read (the integrator output; its `fields` are class codes or names, the `values` are accumulators or probabilities)
-- `NeuroEvent`: read (the bus) and written (the outcomes only)
+- `NeuroEvent`: read (the bus) and written (only the end of the continuous feedback and the outcomes)
 - `NeuroControl`: published, the flow of the feedback (the values and the thresholds, with the header of the `NeuroPrediction` they come from)
 
 <!-- /interfaces -->

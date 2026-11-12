@@ -36,6 +36,8 @@ or, with the ready launch file of the XDF backend:
 ros2 launch ros2neuro_recorder_xdf xdf_recorder.launch.py output:=/tmp/recordings subject:=sub-01 task:=rest xdf_file_type:=gdf
 ```
 
+(the launch file does not set the output folder yet: the file goes to the working directory, see [XDF / GDF](xdf.md#launch)).
+
 ---
 
 ## Reference (from the package README)
@@ -100,14 +102,22 @@ delegated to plugins such as [`ros2neuro_recorder_xdf`](xdf.md).
 
 ## Main Parameters
 
-- `plugin`: pluginlib class name of the recorder backend
+- `plugin`: pluginlib class name of the recorder backend (required)
 - `topic_data`: topic carrying `ros2neuro_msgs/msg/NeuroFrame`, defaults to `/neurodata`
-- `topic_info`: topic carrying `ros2neuro_msgs/msg/NeuroFrameInfo`, defaults to `/neurodata_info`
+- `topic_info`: topic carrying `ros2neuro_msgs/msg/NeuroFrameInfo` (`transient_local`), defaults to `/neurodata_info`
 - `topic_event`: topic carrying `ros2neuro_msgs/msg/NeuroEvent`, defaults to `/neuroevent`
-- `output`: output folder
+- `output`: output folder, defaults to `.` (created if missing)
 - `filename`: explicit output filename; if empty, the node generates one
-- `max_queue_size`: bounded queue size for incoming frames before the recorder loop consumes them
-- `subject`, `session`, `modality`, `task`, `extra`: fields used to build the generated filename
+- `max_queue_size`: bounded queue size for incoming frames before the recorder loop consumes them, defaults to `32`
+  (when full, the oldest frame is dropped with a warning)
+- `subject` (default `unknown`), `session`, `modality`, `task`, `extra` (default empty): fields used to build the generated filename
+
+Every parameter except the three topics is also accepted with the `recorder.` prefix (`recorder.plugin`,
+`recorder.output`, ...), which wins when set.
+
+The node waits for `NeuroFrameInfo`, opens the file, then writes every frame it receives. Events are written only
+once the first frame has been recorded: an event that arrives earlier is dropped. The file is closed when the node
+stops (or after a write error, after which the node shuts down).
 
 ## Generated Filename
 

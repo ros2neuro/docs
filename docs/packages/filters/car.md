@@ -104,7 +104,7 @@ host where the license and a display are available):
    ```
 
    This prints PASSED/FAILED (fails if the maximum absolute difference between ROS
-   and MATLAB output exceeds `1e-3`) and shows/saves a debug plot to
+   and MATLAB output exceeds 4 float32 ULP of the largest input sample (about 4e-3 for the test data)) and shows/saves a debug plot to
    `test/compare_car.png`.
 
 Step 1 is also wired into `colcon test` as an opt-in test:

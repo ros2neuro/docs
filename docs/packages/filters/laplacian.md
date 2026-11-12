@@ -48,7 +48,10 @@ Only non-zero entries in the layout are treated as valid channels.
 ## Parameters
 
 - `layout` (`string`, required): matrix serialized row-by-row with `;` between rows
-- `nchannels` (`integer`, optional): number of channels; if omitted, the highest channel id in the layout is used
+- `nchannels` (`integer`, optional): number of channels of the input (the mask is `nchannels x nchannels`); if omitted, the
+  highest channel id in the layout is used. Channel ids are 1-based (0 = no electrode): a layout with an id below 0 or above
+  `nchannels` is refused at configure. Every frame must have exactly `nchannels` channels: a frame with another number is not
+  filtered, and the filter chain logs `Laplacian: the frame has N channels, 'nchannels' is M` and drops it
 
 Example:
 

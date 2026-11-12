@@ -5,7 +5,9 @@ them: which ones are **global** (one section loaded by every node that needs the
 you can decide what else deserves a global parameter.
 
 **No node asks another node for a parameter.** Every node declares and reads its own parameters; a value that several nodes share is the
-same parameter in each of them (same name, same default), and the parameter file gives it to all of them at once.
+same parameter in each of them (same name, same default), and the parameter file gives it to all of them at once. One exception: the
+feedback has no default for `classes` and `thresholds` (the manager and control default to `[773, 771]` and `[0.8, 0.8]`), so they must
+be given to it.
 
 ## Global parameters: the `/**` section
 

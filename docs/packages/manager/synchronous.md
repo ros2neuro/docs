@@ -95,7 +95,7 @@ up: the DL decoders take a while to load).
 and reading the integrator?) the manager logs an **error** and stops with exit code 1 (`on_exit="shutdown"` ends the whole launch).
 
 **End.** After the last trial and `duration.end` the plugin publishes `/protocol_ended` (latched), prints
-`Summary: hit=.. miss=.. timeout=.. accuracy=..%` (counted from the ends of the outcomes it heard) and, with `shutdown_on_end`, stops the node.
+`Summary: hit=.. miss=.. timeout=.. accuracy=..%` (counted from the outcomes it heard) and, with `shutdown_on_end`, stops the node.
 
 ## Parameters (declared on the manager node)
 

@@ -20,7 +20,7 @@ The recorder plugin that writes GDF or BDF files using `xdffileio`: the signal a
 - **ROS 2 packages** (run only): `launch`, `launch_ros`
 - **External libraries**:
     - `xdffileio`: writing GDF/BDF (found with `find_library`)
-    - `libeegdev`: optional, used by the round-trip tests
+    - `libeegdev`: needed only to build the tests (with `BUILD_TESTING` the configuration fails without it): the round-trip test compiles the sources of `ros2neuro_acquisition_eegdev`, which must sit next to this package in `src/`
 
 ## Messages and topics
 
@@ -68,7 +68,8 @@ Use the following plugin name in [`ros2neuro_recorder`](index.md):
 
 ## Parameters
 
-Recorder-level parameters are declared by [`ros2neuro_recorder`](index.md). This package adds:
+Recorder-level parameters are declared by [`ros2neuro_recorder`](index.md). This package adds (each also accepted with the
+`recorder.` prefix, e.g. `recorder.xdf.file_type`):
 
 - `xdf.file_type`: output format, currently `gdf` or `bdf`
 - `xdf.session_id`: session metadata stored in the file header
@@ -98,11 +99,18 @@ ros2 launch ros2neuro_recorder_xdf xdf_recorder.launch.py
 
 It starts `ros2neuro_recorder/recorder` preconfigured with the XDF backend.
 
+Launch arguments (defaults in brackets): `topic_data` (`/neurodata`), `topic_info` (`/neurodata_info`),
+`topic_event` (`/neuroevent`), `output` (`.`, the folder of the file), `filename` (empty), `subject` (`unknown`), `session`, `modality`, `task`, `extra`
+(empty), `xdf_file_type` (`gdf`), `xdf_session_id`, `xdf_birthday` (empty), `xdf_height`, `xdf_weight` (`0.0`),
+`max_queue_size` (`32`).
+
+
 ## Example
 
 ```bash
 ros2 launch ros2neuro_recorder_xdf xdf_recorder.launch.py \
-  output:=/tmp/recordings \
+  topic_data:=/acquisition/neurodata \
+  topic_info:=/acquisition/neurodata_info \
   subject:=sub-01 \
   session:=01 \
   task:=rest \
@@ -113,6 +121,8 @@ ros2 launch ros2neuro_recorder_xdf xdf_recorder.launch.py \
 
 - Generated filenames use the extension returned by the plugin, so `gdf` and `bdf`
   recordings keep a coherent filename suffix.
-- `NeuroEvent` messages are interpreted using `onset`; XDF event duration is
-  currently written as `0.0`.
+- `NeuroEvent` messages are placed in the file by `header.stamp`, relative to the `header.stamp` of the first
+  recorded frame; the `onset` field of the message is not used. XDF event duration is currently written as `0.0`.
+- An event type is created for each (`event_id`, `family_id`) pair, with the `description` of its first event
+  (or `event_id=<id>,family_id=<id>` when empty); the code written in the file is `event_id`.
 - The current `xdffileio` integration supports up to 16 sensor/trigger groups.

@@ -132,23 +132,14 @@ for every prediction, whatever its probability).
   `dynamic_reconfigure` + a generated `Buffer.cfg`. Same two knobs
   (`buffer_size`, `increment`), no separate `.cfg` file needed.
 
-## Known gap in the current parameter pipeline
+## Parameters from the launch file and at runtime
 
-As of this writing, `ros2neuro_integrator::IntegratorNode` only pre-declares
-and routes through one hardcoded plugin parameter, `integrator.params.alpha`
--- both at configure time (`get_parameters("integrator.params", ...)` only
-returns *declared* parameters, and only `alpha` is declared) and at runtime
-(`IntegratorNode::is_supported_runtime_parameter` only allow-lists
-`rejection` and `integrator.params.alpha`). Until that's generalized (e.g.
-`automatically_declare_parameters_from_overrides` on the node, and dropping
-the runtime allow-list in favor of delegating anything under
-`integrator.params.*` to the plugin), `buffer_size`/`increment`/`init_val`
-won't actually reach this plugin from a launch YAML or `ros2 param set`, and
-it will silently run with its code defaults (`buffer_size=48`,
-`increment=HARD`, uniform `init_val`). The plugin itself is written
-correctly against the documented `Integrator` interface and is verified
-directly (see Testing below); this gap is in the node that hosts it, not
-here.
+`ros2neuro_integrator` declares every `integrator.params.*` parameter it is given at start (parameter
+file or `-p`) and passes all of them to the plugin, so `buffer_size`, `increment` and `init_val` reach
+`configure()` from a launch YAML. At runtime it forwards any change under `integrator.params.*` to
+`set_runtime_parameter`, so `ros2 param set /integrator integrator.params.buffer_size 32` works, but only
+for a parameter that was given at start (ROS refuses an undeclared parameter). A parameter that is not
+given keeps its code default (`buffer_size=48`, `increment=HARD`, uniform `init_val`).
 
 ## Testing
 
@@ -162,3 +153,5 @@ colcon test --packages-select ros2neuro_integrator_buffer
 and SOFT increment, `[0, 1]` clipping, `init_val` handling (both matching
 and mismatched sizes), invalid `configure()` parameters, and
 `set_runtime_parameter` validation.
+`test/test_buffer_node.cpp` runs the integrator node with this plugin (parameters given as
+`integrator.params.*`) and checks the published `NeuroPrediction` (`TYPE_SCORES`, the buffer values).

@@ -62,11 +62,13 @@ for `n = 0, ..., N-1`.
 - plugin id: `ros2neuro_filters_hamming/HammingFloat`
 - header: `Hamming.hpp`
 
-The plugin applies the window row-wise to the incoming matrix, independently for each channel.
+The plugin multiplies every channel (column) of the incoming matrix by the window, along the samples (rows). The window
+length is the number of samples of the first matrix it receives and is not changed afterwards: every frame must have
+that number of samples.
 
 ## Reusable C++ API
 
-The `ros2neuro::filters::Hamming<T>` class now exposes:
+The `ros2neuro::filters::Hamming<T>` class exposes:
 
 - `initialize(int nsamples)`: explicitly create the window coefficients
 - `coefficients()`: read the cached coefficient vector

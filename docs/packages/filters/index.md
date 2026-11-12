@@ -144,11 +144,16 @@ Published topic:
 
 - `~/filtered` (`ros2neuro_msgs/msg/NeuroFrame`)
 
+Every `NeuroSensor` block of the frame goes through the same chain, that is through the same filter instances, one block
+after the other. Stateful filters (Butterworth) and the windows keep the shape of the first matrix they receive, so feed the
+node frames with a single sensor block (or chains without such filters).
+
 Main parameters:
 
 - `configname` (`string`, default `filters`): the prefix of the chain parameters
-- `definitionsname` (`string`, default: the same as `configname`): the prefix under which the filters are *defined* (class and
-  parameters), when it must differ from the one of the chain
+- `definitionsname` (`string`, default `filters`): the prefix under which the filters are *defined* (class and
+  parameters), when it must differ from the one of the chain; a filter whose `class` (or whose parameters) are not found under
+  it is looked up under `configname`, so by default the chain prefix is used
 - `input_topic` (`string`, default `/neurodata`)
 - `output_topic` (`string`, default `~/filtered`)
 
@@ -380,8 +385,8 @@ host where the license and a display are available):
    and MATLAB output exceeds `5e-3`) and shows/saves a debug plot to
    `test/compare_filter_chain_full.png`.
 
-   Note: the threshold here is looser than the `1e-3` used by the per-filter
-   round-trip tests, because this chain cascades 2 stateful IIR filters
+   Note: the threshold here is looser than the `1e-3` used by the window, Laplacian
+   and Butterworth round-trip tests, because this chain cascades 2 stateful IIR filters
    (Butterworth hp + lp). float32 rounding at each stage propagates through
    the recursion and can produce occasional error spikes higher than in the
    stateless filters (window/car/dc/laplacian), even though the mean error
@@ -393,3 +398,7 @@ Step 1 is also wired into `colcon test` as an opt-in test:
 colcon build --packages-select ros2neuro_filters ros2neuro_filters_dc ros2neuro_filters_butterworth ros2neuro_filters_car ros2neuro_filters_hann --cmake-args -DBUILD_ROUNDTRIP_TESTS=ON
 colcon test --packages-select ros2neuro_filters
 ```
+
+## Check it in MATLAB
+
+Every filter above has a MATLAB function (`r2n_car`, `r2n_dc`, `r2n_laplacian`, `r2n_window`, `r2n_butterworth`) that gives the same numbers as the node, to a few float32 ULP or exactly. Copy it and use it in your analysis: see [Reproducibility in MATLAB](../../reproducibility/matlab.md).

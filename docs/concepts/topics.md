@@ -3,9 +3,7 @@
 The names below are the **defaults** of each node. Launch files remap them, so the real names depend on the
 node name you give: a node called `acquisition` publishes `~/neurodata` as `/acquisition/neurodata`.
 
-[![Topics and message types: the nodes of the chain, with the plugins and the topic and message type of every arrow](../assets/ros2neuro_2_topics.png)](../assets/ros2neuro_2_topics.png)
-
-The diagram uses the topic names of the [`ros2neuro_devel_test`](../packages/devel-test.md) launchers. Click a message type in the tables below to read its description.
+The chain they connect is the one of the [architecture figure](architecture.md#the-loop-in-one-figure): every solid arrow there is one of the topics below. The tables use the topic names of the [`ros2neuro_devel_test`](../packages/devel-test.md) launchers. Click a message type to read its description.
 
 ## Topics
 
@@ -28,7 +26,7 @@ The diagram uses the topic names of the [`ros2neuro_devel_test`](../packages/dev
 | integrator | subscribes | `/neuroevent` (`event_topic`) | [`NeuroEvent`](messages.md#neuroevent) | optional reset on an event |
 | control | subscribes | `/integrated/raw` (`input_topic`) | [`NeuroPrediction`](messages.md#neuroprediction) | integrator output |
 | control (Feedback plugin) | publishes | `/control_feedback/probabilities` (`control_topic`) | [`NeuroControl`](messages.md#neurocontrol) | flow for the feedback: the values and the thresholds in force, with the header of the `NeuroPrediction` they come from |
-| control (Feedback plugin) | subscribes, publishes | `/neuroevent` (`event_topic`) | [`NeuroEvent`](messages.md#neuroevent) | hears the phases of the trials, writes only Hit / Miss / Timeout |
+| control (Feedback plugin) | subscribes, publishes | `/neuroevent` (`event_topic`) | [`NeuroEvent`](messages.md#neuroevent) | hears the phases of the trials, writes only the end of CFeedback (CFeedback+Off) and Hit / Miss / Timeout |
 | manager | subscribes, publishes | `/neuroevent` (`event_topic`) | [`NeuroEvent`](messages.md#neuroevent) | writes the phases of the trials, hears the outcome |
 | manager (Synchronous plugin) | publishes | `/protocol_ended` | `std_msgs/Empty` | end of the protocol (`transient_local`) |
 | feedback | subscribes | `/control_feedback/probabilities` (`control_topic`) | [`NeuroControl`](messages.md#neurocontrol) | the values and the thresholds to draw |

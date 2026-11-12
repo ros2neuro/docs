@@ -47,7 +47,11 @@ ros2 launch ros2neuro_acquisition_xdf xdf_acquisition.launch.xml \
   filename:=/path/to/file.gdf
 ```
 
-The launch file reads `acquisition.loop` from the selected YAML configuration.
+Launch arguments: `filename` (required), `framerate` (default `16.0`), `config` (default: the installed
+`config/xdf_configuration.yaml`, read with `allow_substs`), `visualizer` (default `false`: start `neuroviz`).
+`filename` and `framerate` override the values of the YAML file.
+
+The launch file reads `acquisition.loop` from the selected YAML configuration (`true` in the shipped file).
 It does not override it with a launch argument.
 
 The package also installs a dedicated executable:
@@ -70,9 +74,13 @@ actual_framerate = file_samplerate / samples_per_frame
 
 ## Parameters
 
-- `acquisition.filename`: input file path
-- `acquisition.framerate`: requested ROS frame rate for replay chunks
-- `acquisition.loop`: rewind and replay again when the file ends
+- `acquisition.filename`: input file path (required)
+- `acquisition.framerate`: requested ROS frame rate for replay chunks (default `16.0`)
+- `acquisition.loop`: rewind and replay again when the file ends (default `false`)
+- `acquisition.name`: device name reported by the plugin (default `xdf_file`)
+
+The last frame before the end of the file can carry fewer than `samples_per_frame` samples. Without `loop`, the
+next `read()` fails at the end of the file: with `acquisition.reopen: false` the acquisition node then quits.
 
 The acquisition node should generally run with `acquisition.reopen: false` for
 finite file replay unless looping is enabled.
@@ -83,7 +91,10 @@ versions after a read transfer has reached EOF.
 
 ## Group Overrides
 
-Sensor and trigger groups are inferred from the XDF channel metadata by default.
+Sensor and trigger groups are inferred from the XDF channel metadata by default: one group per file array, digital
+channels (trigger-like labels, or integer arrays that are not EEG-like) go to a trigger group named `TRI`, the others
+to sensor groups named after the common prefix of their labels (`EEG` if there is none) and published as `TYPE_EEG`
+unless `type` is overridden.
 Every group can be overridden from ROS parameters, either by zero-based group
 index or by the normalized group name:
 

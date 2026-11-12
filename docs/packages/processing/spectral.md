@@ -41,7 +41,7 @@ Messages used:
 
 ## Example configuration
 
-The Welch node of the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md): a PSD, as natural logarithm (ln), at 4, 6, ... 48 Hz of the `EEG` block (the node also reads the `welch_node:` section of `config/spectral_nodes.yaml`, with the long parameter names):
+The Welch node of the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md): a PSD, as natural logarithm (ln), at 4, 6, ... 48 Hz of the `EEG` block (`spectral_processing.launch.py` configures it instead with the `welch_node:` section of `config/spectral_nodes.yaml`, which uses the long parameter names):
 
 ```yaml
 /welch:
@@ -126,7 +126,7 @@ Default topics:
 Default `feature_name` values:
 
 - FFT: `fft`
-- Welch: `welch`
+- Welch: `psd` (`config/spectral_nodes.yaml` sets it to `welch`)
 - spectrogram: `spectrogram`
 
 ## Feature conventions
@@ -214,16 +214,19 @@ Shared parameters:
 The spectral nodes do not subscribe to `NeuroFrameInfo`; channel labels are taken
 from the incoming `NeuroFrame` payload.
 
-`welch_node` accepts each of these under three names: with the `welch.` prefix used by the launchers of [`ros2neuro_devel_test`](../devel-test.md)
+`welch_node` accepts most of these under three names: with the `welch.` prefix used by the launchers of [`ros2neuro_devel_test`](../devel-test.md)
 (`welch.feature`, `welch.sensor`, `welch.samplerate`, `welch.wlength` for the window length, `welch.wtype`, `welch.overlap`,
 `welch.buffer` for the rolling buffer length, `welch.frequencies`, `welch.log`), with the short name (`feature`, `sensor`,
-`wlength`...) or with the long name listed here. It also accepts `welch.frequencies`: a range such as `"4:2:48"` (from 4 to 48
-Hz in steps of 2) or a list, to publish only those frequencies.
+`samplerate`, `wlength`, `wtype`, `overlap`, `buffer`, `frequencies`, `log`) or with the long name listed here. The overlap and
+the buffer length have only the first two names: `welch_node` does **not** read `analysis_length`, use `buffer` (or
+`welch.buffer`, default 1024). `welch.frequencies` (or `frequencies`) is a range such as `"4:2:48"` (from 4 to 48 Hz in steps
+of 2) or a list, to publish only those frequencies; `fft_node` and `spectrogram_node` accept the same selection as
+`fft.frequencies` / `spectrogram.frequencies` (or `frequencies`).
 
 Additional parameters for `welch_node` and `spectrogram_node`:
 
 - `overlap`: overlap between adjacent windows, in samples
-- `analysis_length`: rolling buffer length, in samples
+- `analysis_length` (`spectrogram_node`), `buffer` (`welch_node`): rolling buffer length, in samples
 
 Default parameter values are provided in `spectral_nodes.yaml`.
 
@@ -258,7 +261,7 @@ windows. Instead, it reuses the existing window classes from:
 - [`ros2neuro_filters_blackman`](../filters/blackman.md)
 - [`ros2neuro_filters_flattop`](../filters/flattop.md)
 
-Those window packages now expose reusable C++ APIs for:
+Those window packages expose reusable C++ APIs for:
 
 - explicit initialization
 - coefficient access
@@ -286,3 +289,7 @@ This is covered in `test_spectral_processors.cpp`.
 - the C++ processors (`FFTProcessor`, `WelchProcessor`, `SpectrogramProcessor`) do not depend on ROS or on any UI: they are reused by
   [`ros2neuro_visualizer`](../visualizer.md), whose Spectrum tab computes the spectrum itself with them, while consumers that run in the pipeline
   rely on the `NeuroFeature` contract of the nodes
+
+## Check it in MATLAB
+
+The Welch PSD has a MATLAB function, `r2n_welch`, identical to the node on the reference run. See [Reproducibility in MATLAB](../../reproducibility/matlab.md). (FFT and spectrogram are not covered yet.)

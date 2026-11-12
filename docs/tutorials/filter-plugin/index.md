@@ -17,7 +17,7 @@ large artifacts on the filters that follow.
 [Plugins](../../concepts/plugins.md) first if the pluginlib mechanism is new to you.
 
 The complete package is in the repository, under `docs/tutorials/filter-plugin/tutorial_filter_plugin/`, and it is
-compiled by the CI of the repository, so the code below is the code that builds.
+the page includes its files, so the code below is the code that builds (with `colcon build` and `colcon test`).
 
 ## 1. How a filter works
 

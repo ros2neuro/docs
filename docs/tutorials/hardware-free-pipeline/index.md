@@ -36,7 +36,7 @@ flowchart LR
 | `welch` | [`ros2neuro_processing_spectral`](../../packages/processing/spectral.md) | power spectral density, 4 to 48 Hz in steps of 2 |
 | `decoder` | [`ros2neuro_decoder`](../../packages/decoder/index.md) | [`ros2neuro::decoder::Gaussian`](../../packages/decoder/gaussian.md), model `b4_bhbf_20230706.smr` (both hands / both feet) |
 | `integrator` | [`ros2neuro_integrator`](../../packages/integrator/index.md) | [`ros2neuro::integrator::Exponential`](../../packages/integrator/exponential.md), `alpha 0.98` |
-| `control` | [`ros2neuro_control`](../../packages/control/index.md) | [`ros2neuro::control_feedback::Feedback`](../../packages/control/feedback.md): reads the integrator, knows the thresholds, drives the feedback |
+| `control` | [`ros2neuro_control`](../../packages/control/index.md) | [`ros2neuro::control::Feedback`](../../packages/control/feedback.md): reads the integrator, knows the thresholds, drives the feedback |
 | `manager` | [`ros2neuro_manager`](../../packages/manager/index.md) | [`ros2neuro::manager::Synchronous`](../../packages/manager/synchronous.md): runs the trials |
 | `feedback` | [`ros2neuro_feedback`](../../packages/feedback/index.md) | [`ros2neuro::feedback::Bar`](../../packages/feedback/bar.md), one bar per class |
 | `recorder` | [`ros2neuro_recorder`](../../packages/recorder/index.md) | [`ros2neuro::recorder::XDFRecorder`](../../packages/recorder/xdf.md), writes GDF (skipped with `record:=false`) |
@@ -73,7 +73,6 @@ A window with two bars opens. The log shows each node loading its plugin:
 [control]: Layout: protocol classes [...], output classes [...], rest_mode=none, K=2
 [manager]: Synchronous: 6 trials, begins in 3000 ms
 [manager]: Trial 1/6 (class: BOTH_FEET (771))
-[control]: Feedback of class BOTH_FEET (771) (duration: 4740 ms)
 ```
 
 The manager runs the trials and writes their events; control does the rest. In a **calibration** control drives the bars with an autopilot (the target class rises towards its
@@ -105,6 +104,7 @@ ros2 node list
 
 ```text
 /acquisition
+/control
 /decoder
 /feedback
 /filters

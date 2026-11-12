@@ -109,8 +109,8 @@ host where the license and a display are available):
    and MATLAB output exceeds `5e-3`) and shows/saves a debug plot to
    `test/compare_dc.png`.
 
-   Note: the threshold here is wider than the `1e-3` used by other single-stage
-   filters, because the DC filter subtracts a per-block mean computed in
+   Note: the threshold here is wider than the `1e-3` used by the window, Laplacian and Butterworth
+   round-trip tests, because the DC filter subtracts a per-block mean computed in
    single precision: a few ULP of float32 rounding in that mean, at the signal
    magnitudes in `rawdata.csv` (~1e4), already amount to a few `1e-3` of
    absolute error.

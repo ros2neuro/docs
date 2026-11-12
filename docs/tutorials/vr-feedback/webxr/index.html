@@ -12,19 +12,20 @@
   <!--
     A passive VR feedback for ROS2neuro.
 
-    It subscribes (through rosbridge) to the flow that the manager publishes for the feedback,
-    /control_feedback/probabilities (ros2neuro_msgs/msg/NeuroControl), and draws it as one bar per class:
+    It hears two things through rosbridge, as ros2neuro_feedback does:
 
-      fields / values   the normalized value of each class       -> height of the bar
-      actions / commands:
-        "event"  phase of the trial: fixation 786, the cue (the class code), and their "Off" (+32768)
-        "outcome"  897 Hit, 898 Miss, 899 Timeout                -> the "boom"
+      the flow of control_feedback, /control_feedback/probabilities (ros2neuro_msgs/msg/NeuroControl):
+        fields / values   the class codes ("773", "771") and their normalized values      -> height of every bar
+                          then "threshold:773", "threshold:771" and the thresholds in force  -> the white line of every bar
+      the event bus, /neuroevent (ros2neuro_msgs/msg/NeuroEvent), where the manager and control write the trial:
+        786 fixation, the cue (the class code), and their "Off" (+32768)
+        897 Hit, 898 Miss, 899 Timeout                                                    -> the "boom"
 
-    It is the same logic as ros2neuro_feedback_bar, with one difference: the thresholds are not
-    in the flow, so they are given here (query parameter "thresholds", same order as the bars).
+    The thresholds move when they are changed while running (ros2 param set /control thresholds "[0.8, 0.8]"). The query
+    parameter "thresholds" is only the value the lines have until the flow brings the real ones.
 
     Query parameters (all optional):
-      ?host=localhost  &port=9090  &topic=/control_feedback/probabilities  &thresholds=0.7,0.7
+      ?host=localhost  &port=9090  &topic=/control_feedback/probabilities  &events=/neuroevent  &thresholds=0.7,0.7
   -->
   <a-scene background="color: #05070d" renderer="colorManagement: true" vr-mode-ui="enabled: true">
     <a-entity id="rig" position="0 0 0">
@@ -48,9 +49,10 @@
     const HOST = params.get('host') || 'localhost';
     const PORT = params.get('port') || '9090';
     const TOPIC = params.get('topic') || '/control_feedback/probabilities';
-    const THRESHOLDS = (params.get('thresholds') || '').split(',').map(Number).filter(v => !isNaN(v) && v > 0);
+    const EVENTS = params.get('events') || '/neuroevent';
+    const THRESHOLDS = (params.get('thresholds') || '').split(',').map(Number).filter(v => !isNaN(v) && v > 0);   // until the flow brings them
 
-    const EVENT = { FIXATION: 786, HIT: 897, MISS: 898, TIMEOUT: 899, OFF: 32768 };
+    const EVENT = { FIXATION: 786, HIT: 897, MISS: 898, TIMEOUT: 899, OFF: 32768, SHOWN: 16384 };
     const REST = 783;
     // a class is colored by its POSITION, never by its code (the rest is the only exception: yellow)
     const COLORS = ['#4169e1', '#b22222', '#228b22', '#9370db', '#ff1493', '#008b8b', '#8b4513'];
@@ -63,7 +65,7 @@
     // ------------------------------------------------------------------ the scene
     const root = document.querySelector('#feedback');
     const statusText = document.querySelector('#status');
-    let bars = [];              // { field, el, color, base }
+    let bars = [];              // { field, el, x, base, line }
     let cross = null, cue = null, outcomeText = null;
     let target = null;          // class code of the current cue
 
@@ -92,12 +94,9 @@
         const bar = el('a-box', { position: `${x} 0 0`, width: BAR_WIDTH * 0.9, height: 0.01, depth: 0.1,
                                   material: `color: ${c}` });
         // the threshold line, in white
-        const th = THRESHOLDS[i];
-        if (th) {
-          el('a-box', { position: `${x} ${th * BAR_HEIGHT} 0.07`, width: BAR_WIDTH * 1.25, height: 0.02, depth: 0.02,
-                        material: 'color: #ffffff' });
-        }
-        bars.push({ field, el: bar, x, base: c });
+        const line = el('a-box', { position: `${x} 0 0.07`, width: BAR_WIDTH * 1.25, height: 0.02, depth: 0.02,
+                                   material: 'color: #ffffff', visible: false });
+        bars.push({ field, el: bar, x, base: c, line, threshold: THRESHOLDS[i] });
       });
       // fixation cross, cue and outcome text, above the bars (hidden until the manager asks)
       const top = BAR_HEIGHT + 0.35;
@@ -112,48 +111,58 @@
       bar.el.setAttribute('position', `${bar.x} ${h / 2} 0`);   // a bar grows upwards from the floor
     }
 
-    // ------------------------------------------------------------------ the flow of the manager
-    function pairs(msg) {
-      const out = {};
-      (msg.actions || []).forEach((a, i) => { out[a] = (msg.commands || [])[i]; });
-      return out;   // { seq, event?, outcome? }
-    }
-
+    // ------------------------------------------------------------------ the flow of control_feedback
+    // fields = the K class codes, then "threshold:<code>" for each; values = the K values, then the thresholds in force
     function onFlow(msg) {
       const fields = msg.fields || [];
       const values = msg.values || [];
-      if (!bars.length && fields.length) build(fields);
-
-      // 1. the values: the height of every bar. A bar whose value is at or above its threshold is brighter.
-      bars.forEach((bar, i) => {
-        const k = fields.indexOf(bar.field);
-        const v = k >= 0 ? values[k] : 0;
-        setHeight(bar, v);
-        const reached = THRESHOLDS[i] && v >= THRESHOLDS[i];
-        bar.el.setAttribute('material', 'color', reached ? '#ffffff' : bar.base);
+      const classes = [], thresholds = {};
+      fields.forEach((f, i) => {
+        if (f.startsWith('threshold:')) thresholds[f.slice('threshold:'.length)] = values[i];
+        else classes.push({ field: f, value: values[i] });
       });
+      if (!bars.length && classes.length) build(classes.map(c => c.field));
 
-      // 2. phases and outcome, as in ros2neuro_feedback (feedback_controller.cpp)
-      const a = pairs(msg);
-      if (a.outcome !== undefined) {
-        const word = { [EVENT.HIT]: 'Hit', [EVENT.MISS]: 'Miss', [EVENT.TIMEOUT]: 'Timeout' }[a.outcome];
-        outcomeText.setAttribute('value', word || '');
-        outcomeText.setAttribute('color', a.outcome === EVENT.HIT ? '#7CFC00' : a.outcome === EVENT.MISS ? '#ff6b6b' : '#cccccc');
-      } else if (a.event !== undefined) {
-        const e = a.event;
-        if (e === EVENT.FIXATION) { cross.setAttribute('visible', true); }
-        else if (e === EVENT.FIXATION + EVENT.OFF) { cross.setAttribute('visible', false); }
-        else if (e - EVENT.OFF === EVENT.HIT || e - EVENT.OFF === EVENT.MISS || e - EVENT.OFF === EVENT.TIMEOUT) {
-          outcomeText.setAttribute('value', '');            // the boom is over
-          target = null;
-        } else if (e >= EVENT.OFF) {
-          cue.setAttribute('visible', false);               // the cue is over (class code + Off)
-        } else if (bars.some(b => Number(b.field) === e) || e === REST) {
-          target = e;                                       // the cue: a circle with the color of the target
-          const i = bars.findIndex(b => Number(b.field) === e);
-          cue.setAttribute('material', 'color', e === REST || i < 0 ? REST_COLOR : bars[i].base);
-          cue.setAttribute('visible', true);
+      // the height of every bar; the white line follows the threshold in force; a bar at or above it is white
+      bars.forEach(bar => {
+        const c = classes.find(x => x.field === bar.field);
+        const v = c ? c.value : 0;
+        if (thresholds[bar.field] !== undefined) bar.threshold = thresholds[bar.field];
+        if (bar.threshold) {
+          bar.line.setAttribute('position', `${bar.x} ${bar.threshold * BAR_HEIGHT} 0.07`);
+          bar.line.setAttribute('visible', true);
         }
+        setHeight(bar, v);
+        bar.el.setAttribute('material', 'color', bar.threshold && v >= bar.threshold ? '#ffffff' : bar.base);
+      });
+    }
+
+    // ------------------------------------------------------------------ the event bus: the phases of the trial
+    // Events and values travel on different topics: the order between them is not guaranteed, and it does not matter here.
+    function onEvent(msg) {
+      const e = msg.event_id;
+      const off = id => e - EVENT.OFF === id;
+      if (e === EVENT.HIT || e === EVENT.MISS || e === EVENT.TIMEOUT) {          // the outcome, written by control
+        const word = { [EVENT.HIT]: 'Hit', [EVENT.MISS]: 'Miss', [EVENT.TIMEOUT]: 'Timeout' }[e];
+        outcomeText.setAttribute('value', word);
+        outcomeText.setAttribute('color', e === EVENT.HIT ? '#7CFC00' : e === EVENT.MISS ? '#ff6b6b' : '#cccccc');
+      } else if (off(EVENT.HIT) || off(EVENT.MISS) || off(EVENT.TIMEOUT)) {      // the end of the outcome, written by the manager
+        outcomeText.setAttribute('value', '');
+        target = null;
+      } else if (e === EVENT.FIXATION) {
+        cross.setAttribute('visible', true);
+      } else if (off(EVENT.FIXATION)) {
+        cross.setAttribute('visible', false);
+      } else if (e >= EVENT.SHOWN && e < EVENT.OFF) {
+        // an event of the kind "this was shown" (id + 16384), published by a feedback: not a phase
+      } else if (e >= EVENT.OFF) {
+        cue.setAttribute('visible', false);                                       // the end of the cue (class code + Off); the end of
+                                                                                  // Start and CFeedback come here too and change nothing
+      } else if (bars.some(b => Number(b.field) === e) || e === REST) {
+        target = e;                                                               // the cue: a sphere with the color of the target
+        const i = bars.findIndex(b => Number(b.field) === e);
+        cue.setAttribute('material', 'color', e === REST || i < 0 ? REST_COLOR : bars[i].base);
+        cue.setAttribute('visible', true);
       }
     }
 
@@ -165,11 +174,14 @@
 
       ros.on('connection', () => {
         statusText.setAttribute('value', `connected: ${TOPIC}`);
-        // No throttle_rate here: the manager sends the events (fixation, cue, outcome) in the same instant as a
-        // value message, and a throttle would drop the second one. The flow is light (about 16 messages/s).
+        // No throttle_rate on the events: a throttle would drop the second of two events sent in the same instant
+        // (the end of the fixation and the cue). The flow is light, a few tens of messages per second.
         new ROSLIB.Topic({
           ros, name: TOPIC, messageType: 'ros2neuro_msgs/msg/NeuroControl'
         }).subscribe(onFlow);
+        new ROSLIB.Topic({
+          ros, name: EVENTS, messageType: 'ros2neuro_msgs/msg/NeuroEvent'
+        }).subscribe(onEvent);
       });
       ros.on('error', () => statusText.setAttribute('value', `cannot reach ${url}`));
       ros.on('close', () => {

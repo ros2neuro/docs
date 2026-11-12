@@ -18,14 +18,18 @@ The decoder package turns a `NeuroFeature` (for example a PSD) into a `NeuroPred
 | [QDA](qda.md) | [`ros2neuro::decoder::QDA`](qda.md) | quadratic discriminant analysis |
 | [SVM](svm.md) | [`ros2neuro::decoder::SVM`](svm.md) | support vector machine |
 | [Gaussian](gaussian.md) | [`ros2neuro::decoder::Gaussian`](gaussian.md) | Gaussian classifier (ported from Matlab SMR) |
+| [scikit-learn](sklearn.md) | [`ros2neuro::decoder::Sklearn`](sklearn.md) | any scikit-learn estimator or Pipeline with `predict_proba` (skops file), run in Python inside the plugin |
+| [Braindecode](braindecode.md) | [`ros2neuro::decoder::Braindecode`](braindecode.md) | deep-learning model of braindecode (PyTorch), run in Python inside the plugin |
 
 The [converters](converters.md) turn a Matlab SMR `.mat` decoder into the `.r2nd` + `manifest.yaml` format.
 
-!!! note "The Python decoder is not a plugin"
-    [`ros2neuro_decoder_py`](python.md) runs deep-learning models (braindecode, torch) as **a separate Python node**, `decoder_node`
-    of its own package, not as a pluginlib plugin of this one. It has the same topic contract (`/features` in, `~/prediction` out),
-    so the rest of the chain does not notice the difference, but its models are folders with their own `manifest.yaml` and it is
-    selected with `decoder.type`, not with a plugin class.
+!!! note "Two ways to run a braindecode model"
+    - [`ros2neuro_decoder_braindecode`](braindecode.md): a **plugin** of this node (`ros2neuro::decoder::Braindecode`), the model runs in
+      Python inside it;
+    - [`ros2neuro_decoder_py`](python.md): **a separate Python node**, `decoder_node` of its own package, selected with its own `decoder.type`.
+
+    Both read the same model folders (`manifest.yaml` + weights) and give the same probabilities; both have the same topic contract
+    (`/features` in, `~/prediction` out), so the rest of the chain does not notice the difference.
 
 ## Topics
 
@@ -72,7 +76,7 @@ The details are in the reference below.
 - **ROS 2 packages** (build and run): `pluginlib`, `rclcpp`, [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs), `yaml-cpp`
 - **External libraries**:
     - `yaml-cpp`: reading the model `manifest.yaml`
-- **At run time**: a decoder plugin package ([`ros2neuro_decoder_lda`](lda.md), `_qda`, `_svm`, `_gaussian`) and a model
+- **At run time**: a decoder plugin package ([`ros2neuro_decoder_lda`](lda.md), `_qda`, `_svm`, `_gaussian`, [`_sklearn`](sklearn.md), [`_braindecode`](braindecode.md)) and a model
 
 ## Messages and topics
 
@@ -145,7 +149,7 @@ Main parameters:
 - `output_topic`
 - `decoder.name`
 - `decoder.type`
-- `decoder.manifest_path`
+- `decoder.manifest` (or its alternative name `decoder.manifest_path`)
 - `decoder.params.*`
 
 ## Saved Model Layout
@@ -172,9 +176,22 @@ Different plugins can then support different model formats while keeping the sam
 
 The recommended runtime entrypoint is `manifest.yaml`.
 
-When `decoder.manifest_path` is provided, `DecoderNode` reads decoder identity from the
-manifest before instantiating the plugin. The plugin can then resolve the binary model
-payload referenced by `decoder.path` and validate manifest and payload consistency.
+Every decoder is configured the same way: the node is given the `manifest.yaml` of the model, nothing else.
+`DecoderNode` reads only the part that is common to every manifest:
+
+```yaml
+decoder:
+  name: ...                            # written in NeuroPrediction.decoder
+  type: ros2neuro::decoder::<Plugin>   # the pluginlib class of the plugin to load
+```
+
+and passes the path of the manifest to the plugin (as `manifest_path`). The plugin reads and checks the rest, which is its own
+format: the spectral decoders (LDA, QDA, SVM, Gaussian) the `decoder.path` of the `.r2nd`, the channel and frequency axes and the
+feature selection; `Sklearn` the `.skops` file and the axes; `Braindecode` the network (`target`, `config`, `parameters_file`).
+`decoder.type` / `decoder.name` given as node parameters must match the manifest (a mismatch is an error).
+
+The parameters under `decoder.params.*` given to the node (launch file or yaml) are passed to the plugin as they are (for example
+`decoder.params.device` of Braindecode).
 
 ## `.r2nd` Container
 
@@ -197,8 +214,8 @@ Version 2 stores:
 - output classes and output type
 - decoder-specific inference parameters
 
-Version 1 files are still accepted by current readers for backward compatibility. They
-simply load with an empty `training` block.
+Version 1 files are still accepted by the LDA and SVM readers for backward compatibility. They
+simply load with an empty `training` block. The QDA and Gaussian readers accept only version 2.
 
 The common intent of the container is:
 
@@ -295,7 +312,7 @@ During `configure()`, the decoder should:
 - load the serialized model artifact from `decoder.path`
 - read and validate `input.name`
 - read and validate `input.type`
-- read and validate `input.unit` when present
+- read `input.unit` and require it to match the unit stored in the model
 - require `input.order = row_major`
 - require exactly two feature axes
 - require one axis named `channels` with non-empty `labels`
@@ -320,8 +337,9 @@ During `predict()`, the decoder should:
 - validate `feature.shape.size() == 2`
 - validate `feature.axes.size() == feature.shape.size()`
 - validate `feature.data.size() == feature.shape[0] * feature.shape[1]`
-- locate the `channels` axis and validate its labels against the incoming feature
-- locate the `frequency` axis and validate its values against the incoming feature
+- require the axes in the order `[channels, frequency]`
+- validate the labels of the `channels` axis against the incoming feature
+- validate the values of the `frequency` axis against the incoming feature
 - build an input vector by extracting entries from `feature.data` in the exact order defined by `features.selection`
 - apply preprocessing only when that part of the contract is implemented
 - run the LDA inference on the extracted vector

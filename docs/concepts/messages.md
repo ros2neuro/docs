@@ -77,7 +77,7 @@ Some messages carry a `type` constant that says what the data are. Who sets it:
 | | `TYPE_CONNECTIVITY`, `TYPE_VECTOR`, `TYPE_MATRIX`, `TYPE_MISC`, `TYPE_UNKNOWN` | 4, 5, 6, 255, 0 | free: a new processing node chooses it |
 | `NeuroPrediction.type` | `TYPE_UNSPECIFIED`, `TYPE_SCORES`, `TYPE_PROBABILITIES`, `TYPE_LOGITS`, `TYPE_REGRESSION` | 0, 1, 2, 3, 4 | the decoder: from the `output_type` parameter or from the model manifest; [`ros2neuro_decoder_py`](../packages/decoder/python.md) publishes `TYPE_PROBABILITIES` |
 | `NeuroSensorInfo.type` | `TYPE_UNKNOWN`, `TYPE_EEG`, `TYPE_EMG`, `TYPE_EOG`, `TYPE_ECG`, `TYPE_GSR`, `TYPE_RESP`, `TYPE_MISC` | 0, 1, 2, 3, 4, 5, 6, 255 | the acquisition plugin, for each analog block (the plugins of the stack declare `TYPE_EEG`, the dummy also `TYPE_EMG`) |
-| `NeuroTriggerInfo.encoding` | `ENCODING_STATE_PER_SAMPLE`, `ENCODING_CODE_PER_SAMPLE`, `ENCODING_BITMASK_PER_SAMPLE` | 0, 1, 2 | the acquisition plugin, for each digital block |
+| `NeuroTriggerInfo.encoding` | `ENCODING_STATE_PER_SAMPLE`, `ENCODING_CODE_PER_SAMPLE`, `ENCODING_BITMASK_PER_SAMPLE` | 0, 1, 2 | always `ENCODING_CODE_PER_SAMPLE` today: `ros2neuro_data` (`to_msg_info`) sets it for every digital block |
 
 ---
 
@@ -260,7 +260,8 @@ string          description
 
 `event_id` identifies the event (see the [event codes](protocols.md#event-codes)). `onset` is the onset in
 seconds in the timeline of the publisher; recorders typically use a time relative to the start of the
-recording. The recorder keys event types on the pair (`event_id`, `family_id`).
+recording. The [XDF recorder](../packages/recorder/xdf.md) does not use `onset`: it places the event by `header.stamp`, relative to
+the first recorded frame, and keys event types on the pair (`event_id`, `family_id`).
 
 ---
 

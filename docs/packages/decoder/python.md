@@ -3,7 +3,7 @@
 !!! info ""
     Package: [`ros2neuro_decoder_py`](https://github.com/ros2neuro/ros2neuro_decoder_py) · part of [Decoder](index.md)
 
-A Python decoder node for machine-learning and deep-learning models (for example a `braindecode` ShallowFBCSPNet). It listens to `NeuroFeature` messages that carry a window of the signal, runs the model and publishes a `NeuroPrediction` with class probabilities. It has the same topic contract as the C++ decoder but is **a separate node, not a pluginlib plugin**.
+A Python decoder node for machine-learning and deep-learning models (for example a `braindecode` ShallowFBCSPNet). It listens to `NeuroFeature` messages that carry a window of the signal, runs the model and publishes a `NeuroPrediction` with class probabilities. It has the same topic contract as the C++ decoder but is **a separate node, not a pluginlib plugin**. The same braindecode model folders also run as a plugin of the C++ decoder node, with the same results: [`ros2neuro_decoder_braindecode`](braindecode.md); scikit-learn models run as the plugin [`ros2neuro_decoder_sklearn`](sklearn.md).
 
 | | |
 |---|---|
@@ -11,7 +11,7 @@ A Python decoder node for machine-learning and deep-learning models (for example
 | **Kind** | Python node (`decoder_node`, installed by this package); models are folders with their own `manifest.yaml` |
 | **Reads** | `/features` (`NeuroFeature`, parameter `input_topic`; the models of the stack read the window of [`ros2neuro_processing_buffer`](../processing/buffer.md)) |
 | **Publishes** | `~/prediction` (`NeuroPrediction`, `TYPE_PROBABILITIES`, parameter `output_topic`) |
-| **Run** | `ros2 launch ros2neuro_decoder_py example_decoder.launch.xml` (starts the whole chain: GDF replay, filters, buffer, this decoder, and optionally a visualizer and a recorder) |
+| **Run** | `ros2 launch ros2neuro_decoder_py example_decoder.launch.xml` (starts the chain: GDF replay, filters, buffer and this decoder) |
 | **Parameters** | `decoder.type` (`braindecode`), `decoder.model_path`, `decoder.name` |
 
 <!-- interfaces -->
@@ -103,8 +103,8 @@ ros2 launch ros2neuro_decoder_py example_decoder.launch.xml
 ```
 
 The chain is: acquisition (replaying `test_mi.gdf`) → filter chain (4-14 Hz band) → `buffer_node` (512 samples) → this decoder.
-The arguments of the launch file select the model (`decoder_model_path`), the configuration, and whether the visualizer and
-the recorder are started.
+The arguments of the launch file select the model (`decoder_model_path`) and the configuration (`config_file`). The arguments
+`enable_visualizer` and `enable_recorder` are declared but the launch file has no visualizer or recorder node yet: they start nothing.
 
 ## Known limitations
 

@@ -70,7 +70,11 @@ raw_score_k = sum_p activity_k,p
 probability_k = raw_score_k / sum_c raw_score_c
 ```
 
-This implementation preserves that inference rule.
+This implementation preserves that inference rule, computed in the log domain (log-sum-exp over the prototypes)
+so that it does not underflow for features far from the training data, and multiplies each `raw_score_k` by the
+prior of the class when the model stores `training.priors` (the converter writes uniform priors, which change nothing).
+With `output.type = NeuroPrediction::TYPE_SCORES` the published values are the `raw_score_k` divided by the largest one
+(so the largest is 1); with `TYPE_PROBABILITIES` they are normalized to sum 1.
 
 ## Runtime configuration
 
@@ -114,8 +118,9 @@ The optional `training` block is supported for traceability and can contain fiel
 - `training.solver`
 - `training.source`
 
-These values document the training procedure only. The runtime decoder uses the stored
-final prototype parameters directly.
+The runtime decoder uses the stored final prototype parameters directly. `training.priors` is the
+only training field it uses: when present, it weights the class scores (see above). The Gaussian reader accepts only
+version 2 `.r2nd` files.
 
 ## Writer API
 
@@ -134,3 +139,7 @@ The current implementation supports:
 - tensor layout `[channels, frequency]`
 - row-major flattening
 - output types `NeuroPrediction::TYPE_SCORES` and `NeuroPrediction::TYPE_PROBABILITIES`
+
+## Check it in MATLAB
+
+`r2n_gaussian_read` reads the `.r2nd` model and `r2n_gaussian_predict` gives the probabilities of the node (difference 1e-7 on the reference run). See [Reproducibility in MATLAB](../../reproducibility/matlab.md).

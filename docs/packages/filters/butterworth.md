@@ -32,7 +32,7 @@ Messages used:
 <!-- /interfaces -->
 ## Algorithm
 
-The plugin builds a stateful low-pass or high-pass Butterworth filter. Internal state is allocated on first use, once the number of channels is known.
+The plugin builds a stateful low-pass or high-pass Butterworth filter. Internal state is allocated on first use, once the number of channels is known; from then on every input must have that same number of channels. The filter runs in double precision and its output is converted back to float32.
 
 ## Plugin
 

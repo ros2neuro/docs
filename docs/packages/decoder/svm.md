@@ -53,7 +53,7 @@ The plugin is loaded through:
 
 and expects one plugin parameter:
 
-- preferred: `decoder.manifest_path` pointing to a decoder folder entrypoint
+- preferred: `decoder.manifest_path` (or `decoder.manifest`) pointing to the `manifest.yaml` of a decoder folder
 - legacy fallback: `decoder.params.model_path` pointing directly to a `.r2nd` model artifact
 
 The package also installs a small helper executable:

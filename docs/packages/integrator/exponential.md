@@ -49,7 +49,8 @@ slowly; a low `alpha` follows the decoder closely. The decision is the class wit
 |---|---|---|
 | `alpha` | `0.98` | smoothing factor, in `[0.0, 1.0]` (an invalid value falls back to the default with a warning) |
 
-`alpha` can be changed while the node runs.
+`alpha` can be changed while the node runs (a value outside `[0.0, 1.0]` is refused) if it was given at start as
+`integrator.params.alpha`: the integrator node declares only the plugin parameters it receives.
 
 ## Use
 
@@ -70,3 +71,7 @@ ros2 param set /integrator integrator.params.alpha 0.9
 ## Tests
 
 `colcon test --packages-select ros2neuro_integrator_exponential`
+
+## Check it in MATLAB
+
+`r2n_integrator_exponential` gives the integrated values of the node, with the reset (difference 1e-7 on the reference run). See [Reproducibility in MATLAB](../../reproducibility/matlab.md).

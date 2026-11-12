@@ -15,7 +15,7 @@ are taken. The package provides the parent class `ros2neuro::control::Control` (
 
 | Plugin | pluginlib class | What it controls |
 |---|---|---|
-| [Feedback](feedback.md) | [`ros2neuro::control_feedback::Feedback`](feedback.md) | the feedback window (wheel, bars): calibration with autopilot, evaluation, free control |
+| [Feedback](feedback.md) | [`ros2neuro::control::Feedback`](feedback.md) | the feedback window (wheel, bars): calibration with autopilot, evaluation, free control |
 | `ros2neuro_control_robot` (custom, not in the stack) | | a robot: you write it, see [A control for a robot](#a-control-for-a-robot-custom) |
 
 ## Topics and services
@@ -26,14 +26,15 @@ are taken. The package provides the parent class `ros2neuro::control::Control` (
 | service client | `/reset` (`reset_service`) | `std_srvs/Empty` |
 
 The control node itself writes nothing. The plugin creates the rest on the same node: [`ros2neuro_control_feedback`](feedback.md) publishes the flow of the
-feedback and writes the end of the continuous feedback, Hit / Miss / Timeout and its end on the event bus.
+feedback and writes the end of the continuous feedback and the outcome (Hit / Miss / Timeout) on the event bus; the end of the
+outcome is the manager's.
 
 ## Minimal example
 
 ```yaml
 /control:
   ros__parameters:
-    plugin: ros2neuro::control_feedback::Feedback
+    plugin: ros2neuro::control::Feedback
     protocol: evaluation
     input_topic: /integrated/raw
     reset_service: /reset
@@ -95,7 +96,7 @@ the node is the only thing it needs.
 
 | Parameter | Default | Meaning |
 |---|---|---|
-| `plugin` | (required) | pluginlib class of the control plugin, for example [`ros2neuro::control_feedback::Feedback`](feedback.md) |
+| `plugin` | (required) | pluginlib class of the control plugin, for example [`ros2neuro::control::Feedback`](feedback.md) |
 | `input_topic` | `/integrated/raw` | the `NeuroPrediction` topic of the integrator |
 | `reset_service` | `/reset` | the reset service of the integrator |
 

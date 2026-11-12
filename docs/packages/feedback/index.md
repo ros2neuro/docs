@@ -76,7 +76,7 @@ builds the layout from its parameters, loads the plugin and runs the drawing loo
 | Parameter | Default | Meaning |
 |---|---|---|
 | `plugin` | (required) | pluginlib class of the drawing, [`ros2neuro::feedback::Wheel`](wheel.md) or [`ros2neuro::feedback::Bar`](bar.md) |
-| `classes`, `rest_mode`, `thresholds` | (see the layout) | the same as the manager and control: the layout of the drawing and the initial markers |
+| `classes`, `rest_mode`, `thresholds` | `classes`, `thresholds`: required (no default); `rest_mode`: `none` | the same as the manager and control: the layout of the drawing and the initial markers |
 | `event.start` ... `event.shown` | the defaults of the stack | the ids of the events (the same as the manager and control) |
 | `control_topic` | `/control_feedback/probabilities` | the flow: values and thresholds |
 | `event_topic` | `/neuroevent` | the phases of the trials and the outcome; also where `publish_display_events` writes |
@@ -96,10 +96,15 @@ Behaviour worth knowing:
 ## Minimal example
 
 ```yaml
+/**:                          # the same for the manager, control and the feedback
+  ros__parameters:
+    classes: [773, 771]       # required by the feedback (no default)
+    rest_mode: none
+    thresholds: [0.7, 0.7]    # required by the feedback (the initial markers)
+
 /feedback:
   ros__parameters:
     plugin: ros2neuro::feedback::Bar
-    mode: training
     control_topic: /control_feedback/probabilities
     fps: 60.0
     window_title: "Bars"
@@ -110,7 +115,7 @@ launch files, and the [hardware-free tutorial](../../tutorials/hardware-free-pip
 
 ## Writing a new drawing
 
-Derive from `ros2neuro::feedback::FeedbackPlugin` (`set_values`, cue, fixation, boom) and export it against
+Derive from `ros2neuro::feedback::Feedback` (`set_values`, cue, fixation, boom) and export it against
 `ros2neuro_feedback` with `pluginlib_export_plugin_description_file(ros2neuro_feedback plugins.xml)`. Keep the
 geometry in a pure, testable header, as [`ros2neuro_feedback_bar`](bar.md) does with `bar_geometry.hpp`.
 
@@ -130,12 +135,13 @@ Default node name: `feedback`.
 | | Default topic | Type | Changed by |
 |---|---|---|---|
 | subscribes | `/control_feedback/probabilities` | `NeuroControl` | `control_topic` |
+| subscribes | `/neuroevent` | `NeuroEvent` | `event_topic` |
 | publishes | `/neuroevent` | `NeuroEvent` | `event_topic`, **only** with `publish_display_events: true` |
 
 Messages used:
 
-- `NeuroControl`: read, the flow of [`ros2neuro_control_feedback`](../control/feedback.md)
-- `NeuroEvent`: published, optional display events
+- `NeuroControl`: read, the flow of [`ros2neuro_control_feedback`](../control/feedback.md) (values, thresholds)
+- `NeuroEvent`: read, the phases and the outcome; published, optional display events
 
 ## Example configuration
 
@@ -173,18 +179,18 @@ Alternatively, put the [`neurodraw`](neurodraw.md) folder in the `src/` of the w
 
 * Phases: what the bus says. With trials (calibration, evaluation) it shows the fixation, the cue and the boom; a control writes no events and only the values are drawn.
 * Before the first message the neutral vector (1/K) is drawn. Gaps in `seq` are logged.
-* Cue = last class event; a rest in timeout that ends as a Hit is marked by the plugins with a small circle (`is_rest_timeout_hit()`); on a Miss the boom shows the class over its threshold (same rule as training),
+* Cue = last class event; a rest in timeout that ends as a Hit is marked by the plugins with a small circle (`is_rest_timeout_hit()`); on a Miss the boom shows the class over its threshold (same rule as `ros2neuro_control_feedback`),
   on a Timeout a neutral grey boom.
 * The latency (message stamp -> drawing) is logged every `latency_log_period_s`.
 * `publish_display_events` (default false): after drawing, publishes on `/neuroevent` `shown + id` for the cue
-  (class code), the boom (the id of Hit / Miss / Timeout) and the matching `+Off` (`shown` and `off` are the manager's), stamped after the drawing.
+  (class code), the boom (the id of Hit / Miss / Timeout) and the matching `+Off` (`event.shown` and `event.off`, the same as the manager and control), stamped after the drawing.
 * Parameters: `plugin`, `control_topic`, `event_topic`, `fps` (60), `publish_display_events`, `latency_log_period_s` (5), `window_title`,
-  `classes`, `rest_mode`, `thresholds` (initial) and `event.*` (the same as the manager and control). ESC in the window ends the node.
+  `classes`, `rest_mode` (`none`), `thresholds` (initial) and `event.*` (the same as the manager and control; `classes` and `thresholds` have no default here and must be given). ESC in the window ends the node.
 * The plugin API: `configure(node, layout, options)`, `set_values`, `set_thresholds` (the markers move), `show_fixation` / `hide_fixation`,
   `show_cue` / `hide_cue`, `show_boom(Outcome, target, reached)` / `hide_boom`. A plugin knows nothing about the ids of the events: the
   controller translates them into the `Outcome` enum (`Hit`, `Miss`, `Timeout`).
 
-Writing a plugin: derive from `FeedbackPlugin`, register in a `plugins.xml` exported with
+Writing a plugin: derive from `Feedback`, register in a `plugins.xml` exported with
 `pluginlib_export_plugin_description_file(ros2neuro_feedback plugins.xml)`.
 
 Tests: `colcon test --packages-select ros2neuro_feedback`: the controller with a recording plugin (ids of the events other than the defaults, thresholds changed while running, the class a miss shows), the layout, the thresholds, the colors, the flow reader.

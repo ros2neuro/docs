@@ -82,24 +82,26 @@ it is a `buffer_node` (a window of the signal) and the decoder is the Python one
 
 ```
 scripts/               topic_csv_recorder.py   (saves the topics of the chain as CSV, for the MATLAB check)
-matlab/                check_evaluation.m (one file), README.md   (data/ and results/ are not pushed)
+matlab/                check_evaluation.m (whole chain), check_functions.m (every stage), r2n/ (one function per stage), README.md   (data/ and results/ are not pushed)
 launch/
   gaussian/            gaussian_wheel.launch.xml   gaussian_bars.launch.xml
     config/            pipeline.yaml  layout.yaml  protocol_calibration.yaml  protocol_evaluation.yaml  protocol_control.yaml
-                       feedback_wheel.yaml  feedback_bars.yaml  recorder.yaml
+                       integrator_exponential.yaml  integrator_buffer.yaml  feedback_wheel.yaml  feedback_bars.yaml  recorder.yaml
     (no model/)        uses extra/b4_bhbf_20230706.smr/               (BOTH_HANDS / BOTH_FEET)
   qda/                 qda_wheel.launch.xml        qda_bars.launch.xml
-    config/            (same files)
+    config/            (same files, no integrator_*.yaml)
     model/             manifest.yaml  qda_test_gdf.r2nd
   qda_custom_codes/    qda_custom_codes_wheel.launch.xml   qda_custom_codes_bars.launch.xml   (classes 501 / 502, only config/layout.yaml)
   gaussian_rest/       gaussian_rest_wheel.launch.xml   gaussian_rest_bars.launch.xml   (classes 773 / 771 + REST 783, rest_mode timeout; only layout.yaml + protocol_*.yaml)
   gaussian_4class/     gaussian_4class_bars.launch.xml        (4 bars, a different threshold each)
                        gaussian_4class_matlab.launch.xml      (the same in evaluation, with a GDF and a CSV of every topic: for matlab/check_evaluation.m)
-    config/            (same files, no wheel)
+    config/            (same files, no wheel; matlab_trials.yaml: the 8 trials of the MATLAB run)
     model/             manifest.yaml  fake_4class_gaussian.r2nd
   gaussian_4class_rest/  gaussian_4class_rest_bars.launch.xml   (the 4-class launcher with the REST, rest_mode timeout; only layout.yaml + protocol_*.yaml)
-  eegnet/              eegnet_wheel.launch.xml   eegnet_bars.launch.xml   (deep-learning model of ros2neuro_decoder_py, buffer_node instead of welch)
+  eegnet/              eegnet_wheel.launch.xml   eegnet_bars.launch.xml   (deep-learning model, braindecode plugin or Python node, buffer_node instead of welch)
   eegnet_rest/         eegnet_rest_wheel.launch.xml   eegnet_rest_bars.launch.xml   (the EEGNet launchers with the REST)
+  sklearn/             sklearn_wheel.launch.xml   sklearn_bars.launch.xml   (scikit-learn plugin, the Laplacian + Welch chain of gaussian)
+  sklearn_4class/      sklearn_4class_bars.launch.xml   (scikit-learn plugin, fictitious 4-class model, 4 bars)
   timing_check/        timing_check.launch.py   (see below)
 ```
 
@@ -114,8 +116,9 @@ source /opt/ros/jazzy/setup.bash && source install/setup.bash
 
 ## Launching
 
-Arguments of every launcher: `protocol` (`calibration` | `evaluation` | `control`, default `evaluation`), `gdf_file` (default
-`ros2neuro_devel_test/extra/test.gdf`), `record` (default `true`: writes a GDF in `recordings_dir` (default `src/ros2neuro_devel_test/recordings/` of the workspace, derived from the install prefix) when the session ends; `record:=false` skips it).
+Arguments of every launcher: `protocol` (`calibration` | `evaluation` | `control`, default `evaluation`), `integrator` (`exponential` | `buffer`,
+default `exponential`: loads `config/integrator_<integrator>.yaml`; not in the `qda*` launchers yet), `gdf_file` (default
+`ros2neuro_devel_test/extra/test.gdf`; the `eegnet*` launchers use `ros2neuro_decoder_py/extra/test_mi.gdf` and also have `model_path` and `decoder:=plugin|python`), `record` (default `true`: writes a GDF in `recordings_dir` (default `src/ros2neuro_devel_test/recordings/` of the workspace, derived from the install prefix) when the session ends; `record:=false` skips it). `gaussian_4class_bars` also has `capture` (default `false`: `capture:=true` saves a CSV of every topic in `capture_dir`, as `gaussian_4class_matlab` does).
 
 ```bash
 ros2 launch ros2neuro_devel_test gaussian_wheel.launch.xml protocol:=calibration
@@ -127,6 +130,12 @@ ros2 launch ros2neuro_devel_test gaussian_rest_wheel.launch.xml protocol:=evalua
 ros2 launch ros2neuro_devel_test gaussian_rest_bars.launch.xml  protocol:=calibration
 ros2 launch ros2neuro_devel_test qda_custom_codes_wheel.launch.xml protocol:=evaluation   # classes 501 / 502 instead of 773 / 771
 ```
+
+**The layout must be the same in control, the manager and the feedback.** The classes, the rest mode and the thresholds are shared parameters and every node
+reads its own copy from the file it is given. The launchers with the rest (`gaussian_rest`, `gaussian_4class_rest`, `eegnet_rest`) give the layout of their
+own folder (`$(var rest)/layout.yaml`) to **all three**: if the feedback got the layout without the rest it would not know it, and it would draw neither the cue (the
+yellow circle) nor the yellow dot of a rest that ends without touching a threshold, with no message at all. `python3 scripts/check_launch_layouts.py` checks it
+for every launcher (exit code 1 if one of them differs): run it after editing a launcher.
 
 | protocol | manager plugin | control (plugin `Feedback`) | what drives the feedback |
 |---|---|---|---|
@@ -184,7 +193,7 @@ cd ~/ros2neuro_ws/src/ros2neuro_devel_test/matlab
 check_evaluation
 ```
 
-One file: loads the GDF and the yaml of the launcher, applies the filters, the decoder and the integrator (reset at every trial), draws every step
+It loads the GDF and the yaml of the launcher, applies the filters, the decoder and the integrator (reset at every trial), draws every step
 with the thresholds and the Fixation / cue / CFeedback / Hit / Miss marked, and compares with ROS 2. See `matlab/README.md` (in the package).
 
 **4. The unit and integration tests** of the packages (no display; about 3 minutes; not at the same time as a launcher in the same ROS domain: `export ROS_DOMAIN_ID=<n>`):
@@ -201,20 +210,23 @@ launch each one with each protocol (`protocol:=calibration | evaluation | contro
 ## Check an evaluation in MATLAB (`matlab/`)
 
 `gaussian_4class_matlab.launch.xml` records an evaluation of the 4-class pipeline (a GDF with the raw EEG and the events, and a CSV of every topic written by
-`scripts/topic_csv_recorder.py`), and **`matlab/check_evaluation.m`, a single file, redoes it in MATLAB**: it loads the GDF and the yaml used by the launcher,
+`scripts/topic_csv_recorder.py`), and **`matlab/check_evaluation.m` redoes it in MATLAB** (with the functions of `matlab/r2n/`): it loads the GDF and the yaml used by the launcher,
 applies the Laplacian, the Welch PSD, the Gaussian decoder and the exponential integrator with the reset at the start of every trial, recomputes the outcome of
 every trial and compares every step with what ROS 2 published. Four figures, ROS 2 against MATLAB, each with Start, Fixation, cue, CFeedback and Hit / Miss / Timeout marked:
 filters (C3 and C4: raw, filtered by ROS 2 and by MATLAB, their difference), the features of `/processing/psd`, the classification, the integration with the thresholds.
 
-On the reference run (8 trials) all the outcomes recomputed from the integrated values are the ones of ROS 2 (8 of 8), the Laplacian differs by one float32 ULP, the PSD by 2e-4
-(ln units), the probabilities by 4e-5, the integrator by 9e-6, and the 8 resets are where ROS 2 puts them. The CSV and the results are **not pushed** (`.gitignore`).
+On the reference run (8 trials) all the outcomes recomputed from the integrated values are the ones of ROS 2 (8 of 8), the Laplacian and the Welch PSD are identical to ROS 2, the
+probabilities differ by 1e-7 and the integrator by 1e-7 (one float32 ULP), and the 8 resets are the ones ROS 2 made (usually at the frame the rule gives, now and then one frame earlier because the events and the values travel on different topics). The CSV and the results are **not pushed** (`.gitignore`).
+The stages are also available one by one, as functions you can copy (`matlab/r2n/`), with `matlab/check_functions.m` that checks all of them against ROS 2:
+see [Reproducibility in MATLAB](../reproducibility/matlab.md).
 What it does, how to run it and the things to know about the reset: `matlab/README.md` (in the package).
 
 ## The yaml files (`<folder>/config/`)
 
 | file | node(s) | what |
 |---|---|---|
-| `pipeline.yaml` | acquisition, filters, welch, decoder, integrator | the processing chain (framerate, Laplacian, PSD 4:2:48 Hz, integrator `alpha` / `rejection` / `reset_event`). Two values come from the launcher: the GDF file and the model manifest |
+| `pipeline.yaml` | acquisition, filters, welch, decoder, integrator | the processing chain (framerate, Laplacian, PSD 4:2:48 Hz). Two values come from the launcher: the GDF file and the model manifest |
+| `integrator_<name>.yaml` | integrator | plugin and parameters of the integrator chosen with `integrator:=` (`alpha` / `rejection` / `reset_event` for the exponential one); in `qda/` the integrator is still in `pipeline.yaml` |
 | `layout.yaml` | every node that needs it (`/**`) and `/control` | `/**`: `classes`, `rest_mode`, `thresholds`, the same for the manager, control and the feedback, which **all load this file** (nobody asks anybody). `/control`: `input_fields` (control's, when present) |
 | `protocol_<protocol>.yaml` | `/manager` and `/control` | two sections in one file. `/manager`: plugin, durations of the trials, number of `trials`, `outcome_wait`. `/control`: plugin `Feedback`, `protocol`, topics, the length of the continuous feedback (`feedback_min/max`, `timeout`: control's own parameters); the evaluation one documents `rest_timeout` |
 | `feedback_wheel.yaml` / `feedback_bars.yaml` | feedback | plugin, fps, window title, topics (the layout comes from `layout.yaml`) |
@@ -246,8 +258,18 @@ colored by its position in `classes`. To try other codes **edit `classes` in `la
 - **gaussian_4class**: a **fictitious** 4-class Gaussian (LEFT_HAND, RIGHT_HAND, BOTH_FEET, BOTH_HANDS) whose prototypes sit at four
   levels of the same 3 features, so replaying the file the four outputs take turns. Only to check a feedback with several bars.
 
-- **eegnet**: the model of [`ros2neuro_decoder_py`](decoder/python.md) (`extra/eegnet_mi_bhbf`, a braindecode ShallowFBCSPNet, both hands / both feet) on its own
-  recording `test_mi.gdf`, with a 4-14 Hz band-pass and a 512-sample window. The model takes a while to load, so `duration.begin` is 15 s.
+- **sklearn**, **sklearn_4class**: the chain of gaussian (Laplacian, Welch) with the plugin `ros2neuro::decoder::Sklearn`, configured like
+  every decoder (`decoder.manifest` in `pipeline.yaml`). The models are MADE UP, written by `scripts/make_sklearn_models.py` from the PSD of
+  `test.gdf` (needs mne, scikit-learn, skops): `sklearn/model` is StandardScaler + LogisticRegression on a **selection** of 6 values (C3, Cz,
+  C4 at 10 and 12 Hz) of the 773 / 771 trials (checks `features.mode: selection`; thresholds 0.62, because its integrated value seldom
+  reaches 0.7); `sklearn_4class/model` is a RandomForest on the whole PSD with fictitious labels (quartiles of C3 - C4 at 12 Hz) and
+  `output.fields` in another order than the classes of the model (checks that the plugin follows `output.fields`).
+- **eegnet**: a braindecode ShallowFBCSPNet (`extra/eegnet_mi_bhbf` of [`ros2neuro_decoder_braindecode`](decoder/braindecode.md), both hands / both feet) on its own
+  recording `test_mi.gdf` (of `ros2neuro_decoder_py`), with a 4-14 Hz band-pass and a 512-sample window. `decoder:=plugin` (default) runs it in the
+  C++ decoder node, configured like every decoder with `decoder.manifest` in `pipeline.yaml` (the `decoder.type` of the manifest,
+  `ros2neuro::decoder::Braindecode`, picks the plugin); `decoder:=python` in the Python node of `ros2neuro_decoder_py`
+  (`config/decoder_python.yaml`): same model folder, identical predictions. The model takes a while to load, so
+  `duration.begin` is 15 s.
 
 A classic model is a `manifest.yaml` plus a binary `.r2nd`: the manifest points to it (`decoder.path`), the weights cannot live in yaml.
 
@@ -282,7 +304,7 @@ The end of the continuous feedback and the outcome are written by control; the m
 ## Things to know
 - Evaluation hit/miss on a looped GDF only shows that the chain works: the file is not synchronized with the cues.
 - The integrator's reset service is `/reset` (a relative name), set in the `/control` section of `protocol_*.yaml`.
-- Hard to see in the logs but important: the feedback reads `/control_feedback/probabilities`, the flow that control builds from the integrator values and the events of the bus.
+- Hard to see in the logs but important: the feedback reads `/control_feedback/probabilities`, the flow that control builds from the integrator values (the events stay on `/neuroevent`, the feedback hears them there).
 - A low threshold on the exponential integrator is crossed again a few predictions after each reset, so the control resets often.
 - The feedback does not print its latency (`latency_log_period_s: 0.0` in `feedback_*.yaml`; set seconds to see `Latency stamp->draw` lines).
 - Close a feedback window with ESC. Watch the events with `ros2 topic echo /neuroevent`.

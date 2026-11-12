@@ -7,6 +7,8 @@ repo_url: https://github.com/ros2neuro/docs
 exclude_docs: |
   /tutorials/*/tutorial_*/
   /tutorials/visualizer/*.yaml
+  /tutorials/fbcsp/matlab/
+  /tutorials/fbcsp/python/
   /tutorials/vr-feedback/webxr/
   /tutorials/vr-feedback/unity/
 
@@ -56,7 +58,9 @@ markdown_extensions:
       anchor_linenums: true
   - pymdownx.inlinehilite
   - pymdownx.snippets:
-      base_path: docs/tutorials
+      base_path:
+        - docs/tutorials
+        - docs/reproducibility
       check_paths: true
   - pymdownx.superfences:
       custom_fences:
@@ -107,6 +111,8 @@ nav:
           - packages/decoder/qda.md
           - packages/decoder/svm.md
           - packages/decoder/gaussian.md
+          - packages/decoder/sklearn.md
+          - packages/decoder/braindecode.md
           - packages/decoder/python.md
           - packages/decoder/converters.md
       - Integrator:
@@ -140,3 +146,6 @@ nav:
       - tutorials/eog-check/index.md
       - tutorials/vr-feedback/index.md
       - tutorials/robot-control/index.md
+      - tutorials/fbcsp/index.md
+  - Reproducibility:
+      - reproducibility/matlab.md

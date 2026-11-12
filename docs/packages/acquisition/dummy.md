@@ -90,12 +90,16 @@ Default signal layout:
 - trigger: 1 channel
 
 The plugin generates sinusoidal sensor data and periodic trigger markers so that
-downstream consumers can be exercised with realistic-looking synchronized frames.
+downstream consumers can be exercised with realistic-looking synchronized frames:
+
+- EEG (`uV`) and EMG (`mV`): 10 Hz sinusoids of amplitude 50 and 5, with a small phase shift between channels;
+- trigger: code `1` on the first sample of every 32nd frame, code `2` in the middle of every 80th frame, `0` elsewhere
+  (the first frame carries both).
 
 ## Parameters
 
 The plugin reads its parameters from the acquisition node under the prefix `acquisition.` (the prefix the node uses
-whenever `acquisition.plugin` is set; a `acquisition.*` prefix is ignored in that case).
+whenever `acquisition.plugin` is set; an `acquisition.prefix` parameter is ignored in that case).
 
 Supported parameters:
 

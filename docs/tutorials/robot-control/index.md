@@ -199,4 +199,4 @@ colcon test --packages-select tutorial_robot_control
 - an exact-time synchronization releases the robot only when the feedback shows the same values;
 - the robot, its commands and the synchronization are yours: the stack only gives you the `Control` class and the flow.
 
-Next: [Showing the feedback in virtual reality](../vr-feedback/index.md).
+Next: [Filter bank CSP: train it in MATLAB, run it in ROS2neuro](../fbcsp/index.md).
