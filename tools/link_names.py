@@ -44,7 +44,7 @@ def family(base, folder, plugins, plugin_pages=None):
 
 family("acquisition", "acquisition", ["dummy", "lsl", "eegdev", "antneuro", "gusbamp", "xdf"])
 family("filters", "filters", ["dc", "butterworth", "car", "laplacian", "hann", "hamming", "blackman", "flattop"])
-family("decoder", "decoder", ["lda", "qda", "svm", "gaussian", "py", "converters"], {"py": "python.md"})
+family("decoder", "decoder", ["lda", "qda", "svm", "gaussian", "sklearn", "braindecode", "converters"])
 family("integrator", "integrator", ["exponential", "buffer"])
 family("recorder", "recorder", ["xdf"])
 family("control", "control", ["feedback"])

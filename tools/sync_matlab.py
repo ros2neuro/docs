@@ -6,7 +6,9 @@ copied to docs/reproducibility/files/ (the page shows their code from there) and
 
   ros2neuro_matlab.zip          the r2n/ functions, check_functions.m, check_evaluation.m and reference/: the first REFERENCE_ROWS
                                 samples of the input and of the ROS 2 output of every filter (the CSV in ros2neuro_filters_*/test/) and the
-                                .r2nd of the test model, so that check_functions passes every line with nothing else.
+                                .r2nd of the test model, and stages/ (inputs and ROS 2 outputs of the decoders, the buffer integrator,
+                                FFT and spectrogram, made by scripts/make_matlab_stages.py), so that check_functions passes every
+                                line with nothing else.
   ros2neuro_matlab_example.zip  one recorded evaluation (GDF + CSV of every topic + the yaml and the model of the launcher), so that
                                 check_evaluation runs with nothing else. Built only when asked (--example), from a run you checked.
 
@@ -55,10 +57,13 @@ LAUNCHER_FILES = ["config/pipeline.yaml", "config/layout.yaml", "config/integrat
 README = """ROS2neuro in MATLAB
 ===================
 
-r2n/                 one function per stage of the chain (CAR, DC, Laplacian, windows, Butterworth, Welch, Gaussian, integrator, ...).
-                     Copy the ones you need. Float32 like ROS 2, no toolbox.
+r2n/                 one function per stage of the chain (CAR, DC, Laplacian, windows, Butterworth, Welch, FFT, spectrogram,
+                     Gaussian, LDA, QDA, SVM, exponential and buffer integrators, ...). Copy the ones you need. Float32 like ROS 2,
+                     no toolbox.
 check_functions.m    checks every function: the filters against the output of the ROS 2 nodes (reference/, the first 512 samples
-                     of the CSV of the ros2neuro_filters_* packages), the others on cases whose answer is known.
+                     of the CSV of the ros2neuro_filters_* packages), the decoders LDA/QDA/SVM, the buffer integrator, FFT and
+                     spectrogram against the output of the ROS 2 nodes on the inputs of stages/, the others on cases whose answer
+                     is known.
                      check_functions('/path/to/src') uses the full CSV of a workspace instead.
 check_evaluation.m   the whole chain (Laplacian, Welch, Gaussian, integrator, outcome of every trial) on a recorded evaluation,
                      compared with what ROS 2 published. Unzip ros2neuro_matlab_example.zip here (it adds example/) and run it
@@ -97,7 +102,7 @@ def sources():
 
 
 def reference():
-    """{relative path: bytes} of reference/: the cropped CSV of the filter packages and the test model."""
+    """{relative path: bytes} of reference/ (the cropped CSV of the filter packages and the test model) and of stages/."""
     files = {}
     for pkg, names in FILTER_CSV.items():
         for name in names:
@@ -106,6 +111,11 @@ def reference():
                 sys.exit(f"{path} not found (run run_ros_pipeline.sh of {pkg})")
             files[f"reference/{pkg}/test/{name}"] = head_rows(path.read_bytes(), REFERENCE_ROWS)
     files[f"reference/{REFERENCE_MODEL.name}"] = REFERENCE_MODEL.read_bytes()
+    stages = SRC / "stages"
+    if not stages.is_dir():
+        sys.exit(f"{stages} not found (run scripts/make_matlab_stages.py of ros2neuro_devel_test)")
+    for path in sorted(p for p in stages.rglob("*") if p.is_file()):
+        files[f"stages/{path.relative_to(stages)}"] = path.read_bytes()
     return files
 
 

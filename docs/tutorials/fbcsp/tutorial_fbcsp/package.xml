@@ -17,7 +17,6 @@
   <exec_depend>ros2neuro_decoder</exec_depend>
   <exec_depend>ros2neuro_acquisition</exec_depend>
   <exec_depend>ros2neuro_devel_test</exec_depend>
-  <exec_depend>ros2neuro_decoder_py</exec_depend>
   <exec_depend>ros2neuro_integrator</exec_depend>
   <exec_depend>ros2neuro_control</exec_depend>
   <exec_depend>ros2neuro_manager</exec_depend>

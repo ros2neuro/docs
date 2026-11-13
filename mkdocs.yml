@@ -113,7 +113,6 @@ nav:
           - packages/decoder/gaussian.md
           - packages/decoder/sklearn.md
           - packages/decoder/braindecode.md
-          - packages/decoder/python.md
           - packages/decoder/converters.md
       - Integrator:
           - packages/integrator/index.md

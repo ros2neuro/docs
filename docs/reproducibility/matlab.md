@@ -1,14 +1,15 @@
 # Reproducibility in MATLAB
 
-Every stage of the chain, from the filters to the integrator, has a **MATLAB twin**: a short function that does the same
+Every stage of the chain computed in C++, from the filters to the decoders and the integrators, has a **MATLAB twin**: a short function that does the same
 computation, in the same float32 arithmetic, and that is **compared with what the real ROS 2 node published**. You can use
 the functions in your own analysis and trust that they give the numbers ROS2neuro gives, because the comparison is repeated on
 the same data every time you run the check.
 
 !!! success "Download"
-    - **[ros2neuro_matlab.zip](ros2neuro_matlab.zip)** (1.5 MB): the `r2n/` functions, `check_functions.m`, `check_evaluation.m` and
-      `reference/`, the first 512 samples of the input and of the ROS 2 output of every filter and a test model. Unzipped on its own,
-      `check_functions` runs **all 21 checks**, the filters against the real node included.
+    - **[ros2neuro_matlab.zip](ros2neuro_matlab.zip)** (1.8 MB): the `r2n/` functions, `check_functions.m`, `check_evaluation.m`,
+      `reference/` (the first 512 samples of the input and of the ROS 2 output of every filter and a test model) and `stages/` (inputs
+      and ROS 2 outputs of the LDA, QDA and SVM decoders, the buffer integrator, the FFT and the spectrogram). Unzipped on its own,
+      `check_functions` runs **all 28 checks**, every comparison with the real nodes included.
     - **[ros2neuro_matlab_example.zip](ros2neuro_matlab_example.zip)** (8 MB, data only): one recorded evaluation (GDF, a CSV of every
       topic, the yaml files and the model of the launcher). Unzip it in the same place (both extract into `ros2neuro_matlab/`) and
       `check_evaluation` redoes the whole chain with no ROS 2 installed.
@@ -18,7 +19,7 @@ the same data every time you run the check.
 
     ```matlab
     cd ros2neuro_matlab
-    check_functions      % 21 checks: 21 PASS
+    check_functions      % 28 checks: 28 PASS
     check_evaluation     % with the example: the whole chain, 8 of 8 outcomes
     ```
 
@@ -27,7 +28,8 @@ Everything described here is in one place, the `matlab/` folder of [`ros2neuro_d
 ```text
 ros2neuro_devel_test/matlab/
 ├── r2n/                      one function per stage: copy the ones you need
-├── check_functions.m         every function against ROS 2 (filters) and on known cases
+├── check_functions.m         every function against ROS 2 (filters, decoders, integrators, FFT, spectrogram) and on known cases
+├── stages/                   inputs and ROS 2 outputs for check_functions (made by scripts/make_matlab_stages.py)
 └── check_evaluation.m        the whole chain on a recorded evaluation (GDF + CSV of every topic)
 ```
 
@@ -45,12 +47,19 @@ ros2neuro_devel_test/matlab/
 | Welch PSD (ln) | [`processing_spectral`](../packages/processing/spectral.md) | `r2n_welch` | the whole-chain run, 817 windows | **0** |
 | Gaussian decoder | [`decoder_gaussian`](../packages/decoder/gaussian.md) | `r2n_gaussian_read`, `r2n_gaussian_predict` | the whole-chain run, 817 predictions | 1.3e-7 |
 | Exponential integrator | [`integrator_exponential`](../packages/integrator/exponential.md) | `r2n_integrator_exponential` | the whole-chain run, 723 frames | 1.2e-7 |
+| LDA decoder | [`decoder_lda`](../packages/decoder/lda.md) | `r2n_linear_read`, `r2n_linear_predict` | the node, 60 features, made-up model | 6e-8 |
+| SVM decoder (linear) | [`decoder_svm`](../packages/decoder/svm.md) | `r2n_linear_read`, `r2n_linear_predict` | the node, 60 features, made-up model | 6e-8 |
+| QDA decoder | [`decoder_qda`](../packages/decoder/qda.md) | `r2n_qda_read`, `r2n_qda_predict` | the node, 60 features, made-up model | 1.5e-8 |
+| Buffer integrator, hard and soft | [`integrator_buffer`](../packages/integrator/buffer.md) | `r2n_integrator_buffer` | the node, 120 predictions each | < 1 ULP |
+| FFT (amplitude) | [`processing_spectral`](../packages/processing/spectral.md) | `r2n_fft` | the node, 33 windows | < 1 ULP |
+| Spectrogram (dB) | [`processing_spectral`](../packages/processing/spectral.md) | `r2n_spectrogram` | the node, 25 buffers of 7 segments | < 1 ULP |
 | Hit / Miss / Timeout | [`control_feedback`](../packages/control/feedback.md) | `r2n_threshold_winner` | the whole-chain run, 8 trials | 8 of 8 equal |
 | Resets of the integrator | [`integrator`](../packages/integrator/index.md) | `r2n_integrator_exponential` | the whole-chain run | 8 resets; usually at the frame the rule gives, sometimes one frame earlier (see below) |
 
 **ULP** is the distance between two neighbouring float32 numbers. The EEG in the test files is of the order of 10 000 µV, where one
-ULP is 0.001 µV: a difference of 2 ULP is the last bit of the number, not a difference of method. The differences of the last three
-rows are in the units of the quantity (probabilities and integrated values are between 0 and 1, so 1e-7 is one ULP there).
+ULP is 0.001 µV: a difference of 2 ULP is the last bit of the number, not a difference of method. The differences of the decoders and
+the integrators are in the units of the quantity (probabilities and integrated values are between 0 and 1, so 1e-7 is one ULP there).
+The FFT and the spectrogram compute in double, like the node, and round to float32 only at the end: they give the same float32 number.
 
 !!! note "How the tolerance is chosen"
     The check does not use one fixed number. It accepts a few ULP **of the largest input sample** (4 for the single-stage filters,
@@ -82,15 +91,24 @@ check_functions
   PASS     filter chain dc>hp 1>lp 40>car>hann    max error 0.00478 (tolerance 0.00781 = 8 ULP of the input 1.249e+04)
   PASS     r2n_welch: a 10 Hz sine of 1 uV peaks at 10 Hz
   ...
-  21 checks: 21 PASS, 0 FAIL, 0 SKIPPED
+  PASS     r2n_linear_predict (LDA)         max error 6e-08   (tolerance 2.38e-07 = 4 ULP of the largest value 0.9126), 180 values
+  ...
+  PASS     r2n_spectrogram (128/64 of 512, hamming, dB)   max error 5e-08 (tolerance 1.53e-05 = 4 ULP of the largest value 55.65)
+
+  28 checks: 28 PASS, 0 FAIL, 0 SKIPPED
 ```
 
 For the filters it reads the input and the output of the real node that each filter package keeps in its `test/` folder
 (`rawdata.csv`, `output_data*.csv`, made by `run_ros_pipeline.sh` of the package); `check_functions('/path/to/src')` points it to another
 workspace. The zip carries the first 512 samples of the same files in `reference/`, and uses them when they are there: every filter
-is causal or works one frame at a time, so the first samples of the ROS 2 output are exactly the filter of the first samples of the input. A package without those files shows **SKIPPED** and how to make them: nothing passes by default. The other functions
-(Welch, Gaussian, integrator, threshold, the `.r2nd` reader, the yaml reader) are also checked on cases whose answer is known by hand;
-their comparison with ROS 2 is the next one. The command exits with an error if anything fails, so `matlab -batch check_functions`
+is causal or works one frame at a time, so the first samples of the ROS 2 output are exactly the filter of the first samples of the input. A package without those files shows **SKIPPED** and how to make them: nothing passes by default.
+
+The decoders LDA, QDA and SVM, the buffer integrator, the FFT and the spectrogram are compared with the real nodes on the files of
+`stages/`: fixed inputs and every message the node published for them. `scripts/make_matlab_stages.py` of `ros2neuro_devel_test` makes
+them: it writes three made-up models (their weights only exercise the arithmetic), starts each node (`decoder_node`, `integrator_node`,
+`fft_node`, `spectrogram_node`), sends the inputs one message at a time and saves the outputs; run it again after changing one of
+those nodes. The other functions (Welch, Gaussian, exponential integrator, threshold, the `.r2nd` reader, the yaml reader) are checked
+on cases whose answer is known by hand; their comparison with ROS 2 is the next one. The command exits with an error if anything fails, so `matlab -batch check_functions`
 can go in a script or a CI job.
 
 **2. The whole chain on a recorded evaluation**
@@ -156,8 +174,8 @@ psd = r2n_welch(double(y(1:512, :)), struct('fs', 512, 'length', 256, 'overlap',
 ```
 
 Each function says in its header which ROS 2 plugin it reproduces, what it expects and what it returns, and each one is a
-single file with no dependency on the others (except `r2n_gaussian_predict`, that takes what `r2n_gaussian_read` returns), so you can copy just the
-ones you need. The yaml reader `r2n_yaml_value(file, key)` reads a parameter from the same file the node loads, which is how
+single file with no dependency on the others (except: a `*_predict` takes what its `*_read` returns, `r2n_linear_predict` and
+`r2n_qda_predict` use `r2n_softmax`, `r2n_fft` and `r2n_spectrogram` use `r2n_spectral_window`), so you can copy just the ones you need. The yaml reader `r2n_yaml_value(file, key)` reads a parameter from the same file the node loads, which is how
 `check_evaluation` avoids typing a number twice.
 
 !!! tip "Why a loop where `mean` or `*` would do"
@@ -199,6 +217,21 @@ One block per function; each starts with what it reproduces. They are also in th
     --8<-- "files/r2n/r2n_welch.m"
     ```
 
+??? example "r2n_fft.m: FFT (amplitude spectrum)"
+    ```matlab
+    --8<-- "files/r2n/r2n_fft.m"
+    ```
+
+??? example "r2n_spectrogram.m: spectrogram"
+    ```matlab
+    --8<-- "files/r2n/r2n_spectrogram.m"
+    ```
+
+??? example "r2n_spectral_window.m: the window of FFT and spectrogram"
+    ```matlab
+    --8<-- "files/r2n/r2n_spectral_window.m"
+    ```
+
 ??? example "r2n_gaussian_read.m: reads the `.r2nd` of the Gaussian decoder"
     ```matlab
     --8<-- "files/r2n/r2n_gaussian_read.m"
@@ -209,9 +242,39 @@ One block per function; each starts with what it reproduces. They are also in th
     --8<-- "files/r2n/r2n_gaussian_predict.m"
     ```
 
+??? example "r2n_linear_read.m: reads the `.r2nd` of the LDA and SVM decoders"
+    ```matlab
+    --8<-- "files/r2n/r2n_linear_read.m"
+    ```
+
+??? example "r2n_linear_predict.m: LDA and SVM decoders"
+    ```matlab
+    --8<-- "files/r2n/r2n_linear_predict.m"
+    ```
+
+??? example "r2n_qda_read.m: reads the `.r2nd` of the QDA decoder"
+    ```matlab
+    --8<-- "files/r2n/r2n_qda_read.m"
+    ```
+
+??? example "r2n_qda_predict.m: QDA decoder"
+    ```matlab
+    --8<-- "files/r2n/r2n_qda_predict.m"
+    ```
+
+??? example "r2n_softmax.m: scores to probabilities (LDA, QDA, SVM)"
+    ```matlab
+    --8<-- "files/r2n/r2n_softmax.m"
+    ```
+
 ??? example "r2n_integrator_exponential.m: exponential integrator"
     ```matlab
     --8<-- "files/r2n/r2n_integrator_exponential.m"
+    ```
+
+??? example "r2n_integrator_buffer.m: buffer integrator"
+    ```matlab
+    --8<-- "files/r2n/r2n_integrator_buffer.m"
     ```
 
 ??? example "r2n_threshold_winner.m: which class touched its threshold"
@@ -238,10 +301,7 @@ The stages below have no MATLAB function checked against ROS 2. Contributions ar
 
 | Stage | Package |
 |---|---|
-| LDA, QDA, SVM decoders | [`decoder_lda`](../packages/decoder/lda.md), [`decoder_qda`](../packages/decoder/qda.md), [`decoder_svm`](../packages/decoder/svm.md) |
-| Deep-learning decoder | [`decoder_py`](../packages/decoder/python.md) |
-| Buffer integrator | [`integrator_buffer`](../packages/integrator/buffer.md) |
-| FFT and spectrogram | [`processing_spectral`](../packages/processing/spectral.md) |
+| scikit-learn and braindecode decoders (the model runs in Python: reproduce it with the same Python model, not in MATLAB) | [`decoder_sklearn`](../packages/decoder/sklearn.md), [`decoder_braindecode`](../packages/decoder/braindecode.md) |
 | Signal buffer | [`processing_buffer`](../packages/processing/buffer.md) |
 | `control_feedback`: calibration autopilot, `rest_mode`, protocol `control` | [`control_feedback`](../packages/control/feedback.md) |
 

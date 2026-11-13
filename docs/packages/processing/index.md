@@ -15,7 +15,7 @@ leaves room for new ones.
 ```mermaid
 flowchart LR
     FIL["filters<br/>NeuroFrame"] --> WEL["welch_node<br/>PSD (spectrum)"] --> CLA["decoder<br/>LDA, QDA, SVM, Gaussian"]
-    FIL --> BUF["buffer_node<br/>window of the filtered signal"] --> DL["decoder_py<br/>deep learning"]
+    FIL --> BUF["buffer_node<br/>window of the filtered signal"] --> DL["decoder<br/>Braindecode plugin"]
 ```
 
 | Decoder | What it needs as input | Processing node | `NeuroFeature` it publishes | Launcher that shows it |

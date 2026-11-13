@@ -45,8 +45,8 @@ What happens in control, and where:
 
 * [`ros2neuro_control_feedback`](../control/feedback.md) (`protocol: control`) forwards every normalized vector of the integrator to the feedback.
 * It compares each class with its own threshold. When a class reaches it (value >= threshold, highest wins) it asks the integrator for
-  a reset through the control node, and waits for the integrator's neutral message (all values 1/K) before forwarding again; no
-  message within 1 s -> error and the session is shut down. Thresholds can be changed at runtime:
+  a reset through the control node, and waits for the reset to be done (the integrator answers the service) and for a value made
+  after the request before forwarding again; none within 1 s -> error and the session is shut down. Thresholds can be changed at runtime:
   `ros2 param set /control thresholds "[0.7, 0.7]"`.
 * Nothing is written on `/neuroevent`.
 

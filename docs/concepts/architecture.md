@@ -57,7 +57,7 @@ is the stage that prepares the data *for the decoder*, so what runs depends on t
 ```mermaid
 flowchart LR
     FIL["filters"] --> WEL["welch_node<br/>PSD"] --> CLA["decoder<br/>LDA, QDA, SVM, Gaussian"]
-    FIL --> BUF["buffer_node<br/>window of the signal"] --> DL["decoder_py<br/>deep learning"]
+    FIL --> BUF["buffer_node<br/>window of the signal"] --> DL["decoder<br/>Braindecode plugin"]
 ```
 
 - the **classic decoders** read a power spectrum: the processing is the Welch PSD ([`ros2neuro_processing_spectral`](../packages/processing/spectral.md));

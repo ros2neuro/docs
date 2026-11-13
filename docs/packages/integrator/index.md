@@ -87,6 +87,13 @@ Messages used:
 `integrator_node` (node name `integrator`) loads one integrator plugin and, for every `NeuroPrediction` it receives, asks the
 plugin to update its integrated values and publishes them as a `NeuroPrediction`.
 
+!!! note "Input: probabilities"
+    The integrators expect predictions of type `TYPE_PROBABILITIES` (non-negative values that sum to 1, one per class): the
+    rejection compares the highest value with a probability, the buffer integrator moves probability mass between the classes.
+    The decoders of the stack publish probabilities, and every test and launcher of ros2neuro was made with `TYPE_PROBABILITIES`.
+    A decoder may declare another `output.type` (scores, logits): it is not refused, but the result of the integration is then
+    not defined by these rules.
+
 The published message has:
 
 - `decoder`: the name of the integrator (`integrator.name`);
@@ -110,9 +117,10 @@ The integrated values can be reset in two ways:
 - an event: when a `NeuroEvent` with `event_id == integrator.reset_event` arrives on `event_topic`. In a calibration or evaluation (trials) the
   launchers use `781` (CFeedback), so every trial starts from the neutral state.
 
-A reset puts the plugin in its neutral state (`1/K` for every class, `K` being the number of classes of the last prediction) and
-**publishes a message with those values**. [`ros2neuro_control_feedback`](../control/feedback.md) relies on that message to know that the reset has happened. Before the
-first prediction there is nothing to reset.
+A reset puts the plugin in its reset state (`1/K` for every class for the exponential integrator, `init_val` for the buffer one;
+`K` is the number of classes of the last prediction: its `fields`, or its `values` when a decoder publishes no fields) and
+**publishes a message with those values**; the service answers after that. [`ros2neuro_control_feedback`](../control/feedback.md)
+waits for that answer and then uses only values made after its request. Before the first prediction there is nothing to reset.
 
 ## Parameters
 

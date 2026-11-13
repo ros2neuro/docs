@@ -1,7 +1,7 @@
 # written by train_fbcsp.m
 name: fbcsp_lda
 subject: tutorial
-source: "train_fbcsp.m on /home/paolo/ros2neuro_ws/src/ros2neuro_decoder_py/extra/test_mi.gdf"
+source: "train_fbcsp.m on ros2neuro_devel_test/extra/test_mi.gdf"
 shrinkage: 0.1
 classes: ["771", "773"]
 component_labels: ["csp1", "csp2"]

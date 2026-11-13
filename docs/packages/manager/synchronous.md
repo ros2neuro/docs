@@ -88,8 +88,16 @@ calibration and in evaluation. The length of the continuous feedback of each tri
 between `duration.feedback_min` and `duration.feedback_max` of [`ros2neuro_control_feedback`](../control/feedback.md), in an evaluation it is its `duration.timeout`
 (they are control's own parameters: the manager does not know them).
 
-**Start of the protocol.** The plugin waits `duration.begin` ms before the first trial (set it long enough for the pipeline to be
-up: the DL decoders take a while to load).
+**Start of the protocol.** The plugin waits `duration.begin` ms before the first trial, **at least 3000** (a shorter value is refused):
+the nodes must have found each other on the event bus, which keeps no history (a node that joins late misses the events written
+before, and a control that misses the cue and the CFeedback never writes the outcome), and the filters must have settled. Set it
+longer when the pipeline is slow to start (the DL decoders take a while to load; under heavy load discovery takes longer too).
+`duration.outcome_wait` must outlast the continuous feedback of control (`duration.timeout`, `rest_timeout`, `feedback_max`): the
+plugin warns when it is below 30 s.
+
+**Log of every trial.** The manager writes in the terminal the start of every trial (`Trial 3/20 (class: BOTH_HANDS (773))`) and,
+when the outcome arrives, the result with the running counts (`Trial 3/20 (class: BOTH_HANDS (773)): Hit  [hit=2 miss=1 timeout=0]`).
+The manager writes it because it is the node that waits for the outcome to go on (control decides it but does not log it).
 
 **No outcome.** If the outcome does not arrive within `duration.outcome_wait` ms of CFeedback (is [`ros2neuro_control_feedback`](../control/feedback.md) running
 and reading the integrator?) the manager logs an **error** and stops with exit code 1 (`on_exit="shutdown"` ends the whole launch).

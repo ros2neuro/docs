@@ -57,9 +57,9 @@ The class that every plugin extends, and the class names (the pluginlib ids) tha
 | `ros2neuro::feedback::Feedback` | `ros2neuro::feedback::Wheel`, `Bar` |
 
 Two classes are called `Feedback`, in different namespaces and with different jobs: `ros2neuro::control::Feedback` is a *control* plugin (it drives the
-feedback), and `ros2neuro::feedback::Feedback` is the base class of the *drawings* (wheel, bars). A braindecode model runs either
-as the plugin `ros2neuro::decoder::Braindecode` ([`ros2neuro_decoder_braindecode`](../packages/decoder/braindecode.md)) or in the separate Python
-node of [`ros2neuro_decoder_py`](../packages/decoder/python.md), which is not a pluginlib plugin (it picks `sklearn` or `braindecode` with `decoder.type`).
+feedback), and `ros2neuro::feedback::Feedback` is the base class of the *drawings* (wheel, bars). Models made in Python
+(scikit-learn, braindecode) are plugins too: `ros2neuro::decoder::Sklearn` and `ros2neuro::decoder::Braindecode` run the model in a Python interpreter
+inside the plugin.
 
 **Where the internal classes go.** What a plugin uses internally and that is not a plugin goes in the namespace of its family, under a nested namespace
 named after the plugin: the internals of `control_feedback` (`Protocol`, `Training`, `Asynchronous`, `Autopilot`, `FeedbackCore`...) are in

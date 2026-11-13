@@ -5,8 +5,8 @@
 
 Decoder plugin for deep-learning models made with [braindecode](https://braindecode.org) (PyTorch). It runs inside the C++ decoder node of
 [`ros2neuro_decoder`](index.md), like LDA, QDA, SVM and Gaussian, and reads the **same model folders** as
-the Python node of [`ros2neuro_decoder_py`](python.md): on the same features the two give the same
-probabilities (checked: 956 predictions of a whole run, difference 0).
+the model in plain Python: on the same features the plugin gives the same probabilities (checked against a run of 956 predictions,
+difference 0).
 
 | | |
 |---|---|
@@ -32,7 +32,7 @@ decoder node (pybind11), imports `ros2neuro_decoder_braindecode.BraindecodeModel
 
 ## The model folder
 
-The folder of `ros2neuro_decoder_py`: `manifest.yaml` + the weights. It is given like the model of every decoder, with
+A folder with `manifest.yaml` + the weights. It is given like the model of every decoder, with
 `decoder.manifest` of the decoder node: the node reads only `decoder.name` and `decoder.type` (which picks this plugin) and passes the
 manifest to the plugin, which reads the rest:
 
@@ -53,12 +53,12 @@ output:
   type: NeuroPrediction::TYPE_PROBABILITIES
 ```
 
-`extra/eegnet_mi_bhbf/` is an example (ShallowFBCSPNet, 16 channels, 512 samples, BOTH_HANDS / BOTH_FEET), the same folder as
-`ros2neuro_decoder_py/extra/eegnet_mi_bhbf`.
+`extra/eegnet_mi_bhbf/` is an example (ShallowFBCSPNet, 16 channels, 512 samples, BOTH_HANDS / BOTH_FEET), trained on the
+recording `test_mi.gdf` of `ros2neuro_devel_test/extra`.
 
 !!! note "Older manifests"
     A manifest written by an older training script may still have `type: EEGClassifier`: write `type: ros2neuro::decoder::Braindecode`
-    there (the Python node of `ros2neuro_decoder_py` does not read that field, it keeps working).
+    there (the old value can stay as `wrapper: EEGClassifier`: nobody reads it).
 
 ## Parameters
 
@@ -88,14 +88,13 @@ Of the plugin (`decoder.params.*`):
 The whole chain (GDF replay, filters 4-14 Hz, buffer of 512 samples, this plugin, integrator, control, feedback):
 
 ```bash
-ros2 launch ros2neuro_devel_test eegnet_bars.launch.xml protocol:=evaluation              # the plugin (default)
-ros2 launch ros2neuro_devel_test eegnet_bars.launch.xml protocol:=evaluation decoder:=python   # the Python node, for comparison
+ros2 launch ros2neuro_devel_test eegnet_bars.launch.xml protocol:=evaluation
 ```
 
 ## Dependencies
 
 - ROS 2: `ros2neuro_decoder`, `ros2neuro_msgs`, `pluginlib`, `rclcpp`; build: `pybind11-dev`, `python3-dev`.
-- Python (not Debian packages): `pip install -r requirements.txt` (torch, braindecode, numpy, PyYAML; the versions of `ros2neuro_decoder_py`).
+- Python (not Debian packages): `pip install -r requirements.txt` (torch, braindecode, numpy, PyYAML).
 
 ## Tests
 
@@ -105,8 +104,8 @@ colcon test --packages-select ros2neuro_decoder_braindecode && colcon test-resul
 
 `test/test_braindecode_decoder.cpp` loads the plugin through pluginlib, as the node does:
 
-- **the probabilities of the Python node**: two fixed windows (`test/reference_input_*.csv`) and the probabilities that
-  `ros2neuro_decoder_py` gives for them (`test/reference_output.csv`, about 0.78 and 0.32 for BOTH_HANDS: a channel in the wrong place
+- **the probabilities of the model in plain Python**: two fixed windows (`test/reference_input_*.csv`) and the probabilities that
+  the model gives for them outside ROS 2 (`test/reference_output.csv`, about 0.78 and 0.32 for BOTH_HANDS: a channel in the wrong place
   would change them), tolerance 1e-5; regenerate them with `python3 test/make_reference.py`;
 - channels taken by label (reversed order, an extra channel: same output);
 - a missing channel, a short window, a spectrum, no labels: an error, not a wrong number;

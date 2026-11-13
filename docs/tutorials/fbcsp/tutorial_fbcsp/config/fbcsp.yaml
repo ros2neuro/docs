@@ -1,4 +1,4 @@
-# written by train_fbcsp.m from /home/paolo/ros2neuro_ws/src/ros2neuro_decoder_py/extra/test_mi.gdf
+# written by train_fbcsp.m from ros2neuro_devel_test/extra/test_mi.gdf
 fbcsp:
   ros__parameters:
     channels: ["FZ", "FC1", "FC2", "C3", "CZ", "C4", "CP1", "CP2", "CPZ", "FC3", "FCZ", "FC4", "C1", "C2", "CP3", "CP4"]

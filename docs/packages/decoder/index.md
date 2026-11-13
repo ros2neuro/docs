@@ -23,13 +23,10 @@ The decoder package turns a `NeuroFeature` (for example a PSD) into a `NeuroPred
 
 The [converters](converters.md) turn a Matlab SMR `.mat` decoder into the `.r2nd` + `manifest.yaml` format.
 
-!!! note "Two ways to run a braindecode model"
-    - [`ros2neuro_decoder_braindecode`](braindecode.md): a **plugin** of this node (`ros2neuro::decoder::Braindecode`), the model runs in
-      Python inside it;
-    - [`ros2neuro_decoder_py`](python.md): **a separate Python node**, `decoder_node` of its own package, selected with its own `decoder.type`.
-
-    Both read the same model folders (`manifest.yaml` + weights) and give the same probabilities; both have the same topic contract
-    (`/features` in, `~/prediction` out), so the rest of the chain does not notice the difference.
+!!! note "Models made in Python"
+    scikit-learn and braindecode (PyTorch) models run as plugins of this node, [`ros2neuro_decoder_sklearn`](sklearn.md) and
+    [`ros2neuro_decoder_braindecode`](braindecode.md): the model runs in a Python interpreter inside the plugin, and they are configured
+    like every decoder (`decoder.manifest`).
 
 ## Topics
 
@@ -42,7 +39,7 @@ The [converters](converters.md) turn a Matlab SMR `.mat` decoder into the `.r2nd
 
 The decoder reads a `NeuroFeature` that the [processing](../processing/index.md) stage publishes, and its model declares which one
 (name, type and axes, in the manifest). The classic decoders (LDA, QDA, SVM, Gaussian) read a **PSD**, so they follow the
-[Welch node](../processing/spectral.md); a deep-learning model in the [Python decoder](python.md) reads a **window of the
+[Welch node](../processing/spectral.md); a deep-learning model in the [braindecode plugin](braindecode.md) reads a **window of the
 signal**, so it follows the [buffer node](../processing/buffer.md).
 
 ## Minimal example

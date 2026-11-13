@@ -15,6 +15,9 @@ function ok = check_functions(data_root)
 %   The zip of the documentation carries reference/: the first 512 samples of those CSV (every filter is causal or works one frame at a
 %   time, so the first samples of the ROS 2 output are the filter of the first samples of the input) and the .r2nd of a test model.
 %
+%   Part 3, against ROS 2: the decoders LDA / QDA / SVM, the buffer integrator, the FFT and the spectrogram, on the inputs of stages/
+%   and what the real node published for them (scripts/make_matlab_stages.py of ros2neuro_devel_test).
+%
 %   Part 2, analytic: functions that ROS 2 does not publish on their own (Welch, Gaussian, integrator, threshold, .r2nd reader) are checked
 %   on cases whose answer is known by hand. Their comparison with ROS 2 is check_evaluation.m (whole chain, GDF + CSV of every topic).
 here = fileparts(mfilename('fullpath'));
@@ -61,6 +64,12 @@ if isempty(f)
 else
     results(end+1, :) = analytic(['r2n_gaussian_read: reads ' f(1).name], @() gaussian_read_ok(fullfile(f(1).folder, f(1).name)));
 end
+
+%% Part 3: the stages that check_evaluation does not run, against ROS 2 ------------------------------------------------------------
+% stages/ (scripts/make_matlab_stages.py): fixed inputs and what the real nodes published for them: LDA, QDA, SVM (decoder_node,
+% made-up models in stages/models/), buffer integrator hard and soft (integrator_node, buffer_size 10), fft_node (256 samples, hann,
+% amplitude) and spectrogram_node (128 / overlap 64 over 512 samples, hamming, dB). The tolerance is in ULP of the largest ROS 2 value.
+results = [results; stage_checks(fullfile(here, 'stages'))];
 
 %% report ----------------------------------------------------------------------------------------------------------------------------
 fprintf('\n');
@@ -157,4 +166,45 @@ end
 function g = gaussian_read_ok(file)
 m = r2n_gaussian_read(file);
 g = m.n_classes >= 2 && numel(m.priors) == m.n_classes && abs(sum(m.priors) - 1) < 1e-4 && all(m.covariances(:) > 0) && numel(m.selection_channel) >= 1;
+end
+
+function rows = stage_checks(stages)
+rows = cell(0, 3);
+if ~isfolder(stages)
+    rows(end+1, :) = {'SKIPPED', 'stages vs ROS 2', sprintf('no %s (run scripts/make_matlab_stages.py)', stages)}; return
+end
+rd = @(name) readmatrix(fullfile(stages, name));
+feat = rd('decoder_input.csv');
+D = {'lda', 'r2n_linear_predict (LDA)', @r2n_linear_read, @r2n_linear_predict
+     'svm', 'r2n_linear_predict (SVM)', @r2n_linear_read, @r2n_linear_predict
+     'qda', 'r2n_qda_predict (QDA)',    @r2n_qda_read,    @r2n_qda_predict};
+for i = 1:size(D, 1)
+    f = dir(fullfile(stages, 'models', D{i, 1}, '*.r2nd')); m = D{i, 3}(fullfile(f(1).folder, f(1).name));
+    y = zeros(size(feat, 1), m.n_classes);
+    for r = 1:size(feat, 1), y(r, :) = D{i, 4}(m, feat(r, :)); end
+    rows(end+1, :) = compare_stage(D{i, 2}, rd(['decoder_' D{i, 1} '.csv']), y, 4); %#ok<AGROW>
+end
+pred = rd('integrator_input.csv');
+rows(end+1, :) = compare_stage('r2n_integrator_buffer hard (10)', rd('integrator_buffer_hard.csv'), r2n_integrator_buffer(pred, 10, 0), 4);
+rows(end+1, :) = compare_stage('r2n_integrator_buffer soft (10)', rd('integrator_buffer_soft.csv'), r2n_integrator_buffer(pred, 10, 1), 4);
+x = single(rd('spectral_input.csv')); blk = 32; fs = 512;
+ros = rd('fft.csv'); y = zeros(size(ros, 1), size(ros, 2) - 1);
+for r = 1:size(ros, 1)
+    e = ros(r, 1) * blk; a = r2n_fft(x(e-255:e, :), fs, 'hann', false); y(r, :) = a(:)';
+end
+rows(end+1, :) = compare_stage('r2n_fft (256, hann)', ros(:, 2:end), y, 4);
+ros = rd('spectrogram.csv'); y = zeros(size(ros, 1), size(ros, 2) - 1);
+for r = 1:size(ros, 1)
+    e = ros(r, 1) * blk; p = r2n_spectrogram(x(e-511:e, :), fs, 128, 64, 'hamming', true); y(r, :) = reshape(permute(p, [3 2 1]), 1, []);
+end
+rows(end+1, :) = compare_stage('r2n_spectrogram (128/64 of 512, hamming, dB)', ros(:, 2:end), y, 4);
+end
+
+function row = compare_stage(name, ros, y, ulps)
+if ~isequal(size(ros), size(y))
+    row = {'FAIL', name, sprintf('ROS 2 gave %dx%d values, the function %dx%d', size(ros), size(y))}; return
+end
+d = abs(ros - double(y)); m = max(d(:)); tol = ulps * double(eps(single(max(abs(ros(:))))));
+status = 'PASS'; if ~(m <= tol), status = 'FAIL'; end
+row = {status, name, sprintf('max error %-9.3g (tolerance %.3g = %d ULP of the largest value %.4g), %d values', m, tol, ulps, max(abs(ros(:))), numel(d))};
 end

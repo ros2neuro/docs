@@ -213,26 +213,27 @@ ros_f = permute(reshape(single(filtered.data(:, 6:5+nch))', nch, hop, []), [2 1 
 kf = frame_of(filtered.data(1:hop:end, 3:4));
 e = 0;
 for i = 1:numel(kf)
+    if isnan(kf(i)), continue, end                            % its raw frame is not in the CSV (the recorder joined that topic later)
     idx = (kf(i)-1)*hop + (1:hop); ros.filt(idx, :) = ros_f(:, :, i);
     e = max(e, max(abs(ros_f(:, :, i) - filt(idx, :)), [], 'all'));
 end
 report('filters (Laplacian)', e, 1e-6 * max(abs(eeg), [], 'all'), 'max |ROS - MATLAB|, tolerance 1e-6 of the largest sample (float32)');
 
 p = read_table(fullfile(folder, 'psd.csv'));
-k = frame_of(p.data(:, 3:4)); ok = k >= first; ros.psd(k, :) = single(p.data(:, 5:end));
+k = frame_of(p.data(:, 3:4)); in = ~isnan(k); ok = in & k >= first; ros.psd(k(in), :) = single(p.data(in, 5:end));
 e = max(abs(ros.psd(k(ok), :) - psd(k(ok), :)), [], 'all');
 report('Welch PSD (ln)', e, 1e-3, sprintf('%d windows, from the MATLAB filter output', sum(ok)));
 
 d = read_table(fullfile(folder, 'prediction.csv'));
-k = frame_of(d.data(:, 3:4)); ok = k >= first; ros.prob(k, :) = single(d.data(:, 6:end));
+k = frame_of(d.data(:, 3:4)); in = ~isnan(k); ok = in & k >= first; ros.prob(k(in), :) = single(d.data(in, 6:end));
 e = max(abs(ros.prob(k(ok), :) - prob(k(ok), :)), [], 'all');
 report('Gaussian decoder', e, 1e-3, sprintf('%d predictions, from the MATLAB PSD', sum(ok)));
 
 g = read_table(fullfile(folder, 'integrated.csv'));
 dup = [false; all(diff(g.data(:, 3:4)) == 0, 2)];             % the reset messages repeat the stamp of the message before
 keep = ~dup;
-k = frame_of(g.data(keep, 3:4)); v = single(g.data(keep, 6:end)); ros.integ(k, :) = v;
-after = k >= min(reset_frame) & k >= first;                    % once the first reset has happened the state depends on the events only
+k = frame_of(g.data(keep, 3:4)); v = single(g.data(keep, 6:end)); in = ~isnan(k); ros.integ(k(in), :) = v(in, :);
+after = in & k >= min(reset_frame) & k >= first;                    % once the first reset has happened the state depends on the events only
 err = max(abs(v(after, :) - integ(k(after), :)), [], 2); ros.err(k(after)) = err;
 report('integrator (after the first reset)', max(err), 1e-3, sprintf('%d frames, reset at every CFeedback, from the MATLAB decoder', sum(after)));
 ros_resets = sum(dup);
@@ -246,7 +247,7 @@ end
 
 function frame_of = align_csv(folder, eeg, hop, nch)
 %ALIGN_CSV Where the CSV run is inside the GDF. Returns frame_of(stamps): the frame of the GDF of each message of the CSV (by header stamp),
-%   or [] when there is no run or it is not the session of the GDF.
+%   (NaN when that frame is not in the CSV), or [] when there is no run or it is not the session of the GDF.
 frame_of = [];
 if ~isfolder(folder), return, end
 raw = read_table(fullfile(folder, 'raw.csv'));
@@ -255,7 +256,17 @@ at = find(all(abs(eeg - r1) <= 1e-3 * max(1, abs(r1)), 2), 1);
 if isempty(at) || mod(at - 1, hop) ~= 0, return, end
 off = (at - 1) / hop;                                         % frames of the GDF before the first frame of the CSV
 stamp_of = raw.data(1:hop:end, 3:4);                          % header stamp of every raw frame of the CSV
-frame_of = @(stamps) arrayfun(@(i) find(all(stamp_of == stamps(i, :), 2), 1), 1:size(stamps, 1))' + off;
+frame_of = @(stamps) frame_lookup(stamp_of, stamps) + off;
+end
+
+function k = frame_lookup(stamp_of, stamps)
+%FRAME_LOOKUP Index of the raw frame with each stamp; NaN for a message whose raw frame is not in the CSV (the CSV recorder
+%   subscribes to every topic at its own pace, so the first frames of one topic can be missing in another).
+k = nan(size(stamps, 1), 1);
+for i = 1:size(stamps, 1)
+    j = find(all(stamp_of == stamps(i, :), 2), 1);
+    if ~isempty(j), k(i) = j; end
+end
 end
 
 function frames = observed_resets(folder, frame_of)
@@ -264,6 +275,7 @@ function frames = observed_resets(folder, frame_of)
 g = read_table(fullfile(folder, 'integrated.csv'));
 dup = [false; all(diff(g.data(:, 3:4)) == 0, 2)];
 frames = frame_of(g.data(find(dup) - 1, 3:4)) + 1;
+frames = frames(~isnan(frames));
 end
 
 function report(name, value, tol, note)

@@ -12,7 +12,7 @@ A sliding-window buffer: it keeps the last `buffer_samples` samples of one senso
 | **Reads** | `neurodata_filtered` (`NeuroFrame`; remap it to the filter output) |
 | **Publishes** | `features` (`NeuroFeature`, `TYPE_TIME_SERIES`, shape `[samples, channels]`, name `buffered_<sensor>`) |
 | **Run** | `ros2 run ros2neuro_processing_buffer buffer_node --ros-args -p sensor_name:=EEG -p buffer_samples:=512` |
-| **Used by** | the EEGNet pipelines of [`ros2neuro_devel_test`](../devel-test.md), in front of [`ros2neuro_decoder_py`](../decoder/python.md) |
+| **Used by** | the EEGNet pipelines of [`ros2neuro_devel_test`](../devel-test.md), in front of [`ros2neuro_decoder_braindecode`](../decoder/braindecode.md) |
 
 <!-- interfaces -->
 ## Dependencies

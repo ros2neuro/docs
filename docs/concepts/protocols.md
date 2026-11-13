@@ -181,12 +181,13 @@ Invalid messages are dropped with a throttled error, and the protocol keeps runn
 A reset is a **service call** (`std_srvs/Empty`), not a topic.
 
 - The integrator creates the service `reset`, which is `/reset` at the root namespace; it is the default of the control node.
-- Every reset makes the integrator publish a message whose values are all `1/K`.
-- In **control**, the control node calls the service when a class reaches its threshold. Until the neutral message
-  arrives it neither forwards values nor decides anything. If the message does not arrive within **1 s**, the
-  pipeline is broken: it logs an error and shuts down with exit code 1.
+- Every reset makes the integrator publish its reset state (`1/K` for the exponential integrator; `init_val` for the buffer one).
+- In **control**, the control node calls the service when a class reaches its threshold. Until the integrator has answered the
+  service and a value made from data of after the request arrives (by `header.stamp`), it neither forwards values nor decides
+  anything. If no such value arrives within **1 s**, the pipeline is broken: it logs an error and shuts down with exit code 1.
 - In **calibration and evaluation**, the integrator resets itself on the event configured in `integrator.reset_event`
-  (781, CFeedback); control does not request it.
+  (781, CFeedback); control does not request it. In evaluation, control ignores the values stamped before the CFeedback (the state
+  of before the reset): only the values made after it decide the trial.
 
 ## The feedback
 

@@ -62,7 +62,7 @@ Notes:
 
 Hardware-free launchers to test the whole chain, **from the acquisition of a GDF file to the wheel or the bars**, with the
 Gaussian, QDA and EEGNet (deep-learning) decoders. These launchers live in `launch/<folder>/` next to `mi_loop`: launch files (`.xml`), their yaml parameter files and the decoder models
-(`manifest.yaml` + `.r2nd`). The only code is the node that saves the topics as CSV for the MATLAB check (`scripts/topic_csv_recorder.py`) and the MATLAB check itself (`matlab/`). Every launcher starts **every node explicitly**:
+(`manifest.yaml` + `.r2nd`). The only code is the node that saves the topics as CSV for the MATLAB check (`scripts/topic_csv_recorder.py`), the script that makes the reference of `check_functions` (`scripts/make_matlab_stages.py`) and the MATLAB check itself (`matlab/`). Every launcher starts **every node explicitly**:
 
 ```
 acquisition -> filters -> welch -> decoder -> integrator -> control (plugin Feedback) -> feedback (wheel | bars)      (+ recorder)
@@ -76,13 +76,14 @@ builds the flow of the feedback; the **manager** runs the trials of a calibratio
 and writes the outcome (Hit / Miss / Timeout), which the manager hears to close the trial.
 
 With a classic decoder (Gaussian, QDA) the processing between the filters and the decoder is a `welch_node`; with the EEGNet decoder
-it is a `buffer_node` (a window of the signal) and the decoder is the Python one ([`ros2neuro_decoder_py`](decoder/python.md)).
+it is a `buffer_node` (a window of the signal) and the decoder is the braindecode plugin ([`ros2neuro_decoder_braindecode`](decoder/braindecode.md)).
 
 ## Layout
 
 ```
 scripts/               topic_csv_recorder.py   (saves the topics of the chain as CSV, for the MATLAB check)
-matlab/                check_evaluation.m (whole chain), check_functions.m (every stage), r2n/ (one function per stage), README.md   (data/ and results/ are not pushed)
+                       make_matlab_stages.py   (inputs + outputs of the decoder/integrator/FFT/spectrogram nodes: matlab/stages/)
+matlab/                check_evaluation.m (whole chain), check_functions.m (every stage), r2n/ (one function per stage), stages/ (its ROS 2 reference), README.md   (data/ and results/ are not pushed)
 launch/
   gaussian/            gaussian_wheel.launch.xml   gaussian_bars.launch.xml
     config/            pipeline.yaml  layout.yaml  protocol_calibration.yaml  protocol_evaluation.yaml  protocol_control.yaml
@@ -98,7 +99,7 @@ launch/
     config/            (same files, no wheel; matlab_trials.yaml: the 8 trials of the MATLAB run)
     model/             manifest.yaml  fake_4class_gaussian.r2nd
   gaussian_4class_rest/  gaussian_4class_rest_bars.launch.xml   (the 4-class launcher with the REST, rest_mode timeout; only layout.yaml + protocol_*.yaml)
-  eegnet/              eegnet_wheel.launch.xml   eegnet_bars.launch.xml   (deep-learning model, braindecode plugin or Python node, buffer_node instead of welch)
+  eegnet/              eegnet_wheel.launch.xml   eegnet_bars.launch.xml   (deep-learning model, braindecode plugin, buffer_node instead of welch)
   eegnet_rest/         eegnet_rest_wheel.launch.xml   eegnet_rest_bars.launch.xml   (the EEGNet launchers with the REST)
   sklearn/             sklearn_wheel.launch.xml   sklearn_bars.launch.xml   (scikit-learn plugin, the Laplacian + Welch chain of gaussian)
   sklearn_4class/      sklearn_4class_bars.launch.xml   (scikit-learn plugin, fictitious 4-class model, 4 bars)
@@ -118,7 +119,7 @@ source /opt/ros/jazzy/setup.bash && source install/setup.bash
 
 Arguments of every launcher: `protocol` (`calibration` | `evaluation` | `control`, default `evaluation`), `integrator` (`exponential` | `buffer`,
 default `exponential`: loads `config/integrator_<integrator>.yaml`; not in the `qda*` launchers yet), `gdf_file` (default
-`ros2neuro_devel_test/extra/test.gdf`; the `eegnet*` launchers use `ros2neuro_decoder_py/extra/test_mi.gdf` and also have `model_path` and `decoder:=plugin|python`), `record` (default `true`: writes a GDF in `recordings_dir` (default `src/ros2neuro_devel_test/recordings/` of the workspace, derived from the install prefix) when the session ends; `record:=false` skips it). `gaussian_4class_bars` also has `capture` (default `false`: `capture:=true` saves a CSV of every topic in `capture_dir`, as `gaussian_4class_matlab` does).
+`ros2neuro_devel_test/extra/test.gdf`; the `eegnet*` launchers use `extra/test_mi.gdf` and also have `model_path`), `record` (default `true`: writes a GDF in `recordings_dir` (default `src/ros2neuro_devel_test/recordings/` of the workspace, derived from the install prefix) when the session ends; `record:=false` skips it). `gaussian_4class_bars` also has `capture` (default `false`: `capture:=true` saves a CSV of every topic in `capture_dir`, as `gaussian_4class_matlab` does).
 
 ```bash
 ros2 launch ros2neuro_devel_test gaussian_wheel.launch.xml protocol:=calibration
@@ -265,10 +266,9 @@ colored by its position in `classes`. To try other codes **edit `classes` in `la
   reaches 0.7); `sklearn_4class/model` is a RandomForest on the whole PSD with fictitious labels (quartiles of C3 - C4 at 12 Hz) and
   `output.fields` in another order than the classes of the model (checks that the plugin follows `output.fields`).
 - **eegnet**: a braindecode ShallowFBCSPNet (`extra/eegnet_mi_bhbf` of [`ros2neuro_decoder_braindecode`](decoder/braindecode.md), both hands / both feet) on its own
-  recording `test_mi.gdf` (of `ros2neuro_decoder_py`), with a 4-14 Hz band-pass and a 512-sample window. `decoder:=plugin` (default) runs it in the
-  C++ decoder node, configured like every decoder with `decoder.manifest` in `pipeline.yaml` (the `decoder.type` of the manifest,
-  `ros2neuro::decoder::Braindecode`, picks the plugin); `decoder:=python` in the Python node of `ros2neuro_decoder_py`
-  (`config/decoder_python.yaml`): same model folder, identical predictions. The model takes a while to load, so
+  recording `extra/test_mi.gdf`, with a 4-14 Hz band-pass and a 512-sample window, run by the braindecode plugin in the C++ decoder node,
+  configured like every decoder with `decoder.manifest` in `pipeline.yaml` (the `decoder.type` of the manifest,
+  `ros2neuro::decoder::Braindecode`, picks the plugin). The model takes a while to load, so
   `duration.begin` is 15 s.
 
 A classic model is a `manifest.yaml` plus a binary `.r2nd`: the manifest points to it (`decoder.path`), the weights cannot live in yaml.

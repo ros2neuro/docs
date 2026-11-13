@@ -66,7 +66,7 @@ and does four things:
 
 ```matlab
 addpath('ros2neuro_matlab/r2n');                       % the functions of the page "Reproducibility in MATLAB"
-train_fbcsp('test_mi.gdf', 'out')                      % the GDF of ros2neuro_decoder_py/extra
+train_fbcsp('test_mi.gdf', 'out')                      % the GDF of ros2neuro_devel_test/extra
 ```
 
 ```text

@@ -107,7 +107,7 @@ Nothing is asked: every parameter is read from the node itself.
 |---|---|
 | `classes`, `rest_mode` | the protocol classes, in order. The plugin builds its own layout from them: the output classes (the rest has none with `rest_mode` `timeout` / `none`), `K`, the neutral vector |
 | `event.start`, `event.fixation`, `event.cfeedback`, `event.hit`, `event.miss`, `event.timeout`, `event.off`, `event.shown` | the ids of the events it listens to and writes (defaults 1, 786, 781, 897, 898, 899, 32768, 16384) |
-| `thresholds` | one per output class, checked against `K`; changeable while running (`ros2 param set /control thresholds "[0.8, 0.8]"`), in every protocol; a wrong size or a value outside (0, 1] is refused |
+| `thresholds` | one per output class, checked against `K`; changeable while running (`ros2 param set /control thresholds "[0.8, 0.8]"`), in every protocol; a wrong size, a value outside (0, 1] or not above 1/K (it would be met right after a reset) is refused. With the buffer integrator and a non-uniform `init_val`, keep the thresholds above it too (control does not know `init_val`) |
 
 | Its own | |
 |---|---|
@@ -122,9 +122,14 @@ durations) the plugin logs the reason and does not configure: the node stops wit
 ### Reset (control)
 
 When a class reaches its threshold the plugin calls `request_reset()` of the control node. From then on nothing is forwarded or
-decided until the integrator's neutral message (every value 1/K) arrives; if it does not arrive within 1 s the plugin logs an
-**error** and stops the node with exit code 1 (the pipeline is broken). In calibration / evaluation the integrator resets on its
-own on the CFeedback event (`integrator.reset_event: 781`): the plugin only drops the queued values (`flush_input()`).
+decided until (1) the integrator has answered the reset service (it answers once it has reset) and (2) a value made from data of
+after the request arrives (its `header.stamp`, the time of the data, at or after the request). The values themselves are not
+looked at, so a reset to any state works (e.g. a non-uniform `init_val` of the buffer integrator). If no such value arrives within
+1 s the plugin logs an **error** and stops the node with exit code 1 (the pipeline is broken).
+
+In calibration / evaluation the integrator resets on its own on the CFeedback event (`integrator.reset_event: 781`): the plugin
+drops the queued values (`flush_input()`) and, in evaluation, ignores every value stamped before the CFeedback (the state of before
+the reset, possibly still on its way): only values made after the CFeedback are shown and decide the trial.
 
 ## Outcomes (`evaluate_trial`)
 
@@ -138,9 +143,12 @@ value the lowest index (order of `output_classes`).
 | rest, `rest_mode=class` | a normal class with its threshold; time over -> **Timeout** |
 
 Durations (the plugin's own parameters): calibration `duration.feedback_min..feedback_max` for every class (rest included); evaluation
-`duration.timeout` for classes with an output, `rest_timeout` (seconds, > 0) for a rest in timeout.
+`duration.timeout` for classes with an output, `rest_timeout` (seconds) for a rest in timeout. Checked at configure:
+`0 < feedback_min <= feedback_max <= 600000` ms, `0 < timeout <= 600000` ms, `0 < rest_timeout <= 600` s. They must also stay below
+the `duration.outcome_wait` of the manager (60 s by default), or the manager gives up before the outcome: control cannot check it
+(it does not ask the manager), the manager warns when `outcome_wait` is below 30 s.
 
-**`rest_timeout`** (seconds, > 0): **required** when an evaluation has the rest with `rest_mode=timeout` (the plugin refuses to
+**`rest_timeout`** (seconds, in (0, 600]): **required** when an evaluation has the rest with `rest_mode=timeout` (the plugin refuses to
 configure without it). It is how long the rest lasts: if no threshold is touched for that time it is a **Hit** (a threshold touched
 before is a Miss). It is independent from `duration.timeout`, the maximum duration of the other trials. Not needed in a
 calibration (the rest lasts `feedback_min..feedback_max` like any class) nor with `rest_mode=class`. The feedback shows the rest
@@ -197,4 +205,4 @@ The layout, the catalog of the class names, the mapping of the integrator fields
 - logic without ROS: `layout`, `fields_map`, `flow` (header, values, thresholds), `reset_wait`, `trial_logic` (the outcome of a trial), `autopilot`, `asynchronous_logic` (the threshold that triggers a reset);
 - `test_feedback_core`: the plugin writes only the end of the feedback and the outcome on the bus and refuses the rest (the end of the outcome is the manager's);
 - `test_feedback_plugin`: the plugin loaded by the node of [`ros2neuro_control`](index.md), with a helper node that plays the integrator, the manager (events) and the feedback: the three protocols (autopilot with and without the rest, Hit / Miss / Timeout, the rest in timeout, no trial without a cue, the classes and the ids of the events as parameters, the thresholds changed while running), the flow (the header of the prediction, the thresholds in force, no phase in it, neutral first) and the configuration that is refused (a rest without `rest_mode`, wrong durations, `rest_timeout` missing);
-- `test_feedback_reset_timeout`: no neutral message after a reset -> the node stops with an error (in its own executable, because the node shuts the process down).
+- `test_feedback_reset_timeout`: no value after a reset -> the node stops with an error (in its own executable, because the node shuts the process down).
