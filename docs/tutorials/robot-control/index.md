@@ -157,7 +157,7 @@ Build the package and start the pipeline with its feedback in one terminal, the 
 colcon build --packages-select tutorial_robot_control && source install/setup.bash
 
 # terminal 1: the pipeline, in control (the flow carries the values of the integrator)
-ros2 launch ros2neuro_devel_test gaussian_wheel.launch.xml protocol:=control record:=false
+ros2 launch ros2neuro_devel_test feedback_wheel.launch.py protocol:=control
 
 # terminal 2: the robot control, the synchronization and the robot
 ros2 launch tutorial_robot_control robot_control.launch.xml
@@ -198,5 +198,3 @@ colcon test --packages-select tutorial_robot_control
 - the **header** of a message is a key: copy it from the prediction and two outputs of the same prediction can be paired later;
 - an exact-time synchronization releases the robot only when the feedback shows the same values;
 - the robot, its commands and the synchronization are yours: the stack only gives you the `Control` class and the flow.
-
-Next: [Filter bank CSP: train it in MATLAB, run it in ROS2neuro](../fbcsp/index.md).

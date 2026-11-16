@@ -1,7 +1,7 @@
 <launch>
     <!-- The robot side of the stack: the robot control (a second control node, next to the one of ros2neuro_control_feedback), the
          synchronization with the flow of the feedback, and the robot. Start it next to a pipeline that has the feedback, for example
-             ros2 launch ros2neuro_devel_test gaussian_wheel.launch.xml protocol:=control record:=false
+             ros2 launch ros2neuro_devel_test test_feedback_wheel.launch.xml protocol:=control
          (in control and evaluation the flow carries the values of the integrator, with the header of the prediction). -->
     <let name="config" value="$(find-pkg-share tutorial_robot_control)/config/robot_control.yaml"/>
 

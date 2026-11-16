@@ -32,7 +32,7 @@ comes with [`ros2neuro_devel_test`](../../packages/devel-test.md):
 ```bash
 ros2 run ros2neuro_acquisition acquisition --ros-args \
   --params-file acquisition_gdf.yaml \
-  -p acquisition.filename:=$(ros2 pkg prefix ros2neuro_devel_test)/share/ros2neuro_devel_test/extra/test.gdf
+  -p acquisition.filename:=$(ros2 pkg prefix ros2neuro_devel_test)/share/ros2neuro_devel_test/data/test.gdf
 ```
 
 The node publishes `/acquisition/neurodata` and `/acquisition/neurodata_info`.

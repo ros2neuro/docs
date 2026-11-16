@@ -182,7 +182,7 @@ ros2 param set /integrator integrator.params.window 8
 
 Replace the integrator parameters of a launch file, for example the ones of the
 [`ros2neuro_devel_test`](../../packages/devel-test.md) launchers
-(`launch/gaussian/config/integrator_exponential.yaml`), with `integrator.type:
+(`data/config/integrator_exponential.yaml`), with `integrator.type:
 tutorial::integrator::MovingAverage` and `integrator.params.window`. Keep `input_topic`, `output_topic`,
 `event_topic` and `integrator.reset_event` as they are, because [control](../../packages/control/index.md) reads that
 output and the trials rely on the reset at every CFeedback.

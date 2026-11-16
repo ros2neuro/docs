@@ -29,7 +29,7 @@ is written in its header; see [Plugins](concepts/plugins.md) for the classes and
 
 !!! info "Which BCIs"
     ROS2neuro has been tested with motor imagery (MI). It should work for any BCI paradigm: the processing stage has no
-    fixed implementation, so other paradigms, such as the exogenous SSVEP or P300, can be supported by writing your own processing node:
+    fixed implementation, so other paradigms, such as the exogenous SSVEP or P300, can be supported by writing your own processing plugin:
     see [Processing](packages/processing/index.md).
 
 !!! info "Tested on ROS 2 Jazzy"

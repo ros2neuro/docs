@@ -134,7 +134,7 @@ for every prediction, whatever its probability).
 
 ## Parameters from the launch file and at runtime
 
-`ros2neuro_integrator` declares every `integrator.params.*` parameter it is given at start (parameter
+[`ros2neuro_integrator`](index.md) declares every `integrator.params.*` parameter it is given at start (parameter
 file or `-p`) and passes all of them to the plugin, so `buffer_size`, `increment` and `init_val` reach
 `configure()` from a launch YAML. At runtime it forwards any change under `integrator.params.*` to
 `set_runtime_parameter`, so `ros2 param set /integrator integrator.params.buffer_size 32` works, but only

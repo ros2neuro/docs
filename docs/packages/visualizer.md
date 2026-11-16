@@ -141,7 +141,7 @@ Analog filters are not applied to trigger sources.
 ## Spectrum Tab
 
 The `Spectrum` tab computes the power spectrum of the selected channels from the frames it receives, so no spectral
-node has to be running. It uses the same `WelchProcessor` and `FFTProcessor` as [`ros2neuro_processing_spectral`](processing/spectral.md), whose Welch node is the processing stage of the classic
+node has to be running. It uses the same cores (`WelchCore` and `FFTCore`) as [`ros2neuro_processing_spectral`](processing/spectral.md), whose `Welch` plugin is the processing stage of the classic
 decoders (see [Processing](processing/index.md)).
 
 | Control | Values |

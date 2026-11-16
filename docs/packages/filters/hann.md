@@ -76,7 +76,7 @@ The `ros2neuro::filters::Hann<T>` class exposes:
 - `apply(...)`: multiply an input matrix by the window
 
 This makes the class usable both as a filter plugin and as a utility inside packages such as
-[`ros2neuro_processing_spectral`](../processing/spectral.md).
+[`ros2neuro_processing_spectral`](../processing/spectral.md) (the spectral plugins).
 
 Example:
 

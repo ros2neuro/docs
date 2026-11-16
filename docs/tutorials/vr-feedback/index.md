@@ -90,11 +90,11 @@ It prints `Rosbridge WebSocket server started on port 9090`. Port 9090 is where 
 
 ## 3. Start a pipeline that produces a feedback flow
 
-Any launcher of [`ros2neuro_devel_test`](../../packages/devel-test.md) will do. A calibration shows every phase of a
+Any launcher of `feedback/` in [`ros2neuro_devel_test`](../../packages/devel-test.md) will do. A calibration shows every phase of a
 trial, so we use it:
 
 ```bash
-ros2 launch ros2neuro_devel_test gaussian_bars.launch.xml protocol:=calibration record:=false
+ros2 launch ros2neuro_devel_test feedback_bars2.launch.py protocol:=calibration
 ```
 
 The bars window of the stack opens (you can leave it open, it receives the same flow). Note that the session ends by

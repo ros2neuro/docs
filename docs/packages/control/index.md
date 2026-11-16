@@ -41,7 +41,7 @@ outcome is the manager's.
     control_topic: /control_feedback/probabilities
 ```
 
-Complete launch files for every protocol are in [`ros2neuro_devel_test`](../devel-test.md).
+Complete launch files for every protocol (`protocol:=calibration | evaluation | control`) are in the `feedback/` folder of [`ros2neuro_devel_test`](../devel-test.md).
 
 ## Writing a new control
 
@@ -87,7 +87,7 @@ Messages used:
 | `now()`, `ok()` | clock of the node, `rclcpp::ok()` |
 | `request_shutdown(failed)` | stops the node; `failed = true` makes the process exit with code 1 |
 | `request_reset()` | calls the `reset` service of the integrator, asynchronously. `false` (nothing done) if the service is not up |
-| `reset_pending()` | `true` from an accepted `request_reset()` until the integrator has answered it (it answers once it has reset). A plugin that must not use values of before the reset waits for `false`, then takes only the values stamped after its request (what `ros2neuro_control_feedback` does). Default `false` for contexts that do not track it |
+| `reset_pending()` | `true` from an accepted `request_reset()` until the integrator has answered it (it answers once it has reset). A plugin that must not use values of before the reset waits for `false`, then takes only the values stamped after its request (what [`ros2neuro_control_feedback`](feedback.md) does). Default `false` for contexts that do not track it |
 | `flush_input()` | throws away the messages that the input subscription has queued and the node has not delivered yet (for example the values published before a reset) |
 
 The plugin reads its own parameters from the node it is given and may create publishers, subscriptions and timers on it:

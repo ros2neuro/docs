@@ -1,5 +1,5 @@
 function value = r2n_yaml_value(file, key)
-%R2N_YAML_VALUE  "key: value" of a yaml parameter file of ros2neuro (flat keys such as welch.wlength): number, [a, b, c], true/false or text.
+%R2N_YAML_VALUE  "key: value" of a yaml parameter file of ros2neuro (flat keys such as processing.params.wlength): number, [a, b, c], true/false or text.
 lines = regexp(fileread(file), '\r?\n', 'split');
 for i = 1:numel(lines)
     if startsWith(strtrim(lines{i}), '#'), continue, end

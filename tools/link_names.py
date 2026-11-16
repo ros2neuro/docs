@@ -50,8 +50,7 @@ family("recorder", "recorder", ["xdf"])
 family("control", "control", ["feedback"])
 family("manager", "manager", ["synchronous", "asynchronous"])
 family("feedback", "feedback", ["wheel", "bar"])
-package("ros2neuro_processing_spectral", f"{P}/processing/spectral.md")
-package("ros2neuro_processing_buffer", f"{P}/processing/buffer.md")
+family("processing", "processing", ["spectral", "buffer", "fbcsp"])
 package("neurodraw", f"{P}/feedback/neurodraw.md")
 package("ros2neuro_visualizer", f"{P}/visualizer.md")
 package("ros2neuro_devel_test", f"{P}/devel-test.md")
@@ -67,22 +66,25 @@ for x, cls in [("dc", "Dc"), ("butterworth", "Butterworth"), ("car", "Car"), ("l
                ("hann", "Hann"), ("hamming", "Hamming"), ("blackman", "Blackman"), ("flattop", "Flattop")]:
     package(f"ros2neuro_filters_{x}/{cls}Float", f"{P}/filters/{x}.md")
 package("ros2neuro::filters::Filter<float>", f"{P}/filters/index.md")
-for cls in ["LDA", "QDA", "SVM", "Gaussian"]:
+for cls in ["LDA", "QDA", "SVM", "Gaussian", "Sklearn", "Braindecode"]:
     package(f"ros2neuro::decoder::{cls}", f"{P}/decoder/{cls.lower()}.md")
 package("ros2neuro::decoder::Decoder", f"{P}/decoder/index.md")
 for cls in ["Exponential", "Buffer"]:
     package(f"ros2neuro::integrator::{cls}", f"{P}/integrator/{cls.lower()}.md")
 package("ros2neuro::integrator::Integrator", f"{P}/integrator/index.md")
+for cls, x in [("FFT", "spectral"), ("Welch", "spectral"), ("Spectrogram", "spectral"), ("Buffer", "buffer"), ("Fbcsp", "fbcsp")]:
+    package(f"ros2neuro::processing::{cls}", f"{P}/processing/{x}.md")
+package("ros2neuro::processing::Processing", f"{P}/processing/index.md")
 package("ros2neuro::recorder::XDFRecorder", f"{P}/recorder/xdf.md")
 package("ros2neuro::recorder::NeuroRecorder", f"{P}/recorder/index.md")
 package("ros2neuro::control::Control", f"{P}/control/index.md")
-package("ros2neuro::control_feedback::Feedback", f"{P}/control/feedback.md")
+package("ros2neuro::control::Feedback", f"{P}/control/feedback.md")
 package("ros2neuro::manager::Synchronous", f"{P}/manager/synchronous.md")
 package("ros2neuro::manager::Asynchronous", f"{P}/manager/asynchronous.md")
-package("ros2neuro::manager::ManagerPlugin", f"{P}/manager/index.md")
+package("ros2neuro::manager::Manager", f"{P}/manager/index.md")
 package("ros2neuro::feedback::Wheel", f"{P}/feedback/wheel.md")
 package("ros2neuro::feedback::Bar", f"{P}/feedback/bar.md")
-package("ros2neuro::feedback::FeedbackPlugin", f"{P}/feedback/index.md")
+package("ros2neuro::feedback::Feedback", f"{P}/feedback/index.md")
 
 # --------------------------------------------------------------------------- scanning
 LINK = r"\[[^\]]*\]\([^)]*\)"

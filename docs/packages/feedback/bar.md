@@ -31,7 +31,7 @@ Messages used:
 
 ## Example configuration
 
-From the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md) (`config/feedback_bars.yaml`); the layout (`classes`, `rest_mode`, the ids of the events, the thresholds) is not a parameter of the plugin: the feedback core reads it from its own parameters (the same as the manager and control) and gives it to the plugin:
+From the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md) (`data/config/feedback_bars.yaml`); the layout (`classes`, `rest_mode`, the ids of the events, the thresholds) is not a parameter of the plugin: the feedback core reads it from its own parameters (the same as the manager and control) and gives it to the plugin:
 
 ```yaml
 # Feedback (bars). It reads the event bus (the phases the manager writes, the outcome control writes) and the flow of control (values and
@@ -72,7 +72,7 @@ The build needs the [`neurodraw`](neurodraw.md) library: see the README of [`ros
 * **Timeout**: when the trial ends without any bar reaching its threshold (the Timeout of an evaluation) **every bar keeps its color but paler** (the same color mixed with white) until the boom
   ends (`duration.boom` of the manager), and then goes back to its own color: the trial is over and nothing was reached. It is the same idea as the arc of the wheel, which goes to the background. The paler
   color is different from the vivid color of a bar that reached its threshold, so the two cannot be confused. How pale it is: `kTowardsWhite` in `faded_color()` (`src/bar_geometry.cpp`, 0.25).
-* **The rest in timeout that is a Hit**: a rest with **`rest_mode=timeout`** that ends without touching a threshold for `rest_timeout` seconds (see the `ros2neuro_control_feedback` README, where it is a parameter) is a Hit:
+* **The rest in timeout that is a Hit**: a rest with **`rest_mode=timeout`** that ends without touching a threshold for `rest_timeout` seconds (see the [`ros2neuro_control_feedback`](../control/feedback.md) README, where it is a parameter) is a Hit:
   a small **yellow dot** appears in the same place under the bars while the boom lasts (only in that case).
 * With `rest_mode=class` the rest is one more bar, **yellow** (the bar and its threshold line, which is white on the other bars); with `none`/`timeout` it has no bar (cue and boom only).
 * neurodraw has no scaling: each bar is a full-height rectangle that slides behind a black mask, whose top edge is the value.

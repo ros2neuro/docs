@@ -1,5 +1,5 @@
 function [a, freqs] = r2n_fft(x, fs, window, apply_log)
-%R2N_FFT  ros2neuro_processing_spectral fft_node (FFTProcessor.h): one-sided amplitude spectrum of one buffer.
+%R2N_FFT  ros2neuro_processing_spectral FFT (FFTCore.h): one-sided amplitude spectrum of one buffer.
 %   x : [window_length channels] (the last window_length samples, float32 as they arrive); fs : Hz; window : name of
 %   r2n_spectral_window (default 'hann'); apply_log : 20*log10(max(a, 1e-12)) (default false).
 %   In double: |FFT(x .* w)| / N, x2 on every bin but the first and the last; rounded to float32 like the published feature.

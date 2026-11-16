@@ -33,6 +33,7 @@ Each column is a family: the header is the package that defines the base class a
 |---|---|---|---|
 | [`ros2neuro_acquisition`](../packages/acquisition/index.md) | [`ros2neuro::acquisition::NeuroDevice`](../packages/acquisition/index.md) | `acquisition.plugin` | [`acquisition_dummy`](../packages/acquisition/dummy.md), [`acquisition_lsl`](../packages/acquisition/lsl.md), [`acquisition_eegdev`](../packages/acquisition/eegdev.md), [`acquisition_antneuro`](../packages/acquisition/antneuro.md), [`acquisition_gusbamp`](../packages/acquisition/gusbamp.md), [`acquisition_xdf`](../packages/acquisition/xdf.md) |
 | [`ros2neuro_filters`](../packages/filters/index.md) | [`ros2neuro::filters::Filter<float>`](../packages/filters/index.md) | `filters.chain` list, `filters.<name>.class` | [`filters_dc`](../packages/filters/dc.md), [`filters_butterworth`](../packages/filters/butterworth.md), [`filters_car`](../packages/filters/car.md), [`filters_laplacian`](../packages/filters/laplacian.md), [`filters_hann`](../packages/filters/hann.md), [`filters_hamming`](../packages/filters/hamming.md), [`filters_blackman`](../packages/filters/blackman.md), [`filters_flattop`](../packages/filters/flattop.md) |
+| [`ros2neuro_processing`](../packages/processing/index.md) | [`ros2neuro::processing::Processing`](../packages/processing/index.md) | `processing.plugin` | [`processing_spectral`](../packages/processing/spectral.md) (`FFT`, `Welch`, `Spectrogram`), [`processing_buffer`](../packages/processing/buffer.md) (`Buffer`), [`processing_fbcsp`](../packages/processing/fbcsp.md) (`Fbcsp`) |
 | [`ros2neuro_decoder`](../packages/decoder/index.md) | [`ros2neuro::decoder::Decoder`](../packages/decoder/index.md) | `type` field of the model `manifest.yaml` | [`decoder_lda`](../packages/decoder/lda.md), [`decoder_qda`](../packages/decoder/qda.md), [`decoder_svm`](../packages/decoder/svm.md), [`decoder_gaussian`](../packages/decoder/gaussian.md), [`decoder_sklearn`](../packages/decoder/sklearn.md), [`decoder_braindecode`](../packages/decoder/braindecode.md) |
 | [`ros2neuro_integrator`](../packages/integrator/index.md) | [`ros2neuro::integrator::Integrator`](../packages/integrator/index.md) | `integrator.type` | [`integrator_exponential`](../packages/integrator/exponential.md), [`integrator_buffer`](../packages/integrator/buffer.md) |
 | [`ros2neuro_recorder`](../packages/recorder/index.md) | [`ros2neuro::recorder::NeuroRecorder`](../packages/recorder/index.md) | `plugin` | [`recorder_xdf`](../packages/recorder/xdf.md) |
@@ -47,30 +48,26 @@ The class that every plugin extends, and the class names (the pluginlib ids) tha
 
 | Parent class | Plugin classes (pluginlib ids) |
 |---|---|
-| `ros2neuro::acquisition::NeuroDevice` | `ros2neuro::acquisition::DummyDevice`, `LSLDevice`, `EGDDevice` (eegdev), `EEGODevice` (ANT Neuro), `GUSBampDevice`, `XDFDevice` |
-| `ros2neuro::filters::Filter<float>` | `ros2neuro_filters_<name>/<Name>Float` for `dc`, `butterworth`, `car`, `laplacian`, `hann`, `hamming`, `blackman`, `flattop`: for example `ros2neuro_filters_butterworth/ButterworthFloat` (the class is a template, `Butterworth<T>`, and `...Float` is its instance) |
-| `ros2neuro::decoder::Decoder` | `ros2neuro::decoder::Gaussian`, `LDA`, `QDA`, `SVM`, `Sklearn`, `Braindecode` |
-| `ros2neuro::integrator::Integrator` | `ros2neuro::integrator::Exponential`, `Buffer` |
-| `ros2neuro::recorder::NeuroRecorder` | `ros2neuro::recorder::XDFRecorder` |
-| `ros2neuro::control::Control` | `ros2neuro::control::Feedback` |
-| `ros2neuro::manager::Manager` | `ros2neuro::manager::Synchronous`, `Asynchronous` |
-| `ros2neuro::feedback::Feedback` | `ros2neuro::feedback::Wheel`, `Bar` |
+| [`ros2neuro::acquisition::NeuroDevice`](../packages/acquisition/index.md) | [`ros2neuro::acquisition::DummyDevice`](../packages/acquisition/dummy.md), `LSLDevice`, `EGDDevice` (eegdev), `EEGODevice` (ANT Neuro), `GUSBampDevice`, `XDFDevice` |
+| [`ros2neuro::filters::Filter<float>`](../packages/filters/index.md) | `ros2neuro_filters_<name>/<Name>Float` for `dc`, `butterworth`, `car`, `laplacian`, `hann`, `hamming`, `blackman`, `flattop`: for example [`ros2neuro_filters_butterworth/ButterworthFloat`](../packages/filters/butterworth.md) (the class is a template, `Butterworth<T>`, and `...Float` is its instance) |
+| [`ros2neuro::processing::Processing`](../packages/processing/index.md) | [`ros2neuro::processing::Welch`](../packages/processing/spectral.md), `FFT`, `Spectrogram`, `Buffer`, `Fbcsp` |
+| [`ros2neuro::decoder::Decoder`](../packages/decoder/index.md) | [`ros2neuro::decoder::Gaussian`](../packages/decoder/gaussian.md), `LDA`, `QDA`, `SVM`, `Sklearn`, `Braindecode` |
+| [`ros2neuro::integrator::Integrator`](../packages/integrator/index.md) | [`ros2neuro::integrator::Exponential`](../packages/integrator/exponential.md), `Buffer` |
+| [`ros2neuro::recorder::NeuroRecorder`](../packages/recorder/index.md) | [`ros2neuro::recorder::XDFRecorder`](../packages/recorder/xdf.md) |
+| [`ros2neuro::control::Control`](../packages/control/index.md) | [`ros2neuro::control::Feedback`](../packages/control/feedback.md) |
+| [`ros2neuro::manager::Manager`](../packages/manager/index.md) | [`ros2neuro::manager::Synchronous`](../packages/manager/synchronous.md), `Asynchronous` |
+| [`ros2neuro::feedback::Feedback`](../packages/feedback/index.md) | [`ros2neuro::feedback::Wheel`](../packages/feedback/wheel.md), `Bar` |
 
-Two classes are called `Feedback`, in different namespaces and with different jobs: `ros2neuro::control::Feedback` is a *control* plugin (it drives the
-feedback), and `ros2neuro::feedback::Feedback` is the base class of the *drawings* (wheel, bars). Models made in Python
-(scikit-learn, braindecode) are plugins too: `ros2neuro::decoder::Sklearn` and `ros2neuro::decoder::Braindecode` run the model in a Python interpreter
+Two classes are called `Feedback`, in different namespaces and with different jobs: [`ros2neuro::control::Feedback`](../packages/control/feedback.md) is a *control* plugin (it drives the
+feedback), and [`ros2neuro::feedback::Feedback`](../packages/feedback/index.md) is the base class of the *drawings* (wheel, bars). Models made in Python
+(scikit-learn, braindecode) are plugins too: [`ros2neuro::decoder::Sklearn`](../packages/decoder/sklearn.md) and [`ros2neuro::decoder::Braindecode`](../packages/decoder/braindecode.md) run the model in a Python interpreter
 inside the plugin.
 
 **Where the internal classes go.** What a plugin uses internally and that is not a plugin goes in the namespace of its family, under a nested namespace
-named after the plugin: the internals of `control_feedback` (`Protocol`, `Training`, `Asynchronous`, `Autopilot`, `FeedbackCore`...) are in
+named after the plugin: the internals of [`control_feedback`](../packages/control/feedback.md) (`Protocol`, `Training`, `Asynchronous`, `Autopilot`, `FeedbackCore`...) are in
 `ros2neuro::control::feedback`, the ones of the LSL device in `ros2neuro::acquisition::lsl`. Two packages never write in the same namespace, so
 types with the same name in different packages (`Layout`, `EventIds`...) do not collide. One trap: inside `ros2neuro::control`, `feedback::` means
 that nested namespace and hides `ros2neuro::feedback`: write `::ros2neuro::feedback::` if you need the drawing package from there.
-
-!!! note "Not everything is a plugin"
-    The **processing** stage has no plugin family and no base class: the Welch node and the buffer node are ordinary
-    nodes, and you choose one by starting it in the launch file. A new processing is a new node that publishes a
-    `NeuroFeature`. See [Processing](../packages/processing/index.md).
 
 Selecting a plugin in a launch parameter file:
 

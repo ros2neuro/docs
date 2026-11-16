@@ -17,7 +17,7 @@ own page.
 |---|---|
 | [Acquisition](acquisition/index.md) | [dummy](acquisition/dummy.md), [xdf](acquisition/xdf.md), [lsl](acquisition/lsl.md), [eegdev](acquisition/eegdev.md), [antneuro](acquisition/antneuro.md), [gusbamp](acquisition/gusbamp.md) |
 | [Filters](filters/index.md) | [dc](filters/dc.md), [butterworth](filters/butterworth.md), [car](filters/car.md), [laplacian](filters/laplacian.md), [hann](filters/hann.md), [hamming](filters/hamming.md), [blackman](filters/blackman.md), [flattop](filters/flattop.md) |
-| [Processing](processing/index.md) | [spectral](processing/spectral.md) (FFT, Welch, spectrogram) for the classic decoders, [buffer](processing/buffer.md) for the deep-learning ones: the decoder decides. Nodes, not plugins |
+| [Processing](processing/index.md) | [spectral](processing/spectral.md) (FFT, Welch, spectrogram) for the classic decoders, [buffer](processing/buffer.md) for the deep-learning ones, [fbcsp](processing/fbcsp.md) for the FBCSP models: the decoder decides |
 | [Decoder](decoder/index.md) | [lda](decoder/lda.md), [qda](decoder/qda.md), [svm](decoder/svm.md), [gaussian](decoder/gaussian.md), [sklearn](decoder/sklearn.md), [braindecode](decoder/braindecode.md); [converters](decoder/converters.md) |
 | [Integrator](integrator/index.md) | [exponential](integrator/exponential.md), [buffer](integrator/buffer.md) |
 
@@ -35,7 +35,7 @@ own page.
 |---|---|
 | [Recorder](recorder/index.md) + [xdf](recorder/xdf.md) | write signal and events to GDF / BDF |
 | [Visualizer](visualizer.md) | Qt scope of the signals |
-| [`ros2neuro_devel_test`](devel-test.md) | hardware-free launchers that run the whole pipeline |
+| [`ros2neuro_devel_test`](devel-test.md) | hardware-free tests of every stage (GDF replay + MATLAB) and the feedback pipelines |
 
 ## Choosing the plugins of a pipeline
 

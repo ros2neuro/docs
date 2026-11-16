@@ -20,7 +20,7 @@ The recorder plugin that writes GDF or BDF files using `xdffileio`: the signal a
 - **ROS 2 packages** (run only): `launch`, `launch_ros`
 - **External libraries**:
     - `xdffileio`: writing GDF/BDF (found with `find_library`)
-    - `libeegdev`: needed only to build the tests (with `BUILD_TESTING` the configuration fails without it): the round-trip test compiles the sources of `ros2neuro_acquisition_eegdev`, which must sit next to this package in `src/`
+    - `libeegdev`: needed only to build the tests (with `BUILD_TESTING` the configuration fails without it): the round-trip test compiles the sources of [`ros2neuro_acquisition_eegdev`](../acquisition/eegdev.md), which must sit next to this package in `src/`
 
 ## Messages and topics
 
@@ -32,7 +32,7 @@ Messages used:
 
 ## Example configuration
 
-From the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md) (`config/recorder.yaml`). `$(var ...)` are launch substitutions (`allow_substs="true"`); replace them with values when the node is not started by a launch file:
+An example of the parameters of the recorder (the Gaussian launchers of [`ros2neuro_devel_test`](../devel-test.md) used it before 2026-11-16; its tests now record the topics as CSV instead). `$(var ...)` are launch substitutions (`allow_substs="true"`); replace them with values when the node is not started by a launch file:
 
 ```yaml
 /recorder:

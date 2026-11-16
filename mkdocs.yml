@@ -7,8 +7,6 @@ repo_url: https://github.com/ros2neuro/docs
 exclude_docs: |
   /tutorials/*/tutorial_*/
   /tutorials/visualizer/*.yaml
-  /tutorials/fbcsp/matlab/
-  /tutorials/fbcsp/python/
   /tutorials/vr-feedback/webxr/
   /tutorials/vr-feedback/unity/
 
@@ -105,6 +103,7 @@ nav:
           - packages/processing/index.md
           - packages/processing/spectral.md
           - packages/processing/buffer.md
+          - packages/processing/fbcsp.md
       - Decoder:
           - packages/decoder/index.md
           - packages/decoder/lda.md
@@ -145,6 +144,5 @@ nav:
       - tutorials/eog-check/index.md
       - tutorials/vr-feedback/index.md
       - tutorials/robot-control/index.md
-      - tutorials/fbcsp/index.md
   - Reproducibility:
       - reproducibility/matlab.md

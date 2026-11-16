@@ -13,12 +13,9 @@ The chain they connect is the one of the [architecture figure](architecture.md#t
 | acquisition | publishes | `~/neurodata_info` | [`NeuroFrameInfo`](messages.md#neuroframeinfo) | stream metadata (`transient_local`) |
 | filter chain | subscribes | `/neurodata` | [`NeuroFrame`](messages.md#neuroframe) | signal to filter |
 | filter chain | publishes | `~/filtered` | [`NeuroFrame`](messages.md#neuroframe) | filtered signal |
-| spectral nodes (FFT, Welch, spectrogram) | subscribes | `/neurodata` | [`NeuroFrame`](messages.md#neuroframe) | signal to analyse (classic decoders) |
-| FFT | publishes | `~/fft` | [`NeuroFeature`](messages.md#neurofeature) | spectrum |
-| Welch | publishes | `~/psd` | [`NeuroFeature`](messages.md#neurofeature) | power spectral density |
-| spectrogram | publishes | `~/spectrogram` | [`NeuroFeature`](messages.md#neurofeature) | time-frequency map |
-| buffer | subscribes | `neurodata_filtered` | [`NeuroFrame`](messages.md#neuroframe) | signal to buffer (deep-learning decoders) |
-| buffer | publishes | `features` | [`NeuroFeature`](messages.md#neurofeature) | sliding window of the signal |
+| processing node (Welch, FFT, Spectrogram, Buffer plugins) | subscribes | `/neurodata` (`input_topic`) | [`NeuroFrame`](messages.md#neuroframe) | signal to analyse or to buffer: the filtered signal, remapped |
+| processing node (Fbcsp plugin) | subscribes | the `input_topics`, one per band (`/processing/band_8_12`, ...) | [`NeuroFrame`](messages.md#neuroframe) | one band-passed stream per band (one filter chain per band); the frames with the same stamp make a group |
+| processing node | publishes | `/features` (`output_topic`) | [`NeuroFeature`](messages.md#neurofeature) | PSD, spectrum, spectrogram, window of the signal or FBCSP features, according to the plugin |
 | decoder | subscribes | `/features` | [`NeuroFeature`](messages.md#neurofeature) | feature to classify: a PSD (classic decoders) or a window (deep learning) |
 | decoder | publishes | `~/prediction` | [`NeuroPrediction`](messages.md#neuroprediction) | class values |
 | integrator | subscribes | `/prediction` (`input_topic`) | [`NeuroPrediction`](messages.md#neuroprediction) | decoder output |
@@ -35,15 +32,14 @@ The chain they connect is the one of the [architecture figure](architecture.md#t
 | recorder | subscribes | `/neurodata`, `/neurodata_info`, `/neuroevent` | [`NeuroFrame`](messages.md#neuroframe), [`NeuroFrameInfo`](messages.md#neuroframeinfo), [`NeuroEvent`](messages.md#neuroevent) | what to write |
 | visualizer | subscribes | `/acquisition/neurodata` (selectable) | [`NeuroFrame`](messages.md#neuroframe) | scope |
 
-!!! note "Which processing node runs depends on the decoder"
-    The Welch node feeds the classic decoders and the buffer node feeds the deep-learning ones: a pipeline uses one of
+!!! note "Which processing plugin runs depends on the decoder"
+    The `Welch` plugin feeds the classic decoders and the `Buffer` plugin feeds the deep-learning ones: a pipeline uses one of
     them between the filters and the decoder, not both. See [Processing](../packages/processing/index.md).
 
 !!! note "Defaults vs launch files"
     The integrator defaults (`/prediction`, `~/control`) differ from the topics used in the test launchers
     (`/classification/prediction`, `/integrated/raw`), which set them through parameters. The same happens with the
-    features: `/features` is only the **default name** of the input of the decoder (and of the output of the buffer), and the Welch node
-    publishes `~/psd` by default. The test launchers remap them to one name per kind of feature: `/processing/psd` for the classic
+    features: `/features` is only the **default name** of the input of the decoder (and the default output of every processing plugin, through `processing_node`). The test launchers remap them to one name per kind of feature: `/processing/psd` for the classic
     decoders (Welch) and `/processing/buffered_features` for the deep-learning ones (buffer). Always check
     `ros2 topic list` and `ros2 node info` on a running system.
 

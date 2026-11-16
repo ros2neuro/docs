@@ -44,9 +44,9 @@ Topic names are the defaults; each node can change them with a parameter, see [T
 
 | Message | Published by (node → default topic) | Read by (node ← default topic) |
 |---|---|---|
-| [`NeuroFrame`](#neuroframe) | `acquisition` → `/acquisition/neurodata`; `filter_chain` → `/filter_chain/filtered` | `filter_chain` ← `/neurodata`; `fft_node`, `welch_node`, `spectrogram_node` ← `/neurodata`; `processing_buffer` ← `/neurodata_filtered`; `recorder` ← `/neurodata`; `neuroviz` ← `/acquisition/neurodata` |
+| [`NeuroFrame`](#neuroframe) | `acquisition` → `/acquisition/neurodata`; `filter_chain` → `/filter_chain/filtered` | `filter_chain` ← `/neurodata`; `processing_node` (the `FFT`, `Welch`, `Spectrogram`, `Buffer` and `Fbcsp` plugins) ← `/neurodata` (remapped to the filter output in the launchers); `recorder` ← `/neurodata`; `neuroviz` ← `/acquisition/neurodata` |
 | [`NeuroFrameInfo`](#neuroframeinfo) | `acquisition` → `/acquisition/neurodata_info` (`transient_local`) | `recorder` ← `/neurodata_info`; `neuroviz` ← `/acquisition/neurodata_info` |
-| [`NeuroFeature`](#neurofeature) | `fft_node` → `~/fft`; `welch_node` → `~/psd`; `spectrogram_node` → `~/spectrogram`; `processing_buffer` → `/features` | `decoder` ← `/features` |
+| [`NeuroFeature`](#neurofeature) | `processing_node` → `/features` (every processing plugin); remapped to `/processing/psd`, `/processing/buffered_features`... in the launchers | `decoder` ← `/features` |
 | [`NeuroPrediction`](#neuroprediction) | `decoder` → `~/prediction`; `integrator` → `~/control` (the [`ros2neuro_devel_test`](../packages/devel-test.md) configuration sets `output_topic: /integrated/raw`) | `integrator` ← `/prediction`; `control` ← `/integrated/raw` |
 | [`NeuroControl`](#neurocontrol) | `control` → `/control_feedback/probabilities` | `feedback` ← `/control_feedback/probabilities` (the values and the thresholds) |
 | [`NeuroEvent`](#neuroevent) | `manager` → `/neuroevent` (the phases of the trials and the end of the outcome); `control` → `/neuroevent` (the end of the continuous feedback, Hit / Miss / Timeout); `feedback` → `/neuroevent` (only with `publish_display_events: true`) | `recorder` ← `/neuroevent`; `integrator` ← `/neuroevent` (only for `integrator.reset_event`); `manager` ← `/neuroevent` (the end of the outcome); `control` ← `/neuroevent` (cue, CFeedback); `feedback` ← `/neuroevent` (the phases and the outcome: fixation, cue, boom) |
@@ -71,13 +71,13 @@ Some messages carry a `type` constant that says what the data are. Who sets it:
 
 | Message | Constant | Values | Set by |
 |---|---|---|---|
-| `NeuroFeature.type` | `TYPE_TIME_SERIES` | 1 | `processing_buffer` (window of the signal) |
-| | `TYPE_SPECTRUM` | 2 | `fft_node`, `welch_node` |
-| | `TYPE_TIME_FREQUENCY` | 3 | `spectrogram_node` |
-| | `TYPE_CONNECTIVITY`, `TYPE_VECTOR`, `TYPE_MATRIX`, `TYPE_MISC`, `TYPE_UNKNOWN` | 4, 5, 6, 255, 0 | free: a new processing node chooses it |
+| `NeuroFeature.type` | `TYPE_TIME_SERIES` | 1 | [`processing_buffer`](../packages/processing/buffer.md) (`Buffer`, window of the signal) |
+| | `TYPE_SPECTRUM` | 2 | `FFT`, `Welch` ([`processing_spectral`](../packages/processing/spectral.md)) |
+| | `TYPE_TIME_FREQUENCY` | 3 | `Spectrogram` |
+| | `TYPE_CONNECTIVITY`, `TYPE_VECTOR`, `TYPE_MATRIX`, `TYPE_MISC`, `TYPE_UNKNOWN` | 4, 5, 6, 255, 0 | `TYPE_MATRIX`: `Fbcsp` ([`processing_fbcsp`](../packages/processing/fbcsp.md)); the others are free: a new processing plugin chooses it |
 | `NeuroPrediction.type` | `TYPE_UNSPECIFIED`, `TYPE_SCORES`, `TYPE_PROBABILITIES`, `TYPE_LOGITS`, `TYPE_REGRESSION` | 0, 1, 2, 3, 4 | the decoder: from the `output_type` parameter or from the model manifest |
 | `NeuroSensorInfo.type` | `TYPE_UNKNOWN`, `TYPE_EEG`, `TYPE_EMG`, `TYPE_EOG`, `TYPE_ECG`, `TYPE_GSR`, `TYPE_RESP`, `TYPE_MISC` | 0, 1, 2, 3, 4, 5, 6, 255 | the acquisition plugin, for each analog block (the plugins of the stack declare `TYPE_EEG`, the dummy also `TYPE_EMG`) |
-| `NeuroTriggerInfo.encoding` | `ENCODING_STATE_PER_SAMPLE`, `ENCODING_CODE_PER_SAMPLE`, `ENCODING_BITMASK_PER_SAMPLE` | 0, 1, 2 | always `ENCODING_CODE_PER_SAMPLE` today: `ros2neuro_data` (`to_msg_info`) sets it for every digital block |
+| `NeuroTriggerInfo.encoding` | `ENCODING_STATE_PER_SAMPLE`, `ENCODING_CODE_PER_SAMPLE`, `ENCODING_BITMASK_PER_SAMPLE` | 0, 1, 2 | always `ENCODING_CODE_PER_SAMPLE` today: [`ros2neuro_data`](../packages/msgs-data.md#ros2neuro_data) (`to_msg_info`) sets it for every digital block |
 
 ---
 
@@ -119,7 +119,7 @@ The size of `data` must be `samples * channels`. All publishers and consumers mu
 | `labels` | channel names (optional, `labels.size() == channels`) |
 | `data` | `float32[]`, sample-major |
 
-Labels travel with the runtime data, so a processing node can read channel names without subscribing to the
+Labels travel with the runtime data, so a processing plugin can read channel names without subscribing to the
 metadata topic.
 
 ### NeuroTrigger
@@ -165,9 +165,9 @@ NeuroTriggerInfo[]  triggers
 
 ## NeuroFeature
 
-**`NeuroFeature`** is a generic N-dimensional tensor, the output of every processing node. It is the only contract between
-the [processing](../packages/processing/index.md) stage and the decoder: there is no base class for processing, so a new
-processing (a Hilbert envelope, a covariance matrix...) just publishes a `NeuroFeature` with the type, `shape` and `axes` that
+**`NeuroFeature`** is a generic N-dimensional tensor, the output of every processing plugin. It is the only contract between
+the [processing](../packages/processing/index.md) stage and the decoder: a new
+processing (a Hilbert envelope, a covariance matrix...) is a plugin that publishes a `NeuroFeature` with the type, `shape` and `axes` that
 the decoder expects.
 
 ```text

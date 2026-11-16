@@ -16,8 +16,8 @@ Offline tools that convert decoder models trained elsewhere into the ROS2neuro f
 <!-- interfaces -->
 ## Dependencies
 
-- **ROS 2 packages**: none for the converter; the check in `test/` runs the pipeline (`ros2neuro_acquisition` with the XDF plugin,
-  `ros2neuro_filters` with the Laplacian, `ros2neuro_processing_spectral`, `ros2neuro_decoder` with the Gaussian plugin) and needs `rclpy`, `PyYAML` and `mne`
+- **ROS 2 packages**: none for the converter; the check in `test/` runs the pipeline ([`ros2neuro_acquisition`](../acquisition/index.md) with the XDF plugin,
+  [`ros2neuro_filters`](../filters/index.md) with the Laplacian, [`ros2neuro_processing_spectral`](../processing/spectral.md), [`ros2neuro_decoder`](index.md) with the Gaussian plugin) and needs `rclpy`, `PyYAML` and `mne`
 - **External libraries**:
     - `PyQt5`, `numpy`, `scipy`: the graphical tool and the reading of the Matlab file (`python3-pyqt5`, `python3-numpy`, `python3-scipy`)
 
@@ -42,7 +42,7 @@ The GUI is implemented with PyQt5 and supports native file drag-and-drop, Browse
 
 ### Feature unit
 
-The Gaussian classifier works on the natural logarithm of the Welch PSD, which is what the `welch_node` of [`ros2neuro_processing_spectral`](../processing/spectral.md) publishes (`ln(power/Hz)`).
+The Gaussian classifier works on the natural logarithm of the Welch PSD, which is what the `Welch` plugin of [`ros2neuro_processing_spectral`](../processing/spectral.md) publishes (`ln(power/Hz)`).
 The converter writes this unit in the model (field **Feature unit** of the GUI, or `--feature-unit` of the command-line backend `converters/gaussian.py`), and the decoder refuses a feature with another
 unit: a model converted with a different one (for example the old `dB/Hz`) has to be converted again.
 
@@ -78,10 +78,10 @@ feature it receives (point 3), stopping with a clear message if they differ. It 
    | In the training | Where it is set in ROS2neuro |
    |---|---|
    | sample rate `acq.sf` | the acquisition |
-   | analysis window `modules.smr.win.size`, shift `.shift` | `welch.buffer` (samples) and the frame size of the acquisition (shift = frame / sample rate) |
-   | PSD window and overlap `modules.smr.psd.win`, `.ovl` (fractions of a second and of the window) | `welch.wlength`, `welch.overlap`, `welch.wtype` |
-   | PSD frequencies `modules.smr.psd.freqs` | `welch.frequencies` |
-   | spatial filter (DC, CAR, Laplacian) | the filter chain (`ros2neuro_filters`) |
+   | analysis window `modules.smr.win.size`, shift `.shift` | `processing.params.buffer` of `Welch` (samples) and the frame size of the acquisition (shift = frame / sample rate) |
+   | PSD window and overlap `modules.smr.psd.win`, `.ovl` (fractions of a second and of the window) | `processing.params.wlength`, `.overlap`, `.wtype` of `Welch` |
+   | PSD frequencies `modules.smr.psd.freqs` | `processing.params.frequencies` of `Welch` |
+   | spatial filter (DC, CAR, Laplacian) | the filter chain ([`ros2neuro_filters`](../filters/index.md)) |
 
 5. **The classes.** The first axis of `M` is in the order of `bci.smr.taskset.classes`. The output fields of the decoder are those codes as text, and the
    `classes` of the manager, control and feedback use the same codes (or `input_fields` of control maps the codes of the model onto them).

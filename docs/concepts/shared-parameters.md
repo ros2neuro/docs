@@ -22,7 +22,7 @@ others, so the same file can be given to the manager, to control and to the feed
     thresholds: [0.7, 0.7]
 ```
 
-The launchers of [`ros2neuro_devel_test`](../packages/devel-test.md) do this with `config/layout.yaml`, which the manager, control and the
+The launchers of [`ros2neuro_devel_test`](../packages/devel-test.md) do this with `data/config/layout.yaml`, which the manager, control and the
 feedback all load.
 
 | Parameter | Read by | Notes |
@@ -72,10 +72,10 @@ These are the same value in several yaml sections, with **no** global section ye
 
 | Value | Where it is written |
 |---|---|
-| the name of the sensor block (`EEG`) | `acquisition.sensors.eeg.name`, `welch.sensor` / `sensor_name` of the spectral nodes, `sensor_name` of the buffer node (matched exactly, case sensitive) |
+| the name of the sensor block (`EEG`) | `acquisition.sensors.eeg.name`, `processing.params.sensor` of the processing plugins (`Welch`, `Buffer`...; matched exactly, case sensitive) |
 | the number of channels | the labels of `acquisition.sensors.eeg.labels`, `nchannels` of the spatial filters, and what the decoder model was trained on |
-| the sampling rate (512 Hz) | the device (or the GDF file), `welch.samplerate` / `sample_rate` of the spectral nodes (0 reads it from the frame), `buffer_samples` of the buffer node |
-| the feature: name and frequencies | `welch.feature` (`psd`), `welch.frequencies` (`4:2:48`) and the input contract in the `manifest.yaml` of the decoder model |
+| the sampling rate (512 Hz) | the device (or the GDF file), `processing.params.samplerate` of the spectral plugins (0 reads it from the frame), `processing.params.buffer` of the `Buffer` plugin (its length) |
+| the feature: name and frequencies | `processing.params.feature` (`psd`), `processing.params.frequencies` (`4:2:48`) of the `Welch` plugin and the input contract in the `manifest.yaml` of the decoder model |
 
 ## What could become global next
 

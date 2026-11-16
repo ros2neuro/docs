@@ -145,7 +145,7 @@ Messages used:
 
 ## Example configuration
 
-The feedback of the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md) (`config/feedback_bars.yaml`). The `classes`, `rest_mode` and `thresholds` are in `layout.yaml`, which the launcher gives to the manager, control and the feedback alike.
+The feedback of the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md) (`data/config/feedback_bars.yaml`). The `classes`, `rest_mode` and `thresholds` are in `layout.yaml`, which the launcher gives to the manager, control and the feedback alike.
 
 
 ```yaml
@@ -179,7 +179,7 @@ Alternatively, put the [`neurodraw`](neurodraw.md) folder in the `src/` of the w
 
 * Phases: what the bus says. With trials (calibration, evaluation) it shows the fixation, the cue and the boom; a control writes no events and only the values are drawn.
 * Before the first message the neutral vector (1/K) is drawn. Gaps in `seq` are logged.
-* Cue = last class event; a rest in timeout that ends as a Hit is marked by the plugins with a small circle (`is_rest_timeout_hit()`); on a Miss the boom shows the class over its threshold (same rule as `ros2neuro_control_feedback`),
+* Cue = last class event; a rest in timeout that ends as a Hit is marked by the plugins with a small circle (`is_rest_timeout_hit()`); on a Miss the boom shows the class over its threshold (same rule as [`ros2neuro_control_feedback`](../control/feedback.md)),
   on a Timeout a neutral grey boom.
 * The latency (message stamp -> drawing) is logged every `latency_log_period_s`.
 * `publish_display_events` (default false): after drawing, publishes on `/neuroevent` `shown + id` for the cue

@@ -45,7 +45,7 @@ know: they are control's. See [Protocols](../../concepts/protocols.md) for the c
     duration.begin: 5000
 ```
 
-Complete launch files for every protocol are in [`ros2neuro_devel_test`](../devel-test.md).
+Complete launch files for every protocol (`protocol:=calibration | evaluation | control`) are in the `feedback/` folder of [`ros2neuro_devel_test`](../devel-test.md).
 
 ## Writing a new protocol
 

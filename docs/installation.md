@@ -72,8 +72,8 @@ libraries that are not Debian packages (or not in the version the models need):
 
 | To use | You need (pip) | Its list |
 |---|---|---|
-| `ros2neuro_decoder_sklearn` (scikit-learn models, `.skops`) | `scikit-learn` (the version the model was saved with: the examples use 1.9.0), `skops` | `/opt/ros/jazzy/share/ros2neuro_decoder_sklearn/requirements.txt` |
-| `ros2neuro_decoder_braindecode` (braindecode / PyTorch models) | `torch` (CPU or CUDA), `braindecode` | `/opt/ros/jazzy/share/ros2neuro_decoder_braindecode/requirements.txt` |
+| [`ros2neuro_decoder_sklearn`](packages/decoder/sklearn.md) (scikit-learn models, `.skops`) | `scikit-learn` (the version the model was saved with: the examples use 1.9.0), `skops` | `/opt/ros/jazzy/share/ros2neuro_decoder_sklearn/requirements.txt` |
+| [`ros2neuro_decoder_braindecode`](packages/decoder/braindecode.md) (braindecode / PyTorch models) | `torch` (CPU or CUDA), `braindecode` | `/opt/ros/jazzy/share/ros2neuro_decoder_braindecode/requirements.txt` |
 
 The plugins use the **system Python** (it runs inside the C++ decoder node): the libraries must be visible to it. Activating a virtual
 environment is not enough. Two ways work:
@@ -136,13 +136,13 @@ docker build -t ros2neuro ppa/docker/
     docker exec -it ros2neuro bash -c 'source /opt/ros/jazzy/setup.bash && ros2 topic hz /acquisition/neurodata'   # ~16 Hz
     ```
 
-    Run the whole chain on a recorded GDF and open the feedback window (the wheel; use `gaussian_bars` for the bars):
+    Run the whole chain on a recorded GDF and open the feedback window (the wheel; use `test_feedback_bars2` for the bars):
 
     ```bash
     xhost +local:                                     # let the container open windows on your screen
     docker run -it --rm \
         -e DISPLAY=$DISPLAY -e LIBGL_ALWAYS_SOFTWARE=1 -v /tmp/.X11-unix:/tmp/.X11-unix --network host \
-        ros2neuro ros2 launch ros2neuro_devel_test gaussian_wheel.launch.xml protocol:=calibration record:=false
+        ros2neuro ros2 launch ros2neuro_devel_test feedback_wheel.launch.py protocol:=calibration
     xhost -local:                                     # when you are done
     ```
 
@@ -150,8 +150,6 @@ docker build -t ros2neuro ppa/docker/
 
     - `LIBGL_ALWAYS_SOFTWARE=1` draws with the CPU and works everywhere. With a GPU you can add `--device /dev/dri` and drop it;
       with NVIDIA and the NVIDIA Container Toolkit use `--gpus all -e NVIDIA_DRIVER_CAPABILITIES=graphics,utility`.
-    - To keep the recordings, mount a folder and pass it to the launcher:
-      `-v $HOME/recordings:/home/ubuntu/recordings` and `record:=true recordings_dir:=/home/ubuntu/recordings`.
     - A real amplifier needs its device inside the container (`--device /dev/ttyUSB0`, ...); an LSL stream from another machine
       needs `--network host`. If Fast DDS complains about shared memory when nodes run in different containers, add
       `--ipc=host` to all of them.
@@ -170,7 +168,7 @@ docker build -t ros2neuro ppa/docker/
     # inside the container
     source /opt/ros/jazzy/setup.bash
     ros2 launch ros2neuro_acquisition_dummy dummy_acquisition.launch.py
-    ros2 launch ros2neuro_devel_test gaussian_wheel.launch.xml protocol:=calibration record:=false
+    ros2 launch ros2neuro_devel_test feedback_wheel.launch.py protocol:=calibration
     ```
 
     A "problem setting up the user ... trying manual addition" message on the first start is normal with older Distrobox

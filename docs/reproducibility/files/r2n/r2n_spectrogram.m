@@ -1,5 +1,5 @@
 function [p, freqs, times] = r2n_spectrogram(x, fs, window_length, overlap, window, apply_log)
-%R2N_SPECTROGRAM  ros2neuro_processing_spectral spectrogram_node (SpectrogramProcessor.h): power spectral density of every segment.
+%R2N_SPECTROGRAM  ros2neuro_processing_spectral Spectrogram (SpectrogramCore.h): power spectral density of every segment.
 %   x : [analysis_length channels] (the last analysis_length samples); fs : Hz; window_length, overlap : samples; window : name of
 %   r2n_spectral_window (default 'hann'); apply_log : 10*log10(max(p, 1e-12)) (default true).
 %   Segments of window_length every window_length-overlap samples; in double |FFT(segment .* w)|^2 / (fs * sum(w.^2)), x2 on every

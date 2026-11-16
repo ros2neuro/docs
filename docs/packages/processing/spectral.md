@@ -3,36 +3,33 @@
 !!! info ""
     Package: [`ros2neuro_processing_spectral`](https://github.com/ros2neuro/ros2neuro_processing_spectral) · part of [Packages](../index.md)
 
-Frequency-domain processing: nodes that turn the filtered signal into a spectrum (FFT), a power spectral density (Welch) or a spectrogram, published as `NeuroFeature`. The Welch node is the processing stage of the classic decoders (LDA, QDA, SVM, Gaussian); the C++ processors of the package are also used inside the visualizer.
+Frequency-domain processing: three plugins of [`ros2neuro_processing`](index.md) that turn the filtered signal into a spectrum (`FFT`), a power spectral density (`Welch`) or a spectrogram (`Spectrogram`), published as `NeuroFeature`. `Welch` is the processing stage of the classic decoders (LDA, QDA, SVM, Gaussian); the C++ cores of the package are also used inside the visualizer.
 
 | | |
 |---|---|
 | **Layer** | Processing |
-| **Kind** | Nodes (`fft_node`, `welch_node`, `spectrogram_node`) and a C++ library; not plugins |
-| **Reads** | `/neurodata` (`NeuroFrame`, parameter `input_topic`) |
-| **Publishes** | `~/fft`, `~/psd`, `~/spectrogram` (`NeuroFeature`; FFT and Welch have shape `[channels, frequency]`, the spectrogram `[time, frequency, channel]`) |
-| **Run** | `ros2 launch ros2neuro_processing_spectral spectral_processing.launch.py`<br>`ros2 run ros2neuro_processing_spectral welch_node --ros-args --params-file <file>.yaml` |
-| **Used by** | the Gaussian, QDA and `mi_loop` pipelines of [`ros2neuro_devel_test`](../devel-test.md) (Welch node) and [`ros2neuro_visualizer`](../visualizer.md) (the processors) |
+| **Kind** | Plugins of [`ros2neuro_processing`](index.md) (pluginlib classes `ros2neuro::processing::FFT`, `ros2neuro::processing::Welch`, `ros2neuro::processing::Spectrogram`) and a C++ library of cores |
+| **Reads** | `NeuroFrame` (`/neurodata`, parameter `input_topic`), through the processing node |
+| **Publishes** | `NeuroFeature` (`/features`, parameter `output_topic`) through the processing node; FFT and Welch have shape `[channels, frequency]`, the spectrogram `[time, frequency, channel]` |
+| **Run** | in the YAML of the processing node: `processing.plugin: ros2neuro::processing::Welch`, `processing.params.*` (`ros2 run ros2neuro_processing processing_node --ros-args --params-file <file>.yaml`) |
+| **Used by** | the tests of [`ros2neuro_devel_test`](../devel-test.md) (`processing/welch`, `fft`, `spectrogram`, and the decoders on the PSD) and [`ros2neuro_visualizer`](../visualizer.md) (the cores) |
 
 <!-- interfaces -->
 ## Dependencies
 
-- **ROS 2 packages** (build and run): `rclcpp`, [`ros2neuro_data`](../msgs-data.md#ros2neuro_data), [`ros2neuro_filters_blackman`](../filters/blackman.md), [`ros2neuro_filters_flattop`](../filters/flattop.md), [`ros2neuro_filters_hamming`](../filters/hamming.md), [`ros2neuro_filters_hann`](../filters/hann.md), [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs)
-- **ROS 2 packages** (run only): `launch`, `launch_ros`
+- **ROS 2 packages** (build and run): `pluginlib`, `rclcpp`, [`ros2neuro_data`](../msgs-data.md#ros2neuro_data), [`ros2neuro_filters_blackman`](../filters/blackman.md), [`ros2neuro_filters_flattop`](../filters/flattop.md), [`ros2neuro_filters_hamming`](../filters/hamming.md), [`ros2neuro_filters_hann`](../filters/hann.md), [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs), [`ros2neuro_processing`](index.md)
 - **External libraries**:
     - Eigen3: matrices
     - FFTW3: the transforms (found with `find_library`)
 
 ## Messages and topics
 
-Default node name: `fft_node`, `welch_node`, `spectrogram_node`.
+Default node name: `processing` (the node of [`ros2neuro_processing`](index.md); a launch file gives it the name of the plugin, for example `welch`, and that name is the section of the parameter file).
 
 | | Default topic | Type | Changed by |
 |---|---|---|---|
-| subscribes | `/neurodata` | `NeuroFrame` | `input_topic` |
-| publishes | `~/fft` | `NeuroFeature` | `output_topic` of `fft_node` |
-| publishes | `~/psd` | `NeuroFeature` | `output_topic` of `welch_node` |
-| publishes | `~/spectrogram` | `NeuroFeature` | `output_topic` of `spectrogram_node` |
+| subscribes | `/neurodata` | `NeuroFrame` | `input_topic` of the node |
+| publishes | `/features` | `NeuroFeature` | `output_topic` of the node |
 
 Messages used:
 
@@ -41,31 +38,42 @@ Messages used:
 
 ## Example configuration
 
-The Welch node of the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md): a PSD, as natural logarithm (ln), at 4, 6, ... 48 Hz of the `EEG` block (`spectral_processing.launch.py` configures it instead with the `welch_node:` section of `config/spectral_nodes.yaml`, which uses the long parameter names):
+The Welch plugin of the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md) (`data/config/psd_pipeline.yaml`): a PSD, as natural logarithm (ln), at 4, 6, ... 48 Hz of the `EEG` block (the plugin parameters live under `processing.params.`):
 
 ```yaml
 /welch:
   ros__parameters:
-    welch.feature: psd
-    welch.sensor: EEG
-    welch.samplerate: 512
-    welch.wlength: 256
-    welch.wtype: hamming
-    welch.overlap: 128
-    welch.buffer: 512
-    welch.frequencies: "4:2:48"
-    welch.log: true
+    processing.plugin: ros2neuro::processing::Welch
+    processing.params.feature: psd
+    processing.params.sensor: EEG
+    processing.params.samplerate: 512
+    processing.params.wlength: 256
+    processing.params.wtype: hamming
+    processing.params.overlap: 128
+    processing.params.buffer: 512
+    processing.params.frequencies: "4:2:48"
+    processing.params.log: true
 ```
 
-The node is usually started from a launch file with remaps: `/neurodata` to the filtered signal and `~/psd` to the topic the decoder reads.
+The node is usually started from a launch file with remaps: `/neurodata` to the filtered signal and `/features` to the topic the decoder reads:
+
+```xml
+<node pkg="ros2neuro_processing" exec="processing_node" name="welch" output="screen">
+    <param from="$(var config)/pipeline.yaml" allow_substs="true"/>
+    <remap from="/neurodata" to="/processing/filtered"/>
+    <remap from="/features" to="/processing/psd"/>
+</node>
+```
+
+`config/spectral_nodes.yaml` has one section for each plugin (`fft`, `welch`, `spectrogram`).
 
 <!-- /interfaces -->
 ## Where it fits
 
 Processing is the stage between the filters and the decoder, and what runs there depends on the decoder: the **classic
-decoders** (LDA, QDA, SVM, Gaussian) read a power spectrum, produced by `welch_node` of this package; the **deep-learning
-decoders** read a window of the filtered signal, produced by [`ros2neuro_processing_buffer`](buffer.md). There is no common base class for
-processing: each one is an ordinary node that publishes a `NeuroFeature`. The processors of this package are also a dependency of
+decoders** (LDA, QDA, SVM, Gaussian) read a power spectrum, produced by the `Welch` plugin of this package; the **deep-learning
+decoders** read a window of the filtered signal, produced by the `Buffer` plugin of [`ros2neuro_processing_buffer`](buffer.md). All of them are
+plugins of the same host, [`ros2neuro_processing`](index.md), and publish a `NeuroFeature`. The cores of this package are also a dependency of
 [`ros2neuro_visualizer`](../visualizer.md).
 
 This package implements frequency-domain and time-frequency processing on top of
@@ -74,36 +82,35 @@ This package implements frequency-domain and time-frequency processing on top of
 
 It is designed as a domain package:
 
-- reusable spectral processors live in C++
-- ROS 2 nodes handle topics, parameters, buffering and message conversion
+- the numerical cores live in C++ and know nothing of ROS (`FFTCore`, `WelchCore`, `SpectrogramCore`, namespace `ros2neuro::processing::spectral`)
+- the plugins (`ros2neuro::processing::FFT`, `Welch`, `Spectrogram`) read their parameters, accumulate the frames in a window and build the message; the processing node owns the topics
 - downstream consumers, the decoders and anything else that reads a `NeuroFeature`, rely on a consistent contract
 
 ## What it provides
 
-- `FFTProcessor`: one-sided amplitude spectrum
-- `WelchProcessor`: one-sided Welch power spectral density
-- `SpectrogramProcessor`: rolling time-frequency representation
-- `fft_node`
-- `welch_node`
-- `spectrogram_node`
+- `FFT`: one-sided amplitude spectrum
+- `Welch`: one-sided Welch power spectral density
+- `Spectrogram`: rolling time-frequency representation
+- `FFTCore`, `WelchCore`, `SpectrogramCore`: the same computations as plain C++ classes (no ROS)
+
+The three plugins share a small base (`spectral::SpectralBase`, not a plugin) with the parameters, the accumulation of the frames and the sample rate, and the selection of the frequencies (`FrequencySelection.h`).
 
 ## Package structure
 
 - headers: `include/ros2neuro_processing_spectral`
-- node implementations: `src`
-- default config: `spectral_nodes.yaml`
-- launch file: `spectral_processing.launch.py`
-- tests: `test_spectral_processors.cpp`
+- plugin implementations: `src`, registered in `plugins.xml`
+- example config: `config/spectral_nodes.yaml`
+- tests: `test/test_spectral_processors.cpp` (cores), `test/test_spectral_plugins.cpp` (plugins)
 
 ## Input and output contract
 
 ### Input
 
-Each node subscribes to `ros2neuro_msgs/msg/NeuroFrame`.
+The plugins read `ros2neuro_msgs/msg/NeuroFrame` (`input_kind()` is `Frame`: the processing node subscribes to `NeuroFrame` only).
 
 By default:
 
-- input topic: `/neurodata`
+- input topic: `/neurodata` (parameter `input_topic` of the node)
 
 The selected sensor is converted to a matrix with shape:
 
@@ -111,23 +118,17 @@ The selected sensor is converted to a matrix with shape:
 [samples, channels]
 ```
 
-If `sensor_name` is empty, the first sensor in the frame is used.
+If `sensor` is empty (the default), the first sensor in the frame is used.
 
 ### Output
 
-Each node publishes `ros2neuro_msgs/msg/NeuroFeature`.
+Each plugin publishes `ros2neuro_msgs/msg/NeuroFeature`, through the processing node, on `/features` by default (`output_topic`). The header is the one of the last frame. Nothing is published until the window is full.
 
-Default topics:
+Default `feature` values:
 
-- FFT: `~/fft`
-- Welch: `~/psd`
-- spectrogram: `~/spectrogram`
-
-Default `feature_name` values:
-
-- FFT: `fft`
-- Welch: `psd` (`config/spectral_nodes.yaml` sets it to `welch`)
-- spectrogram: `spectrogram`
+- `FFT`: `fft`
+- `Welch`: `psd`
+- `Spectrogram`: `spectrogram`
 
 ## Feature conventions
 
@@ -153,103 +154,78 @@ Units:
 
 ### Scale of the Welch PSD: natural logarithm
 
-With `welch.log: true` (the default) `welch_node` publishes the **natural logarithm** of the PSD, `ln(power/Hz)`: it does **not**
+With `log: true` (the default) `Welch` publishes the **natural logarithm** of the PSD, `ln(power/Hz)`: it does **not**
 publish decibels. This is the scale of the Matlab SMR Gaussian classifiers (they are trained on `log` of the PSD), so a classifier converted
 with [`ros2neuro_decoder_converters`](../decoder/converters.md) receives the features it was trained with. The unit written in the `NeuroFeature` is
 `ln(power/Hz)`, and a decoder refuses a model whose `input.unit` is different.
 
-- `welch.log: false` publishes the linear PSD (`power/Hz`).
-- To get decibels (`10*log10`) use `welch.log: false` and apply `10*log10(PSD)` in your own node, which publishes the `NeuroFeature`
+- `log: false` publishes the linear PSD (`power/Hz`).
+- To get decibels (`10*log10`) use `log: false` and apply `10*log10(PSD)` in your own node, which publishes the `NeuroFeature`
   with `unit: dB/Hz`; a decoder trained on dB (model converted with `--feature-unit "dB/Hz"`) reads that one. The relation is
   `dB = 10/ln(10) * ln = 4.3429 * ln`, and a classifier is **not** invariant to it: never mix the two scales.
-- The FFT node (`20*log10` of the amplitude) and the spectrogram node (`10*log10` of the power) still publish dB when `apply_log` is true:
+- `FFT` (`20*log10` of the amplitude) and `Spectrogram` (`10*log10` of the power) still publish dB when `log` is true:
   they are not used by the decoders.
 
-## Nodes
+## Plugins
 
-### `fft_node`
+### `FFT`
 
-Publishes a rolling one-sided amplitude spectrum computed over the latest `window_length` samples.
-
-Default output topic:
-
-- `~/fft`
+Publishes a rolling one-sided amplitude spectrum computed over the latest `wlength` samples.
 
 Useful when you want a compact snapshot of the current frequency content.
 
-### `welch_node`
+### `Welch`
 
 Publishes a one-sided Welch PSD over a rolling buffer.
 
-Default output topic:
-
-- `~/psd`
-
 Useful when you want a smoother and more stable spectral estimate than a single-window FFT.
 
-### `spectrogram_node`
+### `Spectrogram`
 
 Publishes a rolling time-frequency feature over a buffered signal segment.
-
-Default output topic:
-
-- `~/spectrogram`
 
 Useful when you want to visualize spectral evolution over time.
 
 ## Parameters
 
-Shared parameters:
+Given to the processing node as `processing.plugin` (the pluginlib class) and `processing.params.<name>`. The node itself has
+`input_topic`, `output_topic` and `processing.name` (see [`ros2neuro_processing`](index.md)).
 
-- `input_topic`: source `NeuroFrame` topic
-- `output_topic`: destination `NeuroFeature` topic
-- `feature_name`: value written to `NeuroFeature.name`
-- `sensor_name`: sensor to extract from the frame, empty means first sensor
-- `sample_rate`: optional override, `0.0` means use `frame.samplerate`
-- `window_length`: analysis window length in samples
-- `window_type`: `rectangular`, `hann`, `hamming`, `blackman`, `flattop`
-- `apply_log`: publish logarithmic values. The Welch node publishes the **natural logarithm** (`ln`) of the PSD, the scale of
-  the Matlab SMR Gaussian classifiers; FFT (`20*log10`, amplitude) and spectrogram (`10*log10`) still publish dB
+Shared by the three plugins:
 
-The spectral nodes do not subscribe to `NeuroFrameInfo`; channel labels are taken
-from the incoming `NeuroFrame` payload.
+| Parameter | Default | Meaning |
+|---|---|---|
+| `feature` | `fft` / `psd` / `spectrogram` | value written to `NeuroFeature.name` |
+| `sensor` | `""` | sensor to extract from the frame, empty means the first sensor |
+| `samplerate` | `0` | optional override in Hz, `0` means use `frame.samplerate` |
+| `wlength` | `256` | analysis window length in samples (at least 2) |
+| `wtype` | `hann` (`hamming` for `Welch`) | `rectangular`, `hann`, `hamming`, `blackman`, `flattop`; an unknown name stops the node at start |
+| `log` | `false` for `FFT`, `true` for the others | publish logarithmic values: `Welch` the **natural logarithm** (`ln`) of the PSD, the scale of the Matlab SMR Gaussian classifiers; `FFT` (`20*log10`, amplitude) and `Spectrogram` (`10*log10`) dB |
+| `frequencies` | all | a range such as `"4:2:48"` (from 4 to 48 Hz in steps of 2), a list (`"8,10,12"`) or a numeric array, to publish only those frequencies; a frequency that is not a bin of the transform is an error for that frame |
 
-`welch_node` accepts most of these under three names: with the `welch.` prefix used by the launchers of [`ros2neuro_devel_test`](../devel-test.md)
-(`welch.feature`, `welch.sensor`, `welch.samplerate`, `welch.wlength` for the window length, `welch.wtype`, `welch.overlap`,
-`welch.buffer` for the rolling buffer length, `welch.frequencies`, `welch.log`), with the short name (`feature`, `sensor`,
-`samplerate`, `wlength`, `wtype`, `overlap`, `buffer`, `frequencies`, `log`) or with the long name listed here. The overlap and
-the buffer length have only the first two names: `welch_node` does **not** read `analysis_length`, use `buffer` (or
-`welch.buffer`, default 1024). `welch.frequencies` (or `frequencies`) is a range such as `"4:2:48"` (from 4 to 48 Hz in steps
-of 2) or a list, to publish only those frequencies; `fft_node` and `spectrogram_node` accept the same selection as
-`fft.frequencies` / `spectrogram.frequencies` (or `frequencies`).
+Additional parameters for `Welch` and `Spectrogram`:
 
-Additional parameters for `welch_node` and `spectrogram_node`:
+| Parameter | Default | Meaning |
+|---|---|---|
+| `overlap` | `128` | overlap between adjacent windows, in samples (kept below `wlength`) |
+| `buffer` | `1024` | rolling buffer length, in samples (at least `wlength`) |
 
-- `overlap`: overlap between adjacent windows, in samples
-- `analysis_length` (`spectrogram_node`), `buffer` (`welch_node`): rolling buffer length, in samples
+The old names (`welch.*`, `window_length`, `sample_rate`, `sensor_name`, `apply_log`, `analysis_length`, ...) do not exist any more:
+there is one set of names, those of the table. A parameter with the wrong type (`wlength: 256.0`, `log: "true"`; an integer is accepted for `samplerate`), an unknown `wtype` or a `wlength` below 2 stops the node, instead of being ignored. The plugins do not subscribe to `NeuroFrameInfo`; channel labels are taken from
+the incoming `NeuroFrame` payload.
 
-Default parameter values are provided in `spectral_nodes.yaml`.
+Example sections for the three plugins: `config/spectral_nodes.yaml`.
 
 ## Launch
 
-Run all spectral nodes:
+Start one processing node for each plugin you need, each with its own name and parameter section:
 
 ```bash
-ros2 launch ros2neuro_processing_spectral spectral_processing.launch.py
+ros2 run ros2neuro_processing processing_node --ros-args -r __node:=welch \
+  --params-file $(ros2 pkg prefix ros2neuro_processing_spectral)/share/ros2neuro_processing_spectral/config/spectral_nodes.yaml
 ```
 
-Run only FFT and Welch:
-
-```bash
-ros2 launch ros2neuro_processing_spectral spectral_processing.launch.py run_spectrogram:=false
-```
-
-Use a custom config file:
-
-```bash
-ros2 launch ros2neuro_processing_spectral spectral_processing.launch.py \
-  config_file:=/path/to/your_spectral_nodes.yaml
-```
+(`-r __node:=welch` selects the `welch:` section of the file.) In a launch file use `name="welch"` as in the example above.
 
 ## Window reuse
 
@@ -280,16 +256,12 @@ reference calculations:
 - spectrogram slices against per-window reference spectral estimates
 - frequency-axis resolution checks for different window sizes
 
-This is covered in `test_spectral_processors.cpp`.
+This is covered in `test/test_spectral_processors.cpp` (the cores). `test/test_spectral_plugins.cpp` checks the plugins: the frequency selection (`"4:2:48"`, lists, errors), a known sine at the right frequency, shapes and axes, the window filling (nothing is published until the buffer is full) and the wrong configurations.
 
 ## Notes
 
-- `sample_rate=0.0` means “read the sample rate from the incoming frame”
+- `samplerate: 0` means “read the sample rate from the incoming frame”
 - rectangular windows are implemented locally because they are trivial and do not need a separate package
-- the C++ processors (`FFTProcessor`, `WelchProcessor`, `SpectrogramProcessor`) do not depend on ROS or on any UI: they are reused by
-  [`ros2neuro_visualizer`](../visualizer.md), whose Spectrum tab computes the spectrum itself with them, while consumers that run in the pipeline
-  rely on the `NeuroFeature` contract of the nodes
-
-## Check it in MATLAB
-
-The Welch PSD has a MATLAB function, `r2n_welch`, identical to the node on the reference run. See [Reproducibility in MATLAB](../../reproducibility/matlab.md). (FFT and spectrogram are not covered yet.)
+- the C++ cores (`FFTCore`, `WelchCore`, `SpectrogramCore`, in `ros2neuro::processing::spectral`) do not depend on ROS or on any UI: they are
+  reused by [`ros2neuro_visualizer`](../visualizer.md), whose Spectrum tab computes the spectrum itself with them, while consumers that run in the pipeline
+  rely on the `NeuroFeature` contract of the plugins

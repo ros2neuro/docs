@@ -9,8 +9,8 @@ and is configured like every decoder: the node is given the `manifest.yaml` of t
 
 | | |
 |---|---|
-| **Plugin** | `ros2neuro::decoder::Sklearn` (base `ros2neuro::decoder::Decoder`) |
-| **Input** | a 2-D `NeuroFeature` of the type of `input.type`: a spectrum `[channels, frequency]` ([`ros2neuro_processing_spectral`](../processing/spectral.md)) or a window `[time, channels]` ([`ros2neuro_processing_buffer`](../processing/buffer.md)) |
+| **Plugin** | `ros2neuro::decoder::Sklearn` (base [`ros2neuro::decoder::Decoder`](index.md)) |
+| **Input** | a 2-D `NeuroFeature` of the type of `input.type`: a spectrum `[channels, frequency]` (the `Welch` plugin of [`ros2neuro_processing_spectral`](../processing/spectral.md)) or a window `[time, channels]` (the `Buffer` plugin of [`ros2neuro_processing_buffer`](../processing/buffer.md)), or the FBCSP features `[band, component]` ([`ros2neuro_processing_fbcsp`](../processing/fbcsp.md)) |
 | **Output** | `NeuroPrediction`: `predict_proba` of the model, in the order of `output.fields`, header of the feature |
 | **Run** | `ros2 run ros2neuro_decoder decoder_node --ros-args -p decoder.manifest:=<model>/manifest.yaml` (like every decoder) |
 
@@ -66,7 +66,7 @@ To make your own: fit the model on the features **as ROS 2 computes them** (same
 ## The example model
 
 `extra/sklearn_lda_test_gdf/`: `StandardScaler` + `LinearDiscriminantAnalysis(solver='lsqr', shrinkage='auto')` on the PSD of
-`ros2neuro_devel_test/extra/test.gdf` computed as the chain of `ros2neuro_devel_test/launch/sklearn` (Laplacian, Welch Hamming 256 / overlap
+`ros2neuro_devel_test/data/test.gdf` computed as the chain of [`ros2neuro_devel_test`](../devel-test.md) (`data/config/psd_pipeline.yaml`: Laplacian, Welch Hamming 256 / overlap
 128 on a buffer of 512, ln, 4:2:48 Hz), one feature per frame of the continuous feedback of the 20 trials 773 / 771 (1486 features).
 Leave-one-trial-out accuracy on the single windows: 0.68. It exercises the plugin; it is not a validated classifier.
 
@@ -97,19 +97,20 @@ Of the plugin (`decoder.params.*`):
         decoder.manifest: /path/to/sklearn_lda_test_gdf/manifest.yaml
 ```
 
-The whole chain (GDF replay, Laplacian, Welch, this plugin, integrator, control, feedback):
+The package [`ros2neuro_devel_test`](../devel-test.md) tests the plugin on a real chain: `decoder/fbcsp_lda/` replays a GDF through four band filter chains, the `Fbcsp` plugin,
+this decoder (a test LDA on FBCSP features, `data/models/fbcsp_lda/`, a `TYPE_MATRIX` input), the integrator and the control, and its `check_decoder_fbcsp.m` redoes the
+LDA in MATLAB from the numbers in `lda_weights.yaml`:
 
 ```bash
-ros2 launch ros2neuro_devel_test sklearn_bars.launch.xml protocol:=evaluation          # 2 classes, features.mode selection
-ros2 launch ros2neuro_devel_test sklearn_4class_bars.launch.xml protocol:=evaluation   # 4 classes, RandomForest
+cd ros2neuro_devel_test
+ros2 launch ros2neuro_devel_test decoder_fbcsp_lda.launch.py   # then check_decoder_fbcsp in MATLAB
 ```
 
-The launchers of `ros2neuro_devel_test` use their own made-up models (`launch/sklearn/model`, `launch/sklearn_4class/model`, written by its
-`scripts/make_sklearn_models.py`); the example model of this package is the one of the tests.
+The model of `lda_psd` (`data/models/lda_psd/sklearn/`) is the same LDA on the PSD as a scikit-learn file; the example model of this package is the one of the tests.
 
 ## Dependencies
 
-- ROS 2: `ros2neuro_decoder`, `ros2neuro_msgs`, `pluginlib`, `rclcpp`; build: `pybind11-dev`, `python3-dev`.
+- ROS 2: [`ros2neuro_decoder`](index.md), [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs), `pluginlib`, `rclcpp`; build: `pybind11-dev`, `python3-dev`.
 - Python: scikit-learn, skops, numpy, PyYAML: `pip install -r requirements.txt` (skops is not a Debian package; load a model with the
   scikit-learn version it was saved with). The training script also needs `mne`.
 

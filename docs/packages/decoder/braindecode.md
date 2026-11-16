@@ -10,8 +10,8 @@ difference 0).
 
 | | |
 |---|---|
-| **Plugin** | `ros2neuro::decoder::Braindecode` (base `ros2neuro::decoder::Decoder`) |
-| **Input** | `NeuroFeature` `TYPE_TIME_SERIES`, shape `[samples, channels]`, axis 1 = channel labels (what [`ros2neuro_processing_buffer`](../processing/buffer.md) publishes) |
+| **Plugin** | `ros2neuro::decoder::Braindecode` (base [`ros2neuro::decoder::Decoder`](index.md)) |
+| **Input** | `NeuroFeature` `TYPE_TIME_SERIES`, shape `[samples, channels]`, axis 1 = channel labels (what the `Buffer` plugin of [`ros2neuro_processing_buffer`](../processing/buffer.md) publishes) |
 | **Output** | `NeuroPrediction`: one value per class of the model (`output.fields`), type `output.type` of the manifest, header of the feature |
 | **Run** | `ros2 run ros2neuro_decoder decoder_node --ros-args -p decoder.manifest:=<model>/manifest.yaml` (like every decoder) |
 
@@ -54,7 +54,7 @@ output:
 ```
 
 `extra/eegnet_mi_bhbf/` is an example (ShallowFBCSPNet, 16 channels, 512 samples, BOTH_HANDS / BOTH_FEET), trained on the
-recording `test_mi.gdf` of `ros2neuro_devel_test/extra`.
+recording `test_mi.gdf` of `ros2neuro_devel_test/data`.
 
 !!! note "Older manifests"
     A manifest written by an older training script may still have `type: EEGClassifier`: write `type: ros2neuro::decoder::Braindecode`
@@ -85,15 +85,17 @@ Of the plugin (`decoder.params.*`):
         decoder.params.device: cpu
 ```
 
-The whole chain (GDF replay, filters 4-14 Hz, buffer of 512 samples, this plugin, integrator, control, feedback):
+The whole chain (GDF replay, filters 4-14 Hz, buffer of 512 samples, this plugin, integrator, control) is the test `decoder/shallow/` of [`ros2neuro_devel_test`](../devel-test.md):
+MATLAB checks the filter and the window the network reads, and `check_decoder_shallow.py` compares the probabilities with PyTorch:
 
 ```bash
-ros2 launch ros2neuro_devel_test eegnet_bars.launch.xml protocol:=evaluation
+cd ros2neuro_devel_test
+ros2 launch ros2neuro_devel_test decoder_shallow.launch.py   # then check_decoder_shallow in MATLAB
 ```
 
 ## Dependencies
 
-- ROS 2: `ros2neuro_decoder`, `ros2neuro_msgs`, `pluginlib`, `rclcpp`; build: `pybind11-dev`, `python3-dev`.
+- ROS 2: [`ros2neuro_decoder`](index.md), [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs), `pluginlib`, `rclcpp`; build: `pybind11-dev`, `python3-dev`.
 - Python (not Debian packages): `pip install -r requirements.txt` (torch, braindecode, numpy, PyYAML).
 
 ## Tests

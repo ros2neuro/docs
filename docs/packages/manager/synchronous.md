@@ -46,7 +46,7 @@ Messages used:
 
 ## Example configuration
 
-The evaluation protocol of the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md) (`config/protocol_evaluation.yaml`, `/manager` part; the
+The evaluation protocol of the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md) (`data/config/protocol_evaluation.yaml`, `/manager` part; the
 `/control` part is for [`ros2neuro_control_feedback`](../control/feedback.md); the layout is in `layout.yaml`):
 
 ```yaml

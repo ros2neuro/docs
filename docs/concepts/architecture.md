@@ -24,7 +24,7 @@ share (`classes`, `rest_mode`, the ids of the events, the initial `thresholds`) 
 loads. See [Shared parameters](shared-parameters.md). The plugins of every box are in [Plugins](plugins.md).
 
 - The [control](../packages/control/index.md) layer has one parent class, `Control`, whose input is always a `NeuroPrediction`;
-  [`ros2neuro_control_feedback`](../packages/control/feedback.md) is the plugin of the stack (`ros2neuro::control::Feedback`).
+  [`ros2neuro_control_feedback`](../packages/control/feedback.md) is the plugin of the stack ([`ros2neuro::control::Feedback`](../packages/control/feedback.md)).
 - The [manager](../packages/manager/index.md) and control share only the event bus `/neuroevent` (and the global parameters).
   The feedback reads that bus too.
 
@@ -37,7 +37,7 @@ publishes its result. A few nodes (recorder, visualizer) sit beside the chain an
 |---|---|---|---|
 | Acquisition | [`ros2neuro_acquisition`](../packages/acquisition/index.md) + one backend plugin | read samples from a device or a file | `NeuroFrame`, `NeuroFrameInfo` |
 | Filters | [`ros2neuro_filters`](../packages/filters/index.md) + filter plugins | clean the signal with a configurable chain | `NeuroFrame` |
-| Processing | [`ros2neuro_processing_spectral`](../packages/processing/spectral.md) (Welch) **or** [`ros2neuro_processing_buffer`](../packages/processing/buffer.md): the decoder decides | turn the filtered frames into the feature the decoder reads (a PSD, or a window of the signal) | `NeuroFeature` |
+| Processing | [`ros2neuro_processing`](../packages/processing/index.md) + one plugin: [`Welch`](../packages/processing/spectral.md) (spectral package), [`Buffer`](../packages/processing/buffer.md), [`Fbcsp`](../packages/processing/fbcsp.md): the decoder decides | turn the filtered frames into the feature the decoder reads (a PSD, or a window of the signal) | `NeuroFeature` |
 | Decoder | [`ros2neuro_decoder`](../packages/decoder/index.md) + one model plugin | classify a feature | `NeuroPrediction` |
 | Integrator | [`ros2neuro_integrator`](../packages/integrator/index.md) + one plugin | smooth the predictions over time | `NeuroPrediction` (`TYPE_SCORES`) |
 | Control | [`ros2neuro_control`](../packages/control/index.md) + one control plugin ([`control_feedback`](../packages/control/feedback.md)) | know the thresholds: drive the feedback, decide the outcome, reset the integrator | `NeuroControl` (flow), `NeuroEvent` (Hit / Miss / Timeout) |
@@ -56,17 +56,17 @@ is the stage that prepares the data *for the decoder*, so what runs depends on t
 
 ```mermaid
 flowchart LR
-    FIL["filters"] --> WEL["welch_node<br/>PSD"] --> CLA["decoder<br/>LDA, QDA, SVM, Gaussian"]
-    FIL --> BUF["buffer_node<br/>window of the signal"] --> DL["decoder<br/>Braindecode plugin"]
+    FIL["filters"] --> WEL["processing node<br/>Welch plugin (PSD)"] --> CLA["decoder<br/>LDA, QDA, SVM, Gaussian"]
+    FIL --> BUF["processing node<br/>Buffer plugin (window)"] --> DL["decoder<br/>Braindecode plugin"]
 ```
 
-- the **classic decoders** read a power spectrum: the processing is the Welch PSD ([`ros2neuro_processing_spectral`](../packages/processing/spectral.md));
+- the **classic decoders** read a power spectrum: the processing is the Welch PSD (the `Welch` plugin of [`ros2neuro_processing_spectral`](../packages/processing/spectral.md));
 - the **deep-learning decoders** read a window of the filtered signal: the processing is the buffer
-  ([`ros2neuro_processing_buffer`](../packages/processing/buffer.md)).
+  (the `Buffer` plugin of [`ros2neuro_processing_buffer`](../packages/processing/buffer.md)).
 
-The spectral code is also used by the visualizer, which computes its spectrum itself. There is **no base class for
-processing**: each one is an ordinary node that reads a `NeuroFrame` and publishes a `NeuroFeature`, so new ones (a Hilbert
-envelope, Riemannian features...) can be added by anyone. See [Processing](../packages/processing/index.md).
+The spectral code is also used by the visualizer, which computes its spectrum itself. Processing is a **plugin family** like the
+others: [`ros2neuro_processing`](../packages/processing/index.md) defines the `Processing` interface and one node, `processing_node`; every processing is a plugin that reads a
+`NeuroFrame` (or a group of them, one per topic, grouped by stamp, or a `NeuroFeature`) and publishes a `NeuroFeature`, so new ones (a Hilbert envelope, Riemannian features...) can be added by anyone. See [Processing](../packages/processing/index.md).
 
 ## Three ideas that explain the design
 

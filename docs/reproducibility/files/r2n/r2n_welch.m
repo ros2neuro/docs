@@ -5,8 +5,7 @@ function psd = r2n_welch(x, w)
 %   Segments of w.length every length-overlap, symmetric window (the Hamming of the ROS code is divided by 100), |X|^2 / (fs * sum(win^2) *
 %   segments), x2 on the interior bins, summed over the segments, ln(max(., 1e-12)). Returns [numel(w.freqs) channels].
 step = w.length - w.overlap; nseg = 1 + floor((size(x, 1) - w.length) / step);
-i = (0:w.length-1)';
-if strcmpi(w.window, 'hamming'), win = (54 - 46 * cos(2 * pi * i / (w.length - 1))) / 100; else, win = 0.5 * (1 - cos(2 * pi * i / (w.length - 1))); end
+win = r2n_spectral_window(w.window, w.length);                 % native MATLAB window, symmetric
 scale = w.fs * sum(win .^ 2) * nseg; bins = w.length / 2 + 1; power = zeros(bins, size(x, 2));
 for s = 0:nseg-1
     X = fft(x(s * step + (1:w.length), :) .* win, [], 1); X = X(1:bins, :);
