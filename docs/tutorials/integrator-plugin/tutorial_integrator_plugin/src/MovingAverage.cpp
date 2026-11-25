@@ -10,6 +10,7 @@ namespace integrator {
 
 using ros2neuro::integrator::IntegrationResult;
 
+// --8<-- [start:configure]
 bool MovingAverage::configure(void) {
     int window = static_cast<int>(this->window_);
     this->getParam("window", window);        // keeps the default when missing
@@ -22,7 +23,9 @@ bool MovingAverage::configure(void) {
     this->window_ = static_cast<std::size_t>(window);
     return true;
 }
+// --8<-- [end:configure]
 
+// --8<-- [start:apply]
 IntegrationResult MovingAverage::apply(const ros2neuro_msgs::msg::NeuroPrediction& prediction) {
     if (prediction.values.empty()) {
         throw std::runtime_error("Prediction values are empty");
@@ -35,7 +38,9 @@ IntegrationResult MovingAverage::apply(const ros2neuro_msgs::msg::NeuroPredictio
     this->trim();
     return this->current_result();
 }
+// --8<-- [end:apply]
 
+// --8<-- [start:reset]
 IntegrationResult MovingAverage::reset(const std::size_t class_count) {
     this->history_.clear();
     if (class_count > 0U) {
@@ -44,7 +49,9 @@ IntegrationResult MovingAverage::reset(const std::size_t class_count) {
     }
     return this->current_result();
 }
+// --8<-- [end:reset]
 
+// --8<-- [start:runtime]
 rcl_interfaces::msg::SetParametersResult MovingAverage::set_runtime_parameter(
     const rclcpp::Parameter& parameter) {
     rcl_interfaces::msg::SetParametersResult result;
@@ -64,7 +71,9 @@ rcl_interfaces::msg::SetParametersResult MovingAverage::set_runtime_parameter(
     result.successful = true;
     return result;
 }
+// --8<-- [end:runtime]
 
+// --8<-- [start:mean]
 IntegrationResult MovingAverage::current_result(void) const {
     IntegrationResult result;
     result.decision = -1;
@@ -86,12 +95,15 @@ IntegrationResult MovingAverage::current_result(void) const {
     result.decision = static_cast<int32_t>(std::distance(result.integrated.begin(), best));
     return result;
 }
+// --8<-- [end:mean]
 
+// --8<-- [start:trim]
 void MovingAverage::trim(void) {
     while (this->history_.size() > this->window_) {
         this->history_.pop_front();
     }
 }
+// --8<-- [end:trim]
 
 }  // namespace integrator
 }  // namespace tutorial

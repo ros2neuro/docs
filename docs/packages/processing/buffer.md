@@ -111,3 +111,15 @@ Processing is the stage between the filters and the decoder, and what runs there
 decoders** (LDA, QDA, SVM, Gaussian) read a power spectrum, produced by the `Welch` plugin of [`ros2neuro_processing_spectral`](spectral.md); the **deep-learning
 decoders** read a window of the filtered signal, produced by this package. All of them are plugins of the same host,
 [`ros2neuro_processing`](index.md), and publish a `NeuroFeature`.
+
+## MATLAB replication
+
+The Buffer plugin copies the last `buffer` samples of the signal into one message, channel by channel; before the first frame the window holds zeros. In MATLAB it is a copy, so it needs no toolbox and the comparison with the node is **exact** (`check_processing_buffer` in [`ros2neuro_devel_test`](../devel-test.md)).
+
+```matlab
+% x: [samples channels] single, hop: samples per NeuroFrame, k: the frame (1-based) a message ends at
+padded = [zeros(buffer - 1, size(x, 2), 'single'); x];       % zeros before the first frame
+window = padded(k * hop:k * hop + buffer - 1, :);            % the last `buffer` samples
+msg    = reshape(window.', 1, []);                           % the plugin publishes them sample after sample, channel by channel
+```
+[Download the MATLAB functions](../../reproducibility/download.md).

@@ -6,6 +6,7 @@
 
 namespace tutorial {
 
+// --8<-- [start:power]
 // Power of one channel of a sample-major block: the variance of its samples, in unit^2.
 //
 // A NeuroSensor stores its data sample by sample: index = sample * channels + channel.
@@ -29,7 +30,9 @@ inline float channel_power(const std::vector<float>& data, std::size_t samples, 
     }
     return static_cast<float>(squares / static_cast<double>(samples));
 }
+// --8<-- [end:power]
 
+// --8<-- [start:detector]
 // Detects when the power of a set of channels crosses a threshold.
 //
 // The detector has two states, below and above. It goes above when ANY channel reaches the
@@ -84,6 +87,7 @@ class ThresholdDetector {
     double hysteresis_;
     bool above_ = false;
 };
+// --8<-- [end:detector]
 
 }  // namespace tutorial
 

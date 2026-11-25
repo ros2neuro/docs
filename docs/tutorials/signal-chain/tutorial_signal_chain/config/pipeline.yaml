@@ -1,0 +1,31 @@
+# The signal chain of a classic MI decoder: Laplacian filter, then the Welch power spectral density (ln, 4 to 48 Hz).
+# The model of the decoder (Gaussian) was trained on exactly this feature.
+/filters:
+  ros__parameters:
+    filters.chain: [laplacian]
+    filters.laplacian.class: ros2neuro_filters_laplacian/LaplacianFloat
+    filters.laplacian.nchannels: 16
+    filters.laplacian.layout: "0 0 1 0 0; 2 3 4 5 6; 7 8 9 10 11; 12 13 14 15 16"
+
+/welch:
+  ros__parameters:
+    processing.plugin: ros2neuro::processing::Welch
+    processing.params.feature: psd
+    processing.params.sensor: EEG
+    processing.params.samplerate: 512
+    processing.params.wlength: 256
+    processing.params.wtype: hamming
+    processing.params.overlap: 128
+    processing.params.buffer: 512
+    processing.params.frequencies: "4:2:48"
+    processing.params.log: true
+
+# Exponential smoothing of the probabilities: alpha is the memory (close to 1: slow and smooth).
+/integrator:
+  ros__parameters:
+    input_topic: /classification/prediction
+    output_topic: /integrated/raw
+    integrator.name: mi_exponential_integrator
+    integrator.type: ros2neuro::integrator::Exponential
+    integrator.params.alpha: 0.98
+    integrator.rejection: -1.0

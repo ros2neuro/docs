@@ -13,13 +13,14 @@
 namespace tutorial {
 
 // Event ids of the ros2neuro stack: Blink is 1024 and its end is 1024 + 32768 ("Off").
-// The manager listens to both on /neuroevent.
+// Nothing in the stack reacts to them: the recorder saves them, and nodes of yours can listen.
 constexpr int kBlinkEvent = 1024;
 constexpr int kOffFlag = 32768;
 
 class EogBlinkNode : public rclcpp::Node {
   public:
     EogBlinkNode(void) : rclcpp::Node("eog_blink") {
+// --8<-- [start:parameters]
         // --- parameters ---------------------------------------------------------------------
         const auto input_topic = this->declare_parameter<std::string>("input_topic", "/neurodata");
         const auto output_topic = this->declare_parameter<std::string>("output_topic", "/neuroevent");
@@ -30,7 +31,9 @@ class EogBlinkNode : public rclcpp::Node {
         this->hysteresis_ = this->declare_parameter<double>("hysteresis", 0.5);
         this->release_s_ = this->declare_parameter<double>("release_s", 0.15);
         this->baseline_tau_s_ = this->declare_parameter<double>("baseline_tau_s", 2.0);
+// --8<-- [end:parameters]
 
+// --8<-- [start:topics]
         // --- topics -------------------------------------------------------------------------
         this->publisher_ = this->create_publisher<ros2neuro_msgs::msg::NeuroEvent>(output_topic, 10);
         this->subscription_ = this->create_subscription<ros2neuro_msgs::msg::NeuroFrame>(
@@ -40,9 +43,11 @@ class EogBlinkNode : public rclcpp::Node {
         RCLCPP_INFO(this->get_logger(), "Looking for blinks on '%s', threshold %.1f", input_topic.c_str(),
                     this->threshold_);
     }
+// --8<-- [end:topics]
 
   private:
     void on_frame(const ros2neuro_msgs::msg::NeuroFrame& frame) {
+// --8<-- [start:find]
         // 1. find the sensor block and the frontal channels (by label, once)
         const auto sensor = std::find_if(frame.sensors.begin(), frame.sensors.end(),
             [this](const ros2neuro_msgs::msg::NeuroSensor& s) { return s.name == this->sensor_; });
@@ -56,7 +61,9 @@ class EogBlinkNode : public rclcpp::Node {
             this->detector_ = std::make_unique<BlinkDetector>(
                 frame.samplerate, this->threshold_, this->hysteresis_, this->release_s_, this->baseline_tau_s_);
         }
+// --8<-- [end:find]
 
+// --8<-- [start:average]
         // 2. one value per sample: the mean of the frontal channels (sample-major layout)
         const rclcpp::Time frame_start(frame.header.stamp);
         for (std::size_t s = 0; s < frame.samples; ++s) {
@@ -65,13 +72,17 @@ class EogBlinkNode : public rclcpp::Node {
                 sum += sensor->data[s * sensor->channels + channel];
             }
             const double value = sum / static_cast<double>(this->indices_.size());
+// --8<-- [end:average]
 
+// --8<-- [start:detect]
             // 3. the detector decides on this sample
             const auto event = this->detector_->process(value);
             if (event == BlinkDetector::Event::None) {
                 continue;
             }
+// --8<-- [end:detect]
 
+// --8<-- [start:publish]
             // 4. the event is stamped with the time of THIS sample, not with the time of the frame
             rclcpp::Time stamp = frame_start;
             stamp += rclcpp::Duration::from_seconds(static_cast<double>(s) / frame.samplerate);
@@ -81,14 +92,18 @@ class EogBlinkNode : public rclcpp::Node {
             message.event_id = event == BlinkDetector::Event::Start ? kBlinkEvent : kBlinkEvent + kOffFlag;
             message.description = "blink";
             this->publisher_->publish(message);
+// --8<-- [end:publish]
 
+// --8<-- [start:count]
             if (event == BlinkDetector::Event::Start) {
                 ++this->blinks_;
                 RCLCPP_INFO(this->get_logger(), "blink %zu", this->blinks_);
             }
+// --8<-- [end:count]
         }
     }
 
+// --8<-- [start:resolve]
     bool resolve_channels(const ros2neuro_msgs::msg::NeuroSensor& sensor) {
         for (const auto& wanted : this->labels_) {
             const auto it = std::find(sensor.labels.begin(), sensor.labels.end(), wanted);
@@ -103,6 +118,7 @@ class EogBlinkNode : public rclcpp::Node {
         RCLCPP_INFO(this->get_logger(), "Using %zu frontal channel(s)", this->indices_.size());
         return !this->indices_.empty();
     }
+// --8<-- [end:resolve]
 
     std::string sensor_;
     std::vector<std::string> labels_;

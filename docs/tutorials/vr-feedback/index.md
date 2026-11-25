@@ -1,4 +1,4 @@
-# Showing the feedback in virtual reality
+# Feedback in virtual reality (WebXR and Unity)
 
 The feedback of a BCI does not have to be a window on a monitor. In this tutorial you send the feedback of ROS2neuro to
 a **virtual reality** scene: the subject sees the bars rise towards their thresholds inside the headset.
@@ -14,6 +14,9 @@ back, without implementing it.)
     | entering immersive mode on a headset (WebXR) | **not tested**: described, no headset was available |
     | the Unity example | **not tested**: it is only an example of possible code, not verified in Unity or on a headset |
 
+**Goal.** Build a **WebXR page** that connects to ROS2neuro through rosbridge and draws the bars, the thresholds, the fixation cross, the cue and the outcome of a trial, **running the real pipeline**.
+Then see the same idea in a Unity script, and where a marker from the VR would enter the stack.
+
 **You will learn**
 
 - what the feedback hears (the flow of control and the event bus) and how to read it from outside ROS;
@@ -25,7 +28,7 @@ back, without implementing it.)
 a WebXR browser. Read [Protocols](../../concepts/protocols.md) first if control, the manager and the feedback are new to you.
 About 30 minutes.
 
-## 1. The idea
+## 1. The plan
 
 ```mermaid
 flowchart LR
@@ -90,42 +93,72 @@ It prints `Rosbridge WebSocket server started on port 9090`. Port 9090 is where 
 
 ## 3. Start a pipeline that produces a feedback flow
 
-Any launcher of `feedback/` in [`ros2neuro_devel_test`](../../packages/devel-test.md) will do. A calibration shows every phase of a
-trial, so we use it:
+Any launcher of `feedback/` in [`ros2neuro_devel_test`](../../packages/devel-test.md) will do. A calibration shows every phase of a trial and drives the bars by itself, so we use it.
+The launcher has no command-line arguments: the protocol is the constant `PROTOCOL` at the top of the file (as delivered, `protocol_evaluation.yaml`). Change the word after
+`protocol_` to `calibration` in `feedback/bars2/feedback_bars2.launch.py`, rebuild and launch (see [the hardware-free tutorial](../hardware-free-pipeline/index.md)):
 
 ```bash
-ros2 launch ros2neuro_devel_test feedback_bars2.launch.py protocol:=calibration
+colcon build --packages-select ros2neuro_devel_test && source install/setup.bash
+ros2 launch ros2neuro_devel_test feedback_bars2.launch.py
 ```
 
-The bars window of the stack opens (you can leave it open, it receives the same flow). Note that the session ends by
-itself when the protocol ends, after about a minute: start it again when you need more.
+The bars window of the stack opens (you can leave it open, it receives the same flow). Note that the session ends by itself when the protocol ends, after about a minute: start it again
+when you need more.
 
-## 4. The WebXR page
+## 4. The WebXR page, step by step
 
-The page is a single file that uses [A-Frame](https://aframe.io) (WebXR) and
-[roslibjs](https://github.com/RobotWebTools/roslibjs) (the JavaScript client of rosbridge). Both are loaded from a CDN,
-with their versions pinned.
+The page is a single file that uses [A-Frame](https://aframe.io) (WebXR) and [roslibjs](https://github.com/RobotWebTools/roslibjs) (the JavaScript client of rosbridge). Both are loaded
+from a CDN, with their versions pinned. We build it in six pieces, from the settings to the connection.
 
-```html title="webxr/index.html"
---8<-- "vr-feedback/webxr/index.html"
+**1. Settings.** Everything is optional and comes from the URL (`?host=...&thresholds=0.7,0.7`). The event ids are those of the [protocol](../../concepts/protocols.md#event-codes). A class is
+coloured by its **position**, never by its code, with the rest (`783`) in yellow: the same rule as the feedback of the stack.
+
+```js title="webxr/index.html"
+--8<-- "vr-feedback/webxr/index.html:settings"
 ```
 
-How it works:
+**2. The scene.** An A-Frame scene (the camera, a floor, two lights and an empty `#feedback` entity) holds everything. `el()` creates an element inside it:
 
-1. **Connection.** `ROSLIB.Ros` opens the WebSocket to `ws://<host>:<port>` and reconnects every two seconds if it
-   drops. The text above the bars says whether it is connected.
-2. **Subscriptions.** It subscribes to `/control_feedback/probabilities` as `ros2neuro_msgs/msg/NeuroControl` and to `/neuroevent` as `ros2neuro_msgs/msg/NeuroEvent`.
-3. **Bars.** At the first message of the flow it builds one bar per entry of `fields` that is **not** `threshold:...`, coloured by **position** (blue, red, green,
-   purple...), never by code, with the rest (`783`) in yellow: the same rule as the feedback of the stack. Every message sets the height of each bar to its value.
-4. **Thresholds.** They arrive in the flow, in the `threshold:<code>` entries, and the white line of each bar follows them, also when you change them while
-   running. A bar at or above its threshold turns white. The query parameter `?thresholds=0.7,0.7` is only the position of the lines until the first message
-   brings the real ones.
-5. **Phases.** The events show or hide the fixation cross and the cue (a sphere with the colour of the target bar), and the outcome writes *Hit*, *Miss* or
-   *Timeout* above the bars. The events that end something (`id + 32768`) hide it. This is the same logic as `feedback_controller.cpp`.
+```js
+--8<-- "vr-feedback/webxr/index.html:scene"
+```
+
+**3. The bars.** At the first message of the flow we build one bar per entry of `fields` that is **not** `threshold:...`: a thin transparent frame, the bar itself and its white threshold line.
+We also create the fixation cross, the cue (a sphere) and the outcome text, hidden until the manager asks for them. A bar grows upwards from the floor, so its position is half its height:
+
+```js
+--8<-- "vr-feedback/webxr/index.html:bars"
+```
+
+**4. The flow.** Every message sets the height of each bar to its value. The `threshold:<code>` entries move the white lines, also when you change the thresholds while running, and a bar at or above
+its threshold turns white. The query parameter `?thresholds=0.7,0.7` is only the position of the lines until the first message brings the real ones.
+
+```js
+--8<-- "vr-feedback/webxr/index.html:flow"
+```
+
+**5. The phases.** The events show or hide the fixation cross and the cue (a sphere with the colour of the target bar), and the outcome writes *Hit*, *Miss* or *Timeout* above the bars.
+The events that end something (`id + 32768`) hide it. This is the same logic as `feedback_controller.cpp`.
+
+```js
+--8<-- "vr-feedback/webxr/index.html:events"
+```
 
 !!! warning "Do not throttle the subscription to the events"
     roslibjs can limit the rate of a subscription with `throttle_rate`. Do not use it on `/neuroevent`: the manager writes two events in the same instant
     (the end of the fixation and the cue), and a throttle would drop the second one, so you would never see the cue.
+
+**6. The connection.** `ROSLIB.Ros` opens the WebSocket to `ws://<host>:<port>` and reconnects every two seconds if it drops; the text above the bars says whether it is connected.
+It subscribes to `/control_feedback/probabilities` as `ros2neuro_msgs/msg/NeuroControl` and to `/neuroevent` as `ros2neuro_msgs/msg/NeuroEvent`.
+
+```js
+--8<-- "vr-feedback/webxr/index.html:connect"
+```
+
+??? example "The complete page"
+    ```html
+    --8<-- "vr-feedback/webxr/index.html"
+    ```
 
 ### Run it
 
@@ -252,4 +285,4 @@ Points to decide when you implement it:
 - a passive VR feedback is the same few lines as the feedback of the stack: bars from the class entries of the flow, lines from its `threshold:` entries,
   phases and outcome from `/neuroevent`.
 
-Next: [Controlling a robot in step with the feedback](../robot-control/index.md).
+Next: [Control a robot in sync with the feedback](../robot-control/index.md).

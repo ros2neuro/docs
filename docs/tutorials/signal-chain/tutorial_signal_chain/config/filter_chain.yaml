@@ -1,0 +1,20 @@
+# One chain: band-pass 1-40 Hz (a high-pass and a low-pass Butterworth), then the common average reference.
+# The section is the name of the node: filter_chain_node started as "filter_chain" reads it.
+filter_chain:
+  ros__parameters:
+    configname: eeg_preprocessing                   # prefix of every parameter below
+    eeg_preprocessing.filters: [hp, lp, car]        # the filters, in the order they are applied
+
+    eeg_preprocessing.hp.class: ros2neuro_filters_butterworth/ButterworthFloat
+    eeg_preprocessing.hp.type: highpass
+    eeg_preprocessing.hp.order: 4
+    eeg_preprocessing.hp.cutoff: 1.0
+    eeg_preprocessing.hp.samplerate: 512.0
+
+    eeg_preprocessing.lp.class: ros2neuro_filters_butterworth/ButterworthFloat
+    eeg_preprocessing.lp.type: lowpass
+    eeg_preprocessing.lp.order: 4
+    eeg_preprocessing.lp.cutoff: 40.0
+    eeg_preprocessing.lp.samplerate: 512.0
+
+    eeg_preprocessing.car.class: ros2neuro_filters_car/CarFloat

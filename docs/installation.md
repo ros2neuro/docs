@@ -108,7 +108,7 @@ ros2 launch ros2neuro_acquisition_dummy dummy_acquisition.launch.py
 
 The launch file prints that the device has started and starts publishing
 [`NeuroFrame`](concepts/messages.md) messages on `/acquisition/neurodata`. For the whole chain up to the feedback, follow
-[Running the whole pipeline without hardware](tutorials/hardware-free-pipeline/index.md). With the apt installation the
+[Run the complete pipeline without hardware](tutorials/hardware-free-pipeline/index.md). With the apt installation the
 launchers of [`ros2neuro_devel_test`](packages/devel-test.md) are installed with the other packages and `ros2 launch
 ros2neuro_devel_test ...` finds them.
 
@@ -142,7 +142,7 @@ docker build -t ros2neuro ppa/docker/
     xhost +local:                                     # let the container open windows on your screen
     docker run -it --rm \
         -e DISPLAY=$DISPLAY -e LIBGL_ALWAYS_SOFTWARE=1 -v /tmp/.X11-unix:/tmp/.X11-unix --network host \
-        ros2neuro ros2 launch ros2neuro_devel_test feedback_wheel.launch.py protocol:=calibration
+        ros2neuro ros2 launch ros2neuro_devel_test feedback_wheel.launch.py
     xhost -local:                                     # when you are done
     ```
 
@@ -168,7 +168,7 @@ docker build -t ros2neuro ppa/docker/
     # inside the container
     source /opt/ros/jazzy/setup.bash
     ros2 launch ros2neuro_acquisition_dummy dummy_acquisition.launch.py
-    ros2 launch ros2neuro_devel_test feedback_wheel.launch.py protocol:=calibration
+    ros2 launch ros2neuro_devel_test feedback_wheel.launch.py
     ```
 
     A "problem setting up the user ... trying manual addition" message on the first start is normal with older Distrobox

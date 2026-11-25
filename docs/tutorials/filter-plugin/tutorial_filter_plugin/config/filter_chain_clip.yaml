@@ -1,6 +1,7 @@
 # Loads the tutorial filter in the ros2neuro filter chain.
-# Run with:
-#   ros2 run ros2neuro_filters filter_chain_node --ros-args --params-file filter_chain_clip.yaml
+# Run with (the acquisition publishes /acquisition/neurodata):
+#   ros2 run ros2neuro_filters filter_chain_node --ros-args --params-file filter_chain_clip.yaml \
+#     -r /neurodata:=/acquisition/neurodata
 filter_chain:
   ros__parameters:
     configname: clipchain

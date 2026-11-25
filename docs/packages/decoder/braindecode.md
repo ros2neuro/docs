@@ -113,3 +113,19 @@ colcon test --packages-select ros2neuro_decoder_braindecode && colcon test-resul
 - a missing channel, a short window, a spectrum, no labels: an error, not a wrong number;
 - the model given as the manifest (what the node passes) or as the folder: the same model;
 - no model or a folder that does not exist: `configure` false, no exception.
+
+## Python replication
+
+A deep network cannot be redone with the MATLAB functions: it is replayed in **Python**, with braindecode / PyTorch written outside the plugin, and compared with the probabilities ROS 2 published (`check_decoder_shallow.py` and `check_pipeline_dl.py` in [`ros2neuro_devel_test`](../devel-test.md)). See [Reproducibility in Python](../../reproducibility/python.md).
+
+```python
+import importlib, torch, yaml
+manifest = yaml.safe_load(open('manifest.yaml'))
+dec = manifest['decoder']
+module, name = dec['target'].rsplit('.', 1)
+net = getattr(importlib.import_module(module), name).from_config(dec['config'])
+net.load_state_dict(torch.load('params.pt', map_location='cpu', weights_only=True))
+net.eval()
+with torch.no_grad():                      # window: [1, channels, samples], the channels of the manifest picked by label
+    p = torch.softmax(net(window).double(), dim=1)      # probabilities, one per class
+```

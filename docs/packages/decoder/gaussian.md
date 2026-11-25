@@ -140,6 +140,24 @@ The current implementation supports:
 - row-major flattening
 - output types `NeuroPrediction::TYPE_SCORES` and `NeuroPrediction::TYPE_PROBABILITIES`
 
-## Check it in MATLAB
+## MATLAB replication
 
-`r2n_gaussian_read` reads the `.r2nd` model and `r2n_gaussian_predict` gives the probabilities of the node (difference 1e-7 on the reference run). See [Reproducibility in MATLAB](../../reproducibility/matlab.md).
+The plugin in MATLAB, to replay offline what the node does online. It uses only native MATLAB functions: the Matlab SMR Gaussian classifier, read from its `.r2nd` conversion. Each function says in its header which plugin it reproduces. It is compared with the real node by `check_decoder_gaussian` in [`ros2neuro_devel_test`](../devel-test.md), which also draws MATLAB and ros2neuro on top of each other and their difference. [Download all the functions](../../reproducibility/download.md).
+
+???+ example "r2n_gaussian_read.m"
+    ```matlab
+    --8<-- "files/r2n/r2n_gaussian_read.m"
+    ```
+
+???+ example "r2n_gaussian_predict.m"
+    ```matlab
+    --8<-- "files/r2n/r2n_gaussian_predict.m"
+    ```
+
+Use it:
+
+```matlab
+addpath('ros2neuro_devel_test/matlab');      % or the folder of the downloaded zip
+m = r2n_gaussian_read('b4_bhbf_20230706.smr.r2nd');
+p = r2n_gaussian_predict(m, psd_row);
+```

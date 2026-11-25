@@ -22,7 +22,7 @@ others, so the same file can be given to the manager, to control and to the feed
     thresholds: [0.7, 0.7]
 ```
 
-The launchers of [`ros2neuro_devel_test`](../packages/devel-test.md) do this with `data/config/layout.yaml`, which the manager, control and the
+The launchers of [`ros2neuro_devel_test`](../packages/devel-test.md) do this with `config/layout.yaml` of each test folder, which the manager, control and the
 feedback all load.
 
 | Parameter | Read by | Notes |

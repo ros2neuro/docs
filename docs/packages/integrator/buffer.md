@@ -155,3 +155,19 @@ and mismatched sizes), invalid `configure()` parameters, and
 `set_runtime_parameter` validation.
 `test/test_buffer_node.cpp` runs the integrator node with this plugin (parameters given as
 `integrator.params.*`) and checks the published `NeuroPrediction` (`TYPE_SCORES`, the buffer values).
+
+## MATLAB replication
+
+The plugin in MATLAB, to replay offline what the node does online. It uses only native MATLAB functions: the buffer of the winner, hard or soft. Each function says in its header which plugin it reproduces. It is compared with the real node by `check_integrator_buffer` in [`ros2neuro_devel_test`](../devel-test.md), which also draws MATLAB and ros2neuro on top of each other and their difference. [Download all the functions](../../reproducibility/download.md).
+
+???+ example "r2n_integrator_buffer.m"
+    ```matlab
+    --8<-- "files/r2n/r2n_integrator_buffer.m"
+    ```
+
+Use it:
+
+```matlab
+addpath('ros2neuro_devel_test/matlab');      % or the folder of the downloaded zip
+y = r2n_integrator_buffer(p, 48, 0, reset_frames);   % buffer_size 48, increment 0 (hard)
+```

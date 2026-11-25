@@ -44,6 +44,7 @@
   </a-scene>
 
   <script>
+    // --8<-- [start:settings]
     // ------------------------------------------------------------------ settings
     const params = new URLSearchParams(location.search);
     const HOST = params.get('host') || 'localhost';
@@ -61,7 +62,9 @@
     const BAR_HEIGHT = 1.5;     // meters for a value of 1
     const BAR_WIDTH = 0.35;
     const BAR_GAP = 0.25;
+    // --8<-- [end:settings]
 
+    // --8<-- [start:scene]
     // ------------------------------------------------------------------ the scene
     const root = document.querySelector('#feedback');
     const statusText = document.querySelector('#status');
@@ -75,11 +78,13 @@
       (parent || root).appendChild(e);
       return e;
     }
+    // --8<-- [end:scene]
 
     function color(field, index) {
       return Number(field) === REST ? REST_COLOR : COLORS[index % COLORS.length];
     }
 
+    // --8<-- [start:bars]
     // One bar per field of the first message. Built once.
     function build(fields) {
       const n = fields.length;
@@ -110,7 +115,9 @@
       bar.el.setAttribute('height', h);
       bar.el.setAttribute('position', `${bar.x} ${h / 2} 0`);   // a bar grows upwards from the floor
     }
+    // --8<-- [end:bars]
 
+    // --8<-- [start:flow]
     // ------------------------------------------------------------------ the flow of control_feedback
     // fields = the K class codes, then "threshold:<code>" for each; values = the K values, then the thresholds in force
     function onFlow(msg) {
@@ -136,7 +143,9 @@
         bar.el.setAttribute('material', 'color', bar.threshold && v >= bar.threshold ? '#ffffff' : bar.base);
       });
     }
+    // --8<-- [end:flow]
 
+    // --8<-- [start:events]
     // ------------------------------------------------------------------ the event bus: the phases of the trial
     // Events and values travel on different topics: the order between them is not guaranteed, and it does not matter here.
     function onEvent(msg) {
@@ -165,7 +174,9 @@
         cue.setAttribute('visible', true);
       }
     }
+    // --8<-- [end:events]
 
+    // --8<-- [start:connect]
     // ------------------------------------------------------------------ rosbridge
     function connect() {
       const url = `ws://${HOST}:${PORT}`;
@@ -190,6 +201,7 @@
       });
     }
     connect();
+    // --8<-- [end:connect]
   </script>
 </body>
 </html>

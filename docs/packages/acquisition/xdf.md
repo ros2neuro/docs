@@ -120,3 +120,20 @@ Supported optional fields are:
 
 Name-based overrides are applied first, then index-based overrides. If `labels`
 is provided, its size must match the number of channels in that group.
+
+## MATLAB replication
+
+The XDF plugin must publish **exactly** the samples of the file (the same float32, in order, 32 per frame, 16 frames per second). To check it, read the file with [BIOSIG](https://biosig.sourceforge.net) and compare it with the frames a recorder saved (`check_acquisition` in [`ros2neuro_devel_test`](../devel-test.md) does this, and also checks the events of the manager and the timing, and draws the signal of ros2neuro against the file with their difference).
+
+```matlab
+[s, h] = sload('test.gdf');                       % BIOSIG: samples x channels (the last channel is the trigger)
+gdf = single(s(:, 1:end-1));
+% raw: [samples channels] single, the samples of the frames saved by the recorder (one CSV row per sample)
+idx = mod((0:size(raw, 1) - 1)', size(gdf, 1)) + 1;   % the file starts again when it ends (acquisition.loop)
+max(abs(double(raw) - double(gdf(idx, :))), [], 'all')   % 0: nothing is computed, the numbers are equal
+```
+[Download the MATLAB functions](../../reproducibility/download.md).
+
+## Tests of the whole stack
+
+[`ros2neuro_devel_test`](https://github.com/ros2neuro/ros2neuro_devel_test) (`acquisition/`) replays `data/test.gdf` with this plugin and checks, in MATLAB, that every sample, the 32 samples per frame, the 16 frames per second and the events of the manager are exactly what the file holds; it also draws the signal of ros2neuro against the file and their difference. Run: `acquisition/acquisition.launch.py` then `check_acquisition`; the check is a MATLAB file you read from the top (see the README of that package).

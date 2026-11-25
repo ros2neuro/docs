@@ -31,7 +31,7 @@ Messages used:
 
 ## Example configuration
 
-From the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md) (`data/config/feedback_wheel.yaml`); the layout (`classes`, `rest_mode`, the ids of the events, the thresholds) is not a parameter of the plugin: the feedback core reads it from its own parameters (the same as the manager and control) and gives it to the plugin:
+From the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md) (`feedback/wheel/config/feedback_wheel.yaml`); the layout (`classes`, `rest_mode`, the ids of the events, the thresholds) is not a parameter of the plugin: the feedback core reads it from its own parameters (the same as the manager and control) and gives it to the plugin:
 
 ```yaml
 # Feedback (wheel). It reads the event bus (the phases the manager writes, the outcome control writes) and the flow of control (values and

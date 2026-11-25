@@ -1,0 +1,15 @@
+# The band-pass of the alpha rhythm, 8-13 Hz, as a filter chain: the node is called "alpha", so it publishes /alpha/filtered.
+alpha:
+  ros__parameters:
+    configname: band
+    band.filters: [hp, lp]
+    band.hp.class: ros2neuro_filters_butterworth/ButterworthFloat
+    band.hp.type: highpass
+    band.hp.order: 4
+    band.hp.cutoff: 8.0
+    band.hp.samplerate: 512.0
+    band.lp.class: ros2neuro_filters_butterworth/ButterworthFloat
+    band.lp.type: lowpass
+    band.lp.order: 4
+    band.lp.cutoff: 13.0
+    band.lp.samplerate: 512.0

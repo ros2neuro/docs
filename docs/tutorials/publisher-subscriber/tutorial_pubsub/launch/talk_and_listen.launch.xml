@@ -1,0 +1,5 @@
+<launch>
+  <!-- both nodes with one command: ros2 launch tutorial_pubsub talk_and_listen.launch.xml -->
+  <node pkg="tutorial_pubsub" exec="talker" name="talker" output="screen"/>
+  <node pkg="tutorial_pubsub" exec="listener" name="listener" output="screen"/>
+</launch>

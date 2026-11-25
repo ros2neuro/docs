@@ -142,3 +142,26 @@ cd mi_training && python3 scripts/make_fbcsp_reference.py ../src/ros2neuro_proce
 ```
 
 The whole chain was also checked by hand: four `filter_chain_node` (the chains written by `mi_training`) and the processing node on the reference input give the 81 features of the reference, with a maximum difference of 1.3e-7.
+
+## MATLAB replication
+
+The plugin in MATLAB, to replay offline what the node does online. It uses only native MATLAB functions: `butter` + `filter` for every band (`r2n_butterworth`), `var` for the variance of every CSP component. Each function says in its header which plugin it reproduces. It is compared with the real node by `check_processing_fbcsp` in [`ros2neuro_devel_test`](../devel-test.md), which also draws MATLAB and ros2neuro on top of each other and their difference. [Download all the functions](../../reproducibility/download.md).
+
+???+ example "r2n_fbcsp_weights.m"
+    ```matlab
+    --8<-- "files/r2n/r2n_fbcsp_weights.m"
+    ```
+
+???+ example "r2n_fbcsp.m"
+    ```matlab
+    --8<-- "files/r2n/r2n_fbcsp.m"
+    ```
+
+Use it:
+
+```matlab
+addpath('ros2neuro_devel_test/matlab');      % or the folder of the downloaded zip
+W = r2n_fbcsp_weights(filters, nbands, comps, nchannels);   % the `filters` parameter of the plugin
+win = cellfun(@(z) z(end-511:end, :), bands_signals, 'UniformOutput', false);   % the last 512 samples of every band
+f = r2n_fbcsp(win, W);                                      % the feature, band-major
+```

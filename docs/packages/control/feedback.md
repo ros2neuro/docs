@@ -206,3 +206,19 @@ The layout, the catalog of the class names, the mapping of the integrator fields
 - `test_feedback_core`: the plugin writes only the end of the feedback and the outcome on the bus and refuses the rest (the end of the outcome is the manager's);
 - `test_feedback_plugin`: the plugin loaded by the node of [`ros2neuro_control`](index.md), with a helper node that plays the integrator, the manager (events) and the feedback: the three protocols (autopilot with and without the rest, Hit / Miss / Timeout, the rest in timeout, no trial without a cue, the classes and the ids of the events as parameters, the thresholds changed while running), the flow (the header of the prediction, the thresholds in force, no phase in it, neutral first) and the configuration that is refused (a rest without `rest_mode`, wrong durations, `rest_timeout` missing);
 - `test_feedback_reset_timeout`: no value after a reset -> the node stops with an error (in its own executable, because the node shuts the process down).
+
+## MATLAB replication
+
+The plugin in MATLAB, to replay offline what the node does online. It uses only native MATLAB functions: the first class over its threshold decides Hit or Miss (what control writes on the event bus). Each function says in its header which plugin it reproduces. It is compared with the real node by `check_integrator_exponential` in [`ros2neuro_devel_test`](../devel-test.md), which also draws MATLAB and ros2neuro on top of each other and their difference. [Download all the functions](../../reproducibility/download.md).
+
+???+ example "r2n_threshold_winner.m"
+    ```matlab
+    --8<-- "files/r2n/r2n_threshold_winner.m"
+    ```
+
+Use it:
+
+```matlab
+addpath('ros2neuro_devel_test/matlab');      % or the folder of the downloaded zip
+w = r2n_threshold_winner([0.7 0.7], integrated_row);   % 0 if no class is over its threshold
+```

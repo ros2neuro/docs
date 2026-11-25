@@ -41,7 +41,7 @@ outcome is the manager's.
     control_topic: /control_feedback/probabilities
 ```
 
-Complete launch files for every protocol (`protocol:=calibration | evaluation | control`) are in the `feedback/` folder of [`ros2neuro_devel_test`](../devel-test.md).
+Complete launch files that run every protocol (the constant `PROTOCOL` at the top of each file) are in the `feedback/` folder of [`ros2neuro_devel_test`](../devel-test.md).
 
 ## Writing a new control
 

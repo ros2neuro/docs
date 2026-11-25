@@ -22,7 +22,6 @@ theme:
   logo: assets/logo-icon.png
   favicon: assets/favicon-v3.png
   features:
-    - navigation.sections
     - navigation.indexes
     - navigation.top
     - navigation.footer
@@ -136,13 +135,27 @@ nav:
       - packages/devel-test.md
   - Tutorials:
       - tutorials/index.md
-      - tutorials/hardware-free-pipeline/index.md
-      - tutorials/visualizer/index.md
-      - tutorials/filter-plugin/index.md
-      - tutorials/integrator-plugin/index.md
-      - tutorials/power-threshold-event/index.md
-      - tutorials/eog-check/index.md
-      - tutorials/vr-feedback/index.md
-      - tutorials/robot-control/index.md
+      - Start here:
+          - "1. ROS 2 essentials: nodes, topics and launch files": tutorials/ros2-basics/index.md
+          - "2. Your first publisher and subscriber": tutorials/publisher-subscriber/index.md
+          - "3. Acquire, view and record the EEG": tutorials/acquisition-recording/index.md
+          - "4. View the signals in the visualizer": tutorials/visualizer/index.md
+          - "5. Build a filter chain": tutorials/filter-chain/index.md
+          - "6. Run several filter chains in parallel": tutorials/multiple-chains/index.md
+          - "7. Build the whole pipeline step by step": tutorials/full-pipeline/index.md
+          - "8. Run the complete pipeline without hardware": tutorials/hardware-free-pipeline/index.md
+      - Your first BCI programs:
+          - "9. Compute the band power of a channel": tutorials/band-power/index.md
+          - "10. A feedback window that follows the band power": tutorials/feedback-gui/index.md
+      - Extending the stack:
+          - "11. Write a filter plugin": tutorials/filter-plugin/index.md
+          - "12. Write an integrator plugin": tutorials/integrator-plugin/index.md
+          - "13. Detect a power threshold and publish an event": tutorials/power-threshold-event/index.md
+          - "14. Detect eye blinks (EOG)": tutorials/eog-check/index.md
+          - "15. Feedback in virtual reality (WebXR and Unity)": tutorials/vr-feedback/index.md
+          - "16. Control a robot in sync with the feedback": tutorials/robot-control/index.md
   - Reproducibility:
-      - reproducibility/matlab.md
+      - reproducibility/index.md
+      - Download and use: reproducibility/download.md
+      - MATLAB: reproducibility/matlab.md
+      - Python: reproducibility/python.md

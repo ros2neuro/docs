@@ -8,7 +8,9 @@ function f = r2n_fbcsp(window, W)
 nb = numel(window); comps = size(W, 2); f = zeros(1, nb * comps);
 for b = 1:nb
     x = double(window{b}); Wb = reshape(W(b, :, :), size(W, 2), size(W, 3));
-    z = x * Wb'; v = mean((z - mean(z, 1)) .^ 2, 1); total = sum(v);
+    z = x * Wb';
+    v = var(z, 1, 1);                                       % native: population variance (mean removed) of every component
+    total = sum(v);
     if total > 0, frac = v / total; else, frac = zeros(1, comps); end
     f((b - 1) * comps + (1:comps)) = log(max(frac, 1e-12));
 end

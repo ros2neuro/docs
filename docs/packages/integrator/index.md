@@ -174,3 +174,7 @@ register that file with `pluginlib_export_plugin_description_file(ros2neuro_inte
 ## Tests
 
 `colcon test --packages-select ros2neuro_integrator`
+
+## Tests of the whole stack
+
+[`ros2neuro_devel_test`](https://github.com/ros2neuro/ros2neuro_devel_test) (`integrator/`) runs a WHOLE pipeline (raw, Laplacian, band-pass, Welch, QDA, integrator) and redoes every step in MATLAB, with one figure per step; it also checks the resets at every CFeedback and the outcome of every trial. `pipeline/` adds control and the feedback window. Run: `integrator/<kind>/integrator_<kind>.launch.py` then `check_integrator_<kind>`, for `exponential` and `buffer`; the check is a MATLAB file you read from the top (see the README of that package).

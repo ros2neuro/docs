@@ -409,3 +409,7 @@ The package includes a small passthrough test decoder exported through `pluginli
 - plugins are discoverable
 - parameter configuration works
 - a `NeuroPrediction` can be produced from a `NeuroFeature`
+
+## Tests of the whole stack
+
+[`ros2neuro_devel_test`](https://github.com/ros2neuro/ros2neuro_devel_test) (`decoder/`) tests some decoders (QDA, LDA, the Matlab SMR Gaussian classifier, LDA on FBCSP, ShallowNet) on the feature of the stage before, against MATLAB (the deep network against PyTorch). `pipeline/` runs complete pipelines with a QDA, an LDA, FBCSP + LDA and ShallowNet. Run: `decoder/<d>/decoder_<d>.launch.py` then `check_decoder_<d>` for `qda`, `lda`, `gaussian`, `fbcsp_lda`, `shallow`; the check is a MATLAB file you read from the top (see the README of that package).

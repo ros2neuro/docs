@@ -21,6 +21,7 @@ class PowerThresholdNode : public rclcpp::Node {
     PowerThresholdNode(void)
         : rclcpp::Node("power_threshold"),
           detector_(0.0, 0.8) {
+// --8<-- [start:parameters]
         // --- parameters ---------------------------------------------------------------------
         const auto input_topic = this->declare_parameter<std::string>("input_topic", "/neurodata");
         const auto output_topic = this->declare_parameter<std::string>("output_topic", "/neuroevent");
@@ -31,7 +32,9 @@ class PowerThresholdNode : public rclcpp::Node {
         this->log_period_s_ = this->declare_parameter<double>("log_period_s", 2.0);
         this->detector_.set_threshold(this->declare_parameter<double>("threshold", 100.0));
         this->detector_.set_hysteresis(this->declare_parameter<double>("hysteresis", 0.8));
+// --8<-- [end:parameters]
 
+// --8<-- [start:runtime]
         // threshold and hysteresis can be changed while the node runs
         this->callback_handle_ = this->add_on_set_parameters_callback(
             [this](const std::vector<rclcpp::Parameter>& parameters) {
@@ -56,7 +59,9 @@ class PowerThresholdNode : public rclcpp::Node {
                 }
                 return result;
             });
+// --8<-- [end:runtime]
 
+// --8<-- [start:topics]
         // --- topics -------------------------------------------------------------------------
         this->publisher_ = this->create_publisher<ros2neuro_msgs::msg::NeuroEvent>(output_topic, 10);
         this->subscription_ = this->create_subscription<ros2neuro_msgs::msg::NeuroFrame>(
@@ -65,6 +70,7 @@ class PowerThresholdNode : public rclcpp::Node {
 
         RCLCPP_INFO(this->get_logger(), "Listening on '%s', publishing events %d on '%s'",
                     input_topic.c_str(), this->event_id_, output_topic.c_str());
+// --8<-- [end:topics]
     }
 
   private:
@@ -74,6 +80,7 @@ class PowerThresholdNode : public rclcpp::Node {
             return;
         }
 
+// --8<-- [start:channels]
         // 1. which channels? (resolved from the labels at the first frame)
         if (!this->resolved_) {
             this->resolve_channels(*sensor);
@@ -81,14 +88,18 @@ class PowerThresholdNode : public rclcpp::Node {
         if (this->indices_.empty()) {
             return;
         }
+// --8<-- [end:channels]
 
+// --8<-- [start:power]
         // 2. the power of every selected channel in this frame
         std::vector<float> powers;
         powers.reserve(this->indices_.size());
         for (const std::size_t channel : this->indices_) {
             powers.push_back(channel_power(sensor->data, frame.samples, sensor->channels, channel));
         }
+// --8<-- [end:power]
 
+// --8<-- [start:cross]
         // 3. did the strongest channel cross the threshold?
         const auto crossing = this->detector_.update(powers);
         this->log_power(frame, crossing.power);
@@ -99,7 +110,9 @@ class PowerThresholdNode : public rclcpp::Node {
         if (crossing.type == ThresholdDetector::Type::Falling && !this->emit_off_) {
             return;
         }
+// --8<-- [end:cross]
 
+// --8<-- [start:publish]
         // 4. publish the event, stamped with the time at the END of the frame: the decision uses
         //    all of its samples, so this is the earliest instant it could have been taken.
         rclcpp::Time stamp(frame.header.stamp);
@@ -117,6 +130,7 @@ class PowerThresholdNode : public rclcpp::Node {
                     crossing.type == ThresholdDetector::Type::Rising ? "ABOVE" : "below",
                     label.c_str(), crossing.power, this->get_parameter("threshold").as_double());
     }
+// --8<-- [end:publish]
 
     const ros2neuro_msgs::msg::NeuroSensor* find_sensor(const ros2neuro_msgs::msg::NeuroFrame& frame) const {
         for (const auto& sensor : frame.sensors) {
@@ -127,6 +141,7 @@ class PowerThresholdNode : public rclcpp::Node {
         return nullptr;
     }
 
+// --8<-- [start:resolve]
     void resolve_channels(const ros2neuro_msgs::msg::NeuroSensor& sensor) {
         this->indices_.clear();
         this->selected_labels_.clear();
@@ -153,6 +168,7 @@ class PowerThresholdNode : public rclcpp::Node {
         RCLCPP_INFO(this->get_logger(), "Monitoring %zu channel(s) of sensor '%s'",
                     this->indices_.size(), sensor.name.c_str());
     }
+// --8<-- [end:resolve]
 
     // Prints the strongest power now and then, to help choosing the threshold.
     void log_power(const ros2neuro_msgs::msg::NeuroFrame& frame, float power) {

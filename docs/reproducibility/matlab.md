@@ -1,5 +1,7 @@
 # Reproducibility in MATLAB
 
+[Download and use the functions](download.md) · [Python version](python.md)
+
 Every stage of the chain computed in C++, from the filters to the decoders and the integrators, has a **MATLAB twin**: a short function that does the same
 computation, in the same float32 arithmetic, and that is **compared with what the real ROS 2 node published**. You can use
 the functions in your own analysis and trust that they give the numbers ROS2neuro gives, because the comparison is repeated on
@@ -14,8 +16,8 @@ the same data every time you run the check.
 ```text
 ros2neuro_devel_test/
 ├── matlab/                   r2n_*.m: one function per stage, copy the ones you need
-├── src/                      r2n_session.py (used by the launchers), topic_csv_recorder.py, t_*.m (helpers of the checks)
-└── acquisition/ filters/ processing/ decoder/ integrator/ feedback/    one folder per test: its launcher (.launch.py) and its check_*.m
+├── src/                      topic_csv_recorder.py (the node that saves the topics as CSV)
+└── acquisition/ filters/ processing/ decoder/ integrator/ pipeline/ feedback/    one folder per test: its launcher (.launch.py), its config/ and its check_*.m
 ```
 
 ## What was checked, and how close it is
@@ -41,6 +43,24 @@ ros2neuro_devel_test/
 | Hit / Miss / Timeout | [`control_feedback`](../packages/control/feedback.md) | `r2n_threshold_winner` | the integrator test, 8 trials | 8 of 8 equal |
 | Resets of the integrator | [`integrator`](../packages/integrator/index.md) | `r2n_integrator_exponential`, `r2n_integrator_buffer` | the integrator test: the neutral message of every reset | 8 resets, one per CFeedback |
 
+## Whole pipelines
+
+The `pipeline/` tests chain every step, from the raw samples to the flow that drives the feedback window, and compare each one with ROS 2 (largest difference over about 1 800 messages and 58 000 samples; the filters are in the units of the signal, the later steps in the units of the quantity):
+
+| Step | QDA | LDA | FBCSP + LDA | Tolerance |
+|---|---|---|---|---|
+| raw | 0 | 0 | 0 | 0 |
+| Laplacian | 0.0029 | 0.0029 | | 0.016 |
+| band-pass (hp 1 Hz, lp 60 Hz) | 0.00098 | 0.00098 | | 0.031 |
+| band chains of FBCSP (8-12 Hz, 16-20 Hz) | | | 0 and 6e-8 | 0.031 |
+| Welch PSD (ln) | 2.6e-4 | 2.6e-4 | | 1e-3 |
+| FBCSP feature | | | 1.2e-7 | 1e-3 |
+| decoder probabilities | 2.6e-5 | 2.5e-5 | 0 | 1e-3 |
+| integrator | 1e-6 | 2.5e-6 | 0 | 1e-3 |
+| control flow (what the window draws) | 2e-7 | 3e-7 | 2e-7 | 1e-3 |
+
+The deep-learning pipeline is checked in [Python](python.md): band-pass 5e-4, window 3e-4, network 1.4e-6, integrator 5e-7, flow 3e-7. The later steps have an absolute tolerance because the rounding of the filters is amplified by the `ln` of the power; a step fed with the ROS 2 output of the step before (the integrator alone, a decoder on the ROS PSD) agrees to a few ULP.
+
 **ULP** is the distance between two neighbouring float32 numbers. The EEG in the test files is of the order of 10 000 µV, where one
 ULP is 0.001 µV: a difference of 2 ULP is the last bit of the number, not a difference of method. The differences of the decoders and
 the integrators are in the units of the quantity (probabilities and integrated values are between 0 and 1, so 1e-7 is one ULP there).
@@ -58,17 +78,17 @@ The tests are useful as regression tests too: if you change a plugin and the num
 ## Run the checks
 
 You need MATLAB R2019b or newer with the **Signal Processing Toolbox**: the filters are written with the native functions of MATLAB
-(`butter` + `filter`, `hann`, `hamming`, `blackman`, `flattopwin`, `mean`), so that the check does not depend on how ROS 2 designs
+(`butter` + `filter`, `pwelch`, `hann`, `hamming`, `blackman`, `flattopwin`, `mean`, `var`), so that the check does not depend on how ROS 2 designs
 its filters. Reading a GDF (the tests) needs [BIOSIG](https://biosig.sourceforge.net).
 
 Each stage has a test in [`ros2neuro_devel_test`](../packages/devel-test.md): `acquisition/`, `filters/` (each filter alone, and three chains), `processing/`
-(Welch, FFT, spectrogram, buffer, FBCSP), `decoder/` (QDA, LDA, Gaussian, LDA on FBCSP, ShallowNet) and `integrator/` (exponential and buffer). A test replays a GDF
+(Welch, FFT, spectrogram, buffer, FBCSP), `decoder/` (QDA, LDA, Gaussian, LDA on FBCSP, ShallowNet) and `integrator/` (whole pipelines to the exponential and the buffer integrator) and `pipeline/` (the complete pipeline with the feedback window: QDA, LDA, FBCSP + LDA, and a deep-learning model checked in Python). A test replays a GDF
 file through the nodes of its stage, with the manager running a protocol so that the session ends by itself, and saves what the nodes published as CSV; its
 `check_*.m` redoes the stage in MATLAB from the samples of the same GDF and compares:
 
 ```bash
 # in the container (about 2 minutes; the session ends by itself)
-ros2 launch ros2neuro_devel_test decoder_qda.launch.py
+ros2 launch ~/ros2neuro_ws/src/ros2neuro_devel_test/decoder/qda/decoder_qda.launch.py
 ```
 ```matlab
 % in MATLAB, in the folder of the test
@@ -243,7 +263,7 @@ One block per function; each starts with what it reproduces. They are also in th
     --8<-- "files/r2n/r2n_sklearn_lda_predict.m"
     ```
 
-The helpers of the checks (`src/t_*.m`) and the `check_*.m` of every test are in the repository.
+Every `check_*.m` of the repository is one self-contained file (no helper functions): read it from the top to see what is read, what is recomputed and how it is compared.
 
 ## What is not covered yet
 

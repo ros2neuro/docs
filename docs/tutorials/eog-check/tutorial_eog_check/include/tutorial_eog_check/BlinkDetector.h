@@ -23,16 +23,19 @@ class BlinkDetector {
   public:
     enum class Event { None, Start, End };
 
+// --8<-- [start:constructor]
     BlinkDetector(double samplerate, double threshold, double hysteresis, double release_s,
                   double baseline_tau_s)
         : threshold_(threshold),
           hysteresis_(hysteresis),
           release_samples_(static_cast<std::size_t>(std::ceil(release_s * samplerate))),
           alpha_(1.0 / (baseline_tau_s * samplerate)) {}
+// --8<-- [end:constructor]
 
     void set_threshold(double threshold) { this->threshold_ = threshold; }
     bool active(void) const { return this->active_; }
 
+// --8<-- [start:process]
     // Feeds one sample, returns the event it produced, if any.
     Event process(double value) {
         if (!this->initialized_) {          // start from the first value: no initial transient
@@ -63,6 +66,7 @@ class BlinkDetector {
         }
         return Event::None;
     }
+// --8<-- [end:process]
 
   private:
     double threshold_;

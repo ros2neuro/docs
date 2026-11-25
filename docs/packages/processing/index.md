@@ -83,7 +83,7 @@ decoder's manifest says what it expects, and you start the processing that provi
 
 The tests of [`ros2neuro_devel_test`](../devel-test.md) show them in use (`processing/` has one per plugin, `decoder/` the decoders on their output).
 
-**Welch**, from the Gaussian pipeline (`data/config/psd_pipeline.yaml`): a PSD, as natural logarithm (ln), at 4, 6, ... 48 Hz, the input
+**Welch**, from the Gaussian pipeline (`pipeline/qda/config/psd_pipeline.yaml`): a PSD, as natural logarithm (ln), at 4, 6, ... 48 Hz, the input
 contract of the decoder's manifest.
 
 ```yaml
@@ -195,3 +195,7 @@ a complete node that reads a `NeuroFrame` and publishes a message (it is a stand
 - [Spectral processing](spectral.md), [Buffer](buffer.md) and [FBCSP](fbcsp.md): the three plugin packages in detail
 - [Decoder](../decoder/index.md): the input contract (`manifest.yaml`) that processing has to satisfy
 - [Architecture](../../concepts/architecture.md): where processing sits in the whole stack
+
+## Tests of the whole stack
+
+[`ros2neuro_devel_test`](https://github.com/ros2neuro/ros2neuro_devel_test) (`processing/`) tests EVERY processing plugin on the raw frames against MATLAB (`pwelch` for Welch), with one figure per plugin. Run: `processing/<plugin>/processing_<plugin>.launch.py` then `check_processing_<plugin>`, for `welch`, `fft`, `spectrogram`, `buffer`, `fbcsp`; the check is a MATLAB file you read from the top (see the README of that package).

@@ -1,10 +1,14 @@
-# Controlling a robot in step with the feedback
+# Control a robot in sync with the feedback
 
 In this tutorial you write the two things that the stack leaves to you when a **robot** has to move together with what the subject
 sees: a **control plugin** for the robot (`ros2neuro_control_robot`) and a **synchronization node** that keeps the robot in step with
 the feedback by looking at the **header** of the messages.
 
 [![The robot side of the stack: control_robot, sync_node and the robot](../../assets/robot_control_architecture.png)](../../assets/robot_control_architecture.png)
+
+**Goal.** Make a robot (here a fake one that only prints what it would do) move **in step with the feedback**: it must receive a command only when the subject's feedback shows the
+values of the *same* prediction. By the end you have a control plugin that turns predictions into robot commands, a node that pairs it with the feedback by `header.stamp`, and a run
+where you compare the stamps on the three topics.
 
 **You will learn**
 
@@ -13,12 +17,12 @@ the feedback by looking at the **header** of the messages.
 - why two controls that read the same integrator can be paired by the header of what they publish;
 - how to synchronize two topics with `message_filters` (exact time).
 
-**You need** a built ROS2neuro workspace and about 30 minutes. It helps to have done
-[Writing an integrator plugin](../integrator-plugin/index.md): the registration steps are the same.
+**You need** the [integrator plugin tutorial](../integrator-plugin/index.md) (the registration steps are the same), the [hardware-free pipeline](../hardware-free-pipeline/index.md) and a built
+ROS2neuro workspace. About 30 minutes.
 
-The complete package is in the repository, under `docs/tutorials/robot-control/tutorial_robot_control/`.
+The complete package is in the repository, under `docs/tutorials/robot-control/tutorial_robot_control/`. The page includes its files, so the code below is the code that builds.
 
-## 1. The idea
+## 1. The plan
 
 The [integrator](../../packages/integrator/index.md) publishes one `NeuroPrediction` for every prediction of the decoder, on
 `/integrated/raw`. Two controls read it, each in its own `control_node` (a node loads **one** control plugin):
@@ -39,6 +43,8 @@ the robot does is what the subject is shown at that moment.
     The few flow messages that are not made from a prediction (the neutral vector the feedback shows between trials) have a stamp of
     their own and never find a command with the same stamp: they are dropped by the synchronization, which is what you want. In a
     **calibration** the feedback shows an autopilot, not the integrator: there is nothing to synchronize with.
+
+We build it from the inside out, each piece testable before the next: the **commands** (pure C++), the **control plugin** that uses them, the **synchronization**, and the **robot**.
 
 ## 2. Package layout
 
@@ -63,8 +69,8 @@ tutorial_robot_control/
 
 ## 3. The commands of the robot
 
-The commands are **yours**: ROS2neuro knows nothing about them. A command is an integer in the `commands` of a `NeuroControl`, named by
-the action `robot_command`.
+First the part with no ROS: *what does the robot do for a given prediction?* The commands are **yours**: ROS2neuro knows nothing about them. A command is an integer in the `commands` of a
+`NeuroControl`, named by the action `robot_command`.
 
 ```cpp title="include/tutorial_robot_control/robot_commands.hpp"
 --8<-- "robot-control/tutorial_robot_control/include/tutorial_robot_control/robot_commands.hpp"
@@ -76,7 +82,7 @@ the action `robot_command`.
 
 ## 4. The control plugin
 
-A control plugin derives from [`ros2neuro::control::Control`](../../packages/control/index.md) and implements two things:
+Now the plugin that reads the predictions and publishes the commands. A control plugin derives from [`ros2neuro::control::Control`](../../packages/control/index.md) and implements two things:
 
 - `configure(node, context)`: read the parameters from the `node` it is given, create what it needs on it (here, a publisher);
 - `on_prediction(prediction)`: called for every `NeuroPrediction`. It must return quickly.
@@ -132,7 +138,7 @@ simply dropped. `queue_size` says how many messages of each topic it can hold wh
 
 ## 7. The robot
 
-The robot of the tutorial only says what it would do; replace it with the driver of yours. It listens to `/sync/command`, **not** to
+Last, something that obeys. The robot of the tutorial only says what it would do; replace it with the driver of yours. It listens to `/sync/command`, **not** to
 `/control_robot/command`: that is what keeps it in step.
 
 ```cpp title="src/fake_robot_node.cpp"
@@ -151,13 +157,14 @@ The parameters and the launch file:
 --8<-- "robot-control/tutorial_robot_control/launch/robot_control.launch.xml"
 ```
 
-Build the package and start the pipeline with its feedback in one terminal, the robot side in another:
+The robot must be driven by the **values of the integrator**, so the pipeline runs in the `control` protocol (free control, no trials). The launcher has no command-line arguments: the protocol is
+the constant `PROTOCOL` at the top of `feedback/wheel/feedback_wheel.launch.py` in `ros2neuro_devel_test`. Change it to `protocol_control.yaml`, then build and start the two sides:
 
 ```bash
-colcon build --packages-select tutorial_robot_control && source install/setup.bash
+colcon build --packages-select ros2neuro_devel_test tutorial_robot_control && source install/setup.bash
 
 # terminal 1: the pipeline, in control (the flow carries the values of the integrator)
-ros2 launch ros2neuro_devel_test feedback_wheel.launch.py protocol:=control
+ros2 launch ros2neuro_devel_test feedback_wheel.launch.py
 
 # terminal 2: the robot control, the synchronization and the robot
 ros2 launch tutorial_robot_control robot_control.launch.xml

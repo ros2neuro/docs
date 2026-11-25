@@ -1,0 +1,32 @@
+# Two chains, each one read by its own node: the section is the name of the node.
+# /mu   : mu rhythm, 8-12 Hz
+# /beta : beta rhythm, 13-30 Hz
+/mu:
+  ros__parameters:
+    configname: band
+    band.filters: [hp, lp]
+    band.hp.class: ros2neuro_filters_butterworth/ButterworthFloat
+    band.hp.type: highpass
+    band.hp.order: 4
+    band.hp.cutoff: 8.0
+    band.hp.samplerate: 512.0
+    band.lp.class: ros2neuro_filters_butterworth/ButterworthFloat
+    band.lp.type: lowpass
+    band.lp.order: 4
+    band.lp.cutoff: 12.0
+    band.lp.samplerate: 512.0
+
+/beta:
+  ros__parameters:
+    configname: band
+    band.filters: [hp, lp]
+    band.hp.class: ros2neuro_filters_butterworth/ButterworthFloat
+    band.hp.type: highpass
+    band.hp.order: 4
+    band.hp.cutoff: 13.0
+    band.hp.samplerate: 512.0
+    band.lp.class: ros2neuro_filters_butterworth/ButterworthFloat
+    band.lp.type: lowpass
+    band.lp.order: 4
+    band.lp.cutoff: 30.0
+    band.lp.samplerate: 512.0

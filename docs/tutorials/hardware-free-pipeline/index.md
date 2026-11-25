@@ -1,16 +1,20 @@
-# Running the whole pipeline without hardware
+# Run the complete pipeline without hardware
 
-In this tutorial you start a complete ROS2neuro pipeline on your computer, from the acquisition to the feedback
-the subject would see, **without an amplifier**. The EEG comes from a GDF file that is replayed as if it were
-live. You will run a calibration, look at what each node publishes, and see where each piece of the
-[architecture](../../concepts/architecture.md) lives.
+**Goal.** Start a complete ROS2neuro pipeline on your computer, from the acquisition to the feedback the subject would see, **without an amplifier**. The EEG comes from a GDF file that
+is replayed as if it were live. You will run a calibration, look at what each node publishes, and see where each piece of the [architecture](../../concepts/architecture.md) lives.
 
 It takes about 10 minutes and needs no code. It is also the quickest way to check that your installation works.
+
+**You will learn**
+
+- which node does which stage, and how they are chained only by topics;
+- how to follow one piece of data from the acquisition to the feedback with `ros2 topic`;
+- which YAML file configures what, and how to change a parameter and see the effect.
 
 **You need** ROS2neuro [installed](../../installation.md) (from apt, or built in a workspace) with the package [`ros2neuro_devel_test`](../../packages/devel-test.md), and a display for the
 feedback window.
 
-## 1. What will run
+## 1. The plan: what will run
 
 The launcher starts one node per stage of the chain:
 
@@ -49,16 +53,18 @@ flowchart LR
 source /opt/ros/jazzy/setup.bash
 source install/setup.bash
 
-ros2 launch ros2neuro_devel_test feedback_bars2.launch.py protocol:=calibration
+ros2 launch ros2neuro_devel_test feedback_bars2.launch.py
 ```
 
-The arguments:
+The launcher has **no command-line arguments**. The choices are two constants at the top of the file, which you edit (it lives in the
+`feedback/bars2/` folder of the package `ros2neuro_devel_test`, in your workspace `src/`):
 
-| Argument | Values | Meaning |
+| Constant | Values | Meaning |
 |---|---|---|
-| `protocol` | `calibration`, `evaluation`, `control` | which [protocol](../../concepts/protocols.md) the manager runs (default `evaluation`) |
-| `integrator` | `exponential`, `buffer` | which integrator plugin (default `exponential`) |
-| `gdf_file` | path | which file to replay |
+| `PROTOCOL` | `protocol_calibration.yaml`, `protocol_evaluation.yaml`, `protocol_control.yaml` | the file of the [protocol](../../concepts/protocols.md) the manager and control run: in the line `PROTOCOL = CFG / 'protocol_evaluation.yaml'` change the word after `protocol_` (as delivered: `evaluation`) |
+| `INTEGRATOR` | `exponential`, `buffer` | which integrator plugin (default `exponential`) |
+
+To start it without going through the installed copy, give the path of the file: `ros2 launch ~/ros2neuro_ws/src/ros2neuro_devel_test/feedback/bars2/feedback_bars2.launch.py`.
 
 A window with two bars opens. The log shows each node loading its plugin:
 
@@ -67,19 +73,13 @@ A window with two bars opens. The log shows each node loading its plugin:
 [manager]: Layout: protocol classes [BOTH_HANDS (773), BOTH_FEET (771)], rest_mode=none
 [decoder]:   Decoder configured. input='/features' output='~/prediction' type='ros2neuro::decoder::Gaussian'
 [control]: Layout: protocol classes [...], output classes [...], rest_mode=none, K=2
-[manager]: Synchronous: 6 trials, begins in 3000 ms
-[manager]: Trial 1/6 (class: BOTH_FEET (771))
+[manager]: Synchronous: 8 trials, begins in 15000 ms
 ```
 
 The manager runs the trials and writes their events; control does the rest. In a **calibration** control drives the bars with an autopilot (the target class rises towards its
 threshold), as the subject would do when training a classifier. In an **evaluation** the bars follow the real
 output of the classifier and control writes the outcome (Hit, Miss or Timeout), and in **control** control resets the integrator when a class reaches its
-threshold. Try the three:
-
-```bash
-ros2 launch ros2neuro_devel_test feedback_bars2.launch.py protocol:=evaluation
-ros2 launch ros2neuro_devel_test feedback_bars2.launch.py protocol:=control
-```
+threshold. Try the three: edit `PROTOCOL` in the launcher, rebuild (`colcon build --packages-select ros2neuro_devel_test`) and launch again.
 
 !!! note "Calibration and evaluation on a replayed file"
     The GDF is not synchronised with the cues, so the hits and misses of an evaluation only show that the chain
@@ -162,7 +162,7 @@ a recorder would write in the GDF file next to the signal (these launchers do no
 
 ## 4. Where the parameters are
 
-Everything is in `ros2neuro_devel_test/data/config/`:
+Every test folder of `ros2neuro_devel_test` has its own `config/` with all the YAML it needs; for this pipeline it is `feedback/bars2/config/`:
 
 | File | Configures |
 |---|---|
@@ -170,9 +170,9 @@ Everything is in `ros2neuro_devel_test/data/config/`:
 | `integrator_exponential.yaml`, `integrator_buffer.yaml` | the integrator |
 | `layout.yaml` | `classes`, `rest_mode`, `thresholds`: loaded by the manager, control **and** the feedback |
 | `protocol_calibration.yaml`, `protocol_evaluation.yaml`, `protocol_control.yaml` | the protocol: `/manager` (trials, durations) and `/control` (the plugin, the length of the feedback) |
-| `feedback_bars.yaml`, `feedback_wheel.yaml` | the drawing |
+| `feedback_bars.yaml` | the drawing (the wheel launcher has its own `feedback_wheel.yaml`) |
 
-Try changing something. For example, in `layout.yaml` change `thresholds: [0.7, 0.7]` to `[0.9, 0.9]` and in
+Try changing something. For example, in `feedback/bars2/config/layout.yaml` change `thresholds: [0.7, 0.7]` to `[0.9, 0.9]` and in
 `protocol_calibration.yaml` change `trials`. After editing, rebuild the package, because the launch files use the
 installed copies:
 
@@ -198,4 +198,4 @@ The tests of every stage (the same nodes one stage at a time, each checked again
 - the manager runs the trials and control drives the feedback, on top of the signal chain, talking through the events;
 - you can replace the amplifier with a file, and nothing else changes.
 
-Next: [Looking at the signals with the visualizer](../visualizer/index.md).
+Next: [Compute the band power of a channel](../band-power/index.md).

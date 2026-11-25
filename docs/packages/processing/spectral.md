@@ -38,7 +38,7 @@ Messages used:
 
 ## Example configuration
 
-The Welch plugin of the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md) (`data/config/psd_pipeline.yaml`): a PSD, as natural logarithm (ln), at 4, 6, ... 48 Hz of the `EEG` block (the plugin parameters live under `processing.params.`):
+The Welch plugin of the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md) (`pipeline/qda/config/psd_pipeline.yaml`): a PSD, as natural logarithm (ln), at 4, 6, ... 48 Hz of the `EEG` block (the plugin parameters live under `processing.params.`):
 
 ```yaml
 /welch:
@@ -265,3 +265,36 @@ This is covered in `test/test_spectral_processors.cpp` (the cores). `test/test_s
 - the C++ cores (`FFTCore`, `WelchCore`, `SpectrogramCore`, in `ros2neuro::processing::spectral`) do not depend on ROS or on any UI: they are
   reused by [`ros2neuro_visualizer`](../visualizer.md), whose Spectrum tab computes the spectrum itself with them, while consumers that run in the pipeline
   rely on the `NeuroFeature` contract of the plugins
+
+## MATLAB replication
+
+The plugin in MATLAB, to replay offline what the node does online. It uses only native MATLAB functions: `pwelch` for the Welch PSD, `fft` for the FFT, the native windows for all of them. Each function says in its header which plugin it reproduces. It is compared with the real node by `check_processing_welch, check_processing_fft, check_processing_spectrogram` in [`ros2neuro_devel_test`](../devel-test.md), which also draws MATLAB and ros2neuro on top of each other and their difference. [Download all the functions](../../reproducibility/download.md).
+
+???+ example "r2n_welch.m"
+    ```matlab
+    --8<-- "files/r2n/r2n_welch.m"
+    ```
+
+???+ example "r2n_fft.m"
+    ```matlab
+    --8<-- "files/r2n/r2n_fft.m"
+    ```
+
+???+ example "r2n_spectrogram.m"
+    ```matlab
+    --8<-- "files/r2n/r2n_spectrogram.m"
+    ```
+
+???+ example "r2n_spectral_window.m"
+    ```matlab
+    --8<-- "files/r2n/r2n_spectral_window.m"
+    ```
+
+Use it:
+
+```matlab
+addpath('ros2neuro_devel_test/matlab');      % or the folder of the downloaded zip
+w   = struct('fs', 512, 'length', 256, 'overlap', 128, 'window', 'hamming', 'freqs', 4:2:48);
+psd = r2n_welch(double(x(end-511:end, :)), w);      % ln PSD of the last 512 samples, [numel(freqs) channels]
+[a, f] = r2n_fft(x(end-255:end, :), 512, 'hann', false);   % amplitude of the last 256 samples
+```

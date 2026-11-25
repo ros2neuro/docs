@@ -113,3 +113,19 @@ Step 1 is also wired into `colcon test` as an opt-in test:
 colcon build --packages-select ros2neuro_filters_car --cmake-args -DBUILD_ROUNDTRIP_TESTS=ON
 colcon test --packages-select ros2neuro_filters_car
 ```
+
+## MATLAB replication
+
+The plugin in MATLAB, to replay offline what the node does online. It uses only native MATLAB functions: `mean` across the channels of every sample. Each function says in its header which plugin it reproduces. It is compared with the real node by `check_filters_single` in [`ros2neuro_devel_test`](../devel-test.md), which also draws MATLAB and ros2neuro on top of each other and their difference. [Download all the functions](../../reproducibility/download.md).
+
+???+ example "r2n_car.m"
+    ```matlab
+    --8<-- "files/r2n/r2n_car.m"
+    ```
+
+Use it:
+
+```matlab
+addpath('ros2neuro_devel_test/matlab');      % or the folder of the downloaded zip
+y = r2n_car(x);
+```

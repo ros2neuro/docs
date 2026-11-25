@@ -66,7 +66,7 @@ To make your own: fit the model on the features **as ROS 2 computes them** (same
 ## The example model
 
 `extra/sklearn_lda_test_gdf/`: `StandardScaler` + `LinearDiscriminantAnalysis(solver='lsqr', shrinkage='auto')` on the PSD of
-`ros2neuro_devel_test/data/test.gdf` computed as the chain of [`ros2neuro_devel_test`](../devel-test.md) (`data/config/psd_pipeline.yaml`: Laplacian, Welch Hamming 256 / overlap
+`ros2neuro_devel_test/data/test.gdf` computed as the chain of [`ros2neuro_devel_test`](../devel-test.md) (`pipeline/qda/config/psd_pipeline.yaml`: Laplacian, Welch Hamming 256 / overlap
 128 on a buffer of 512, ln, 4:2:48 Hz), one feature per frame of the continuous feedback of the 20 trials 773 / 771 (1486 features).
 Leave-one-trial-out accuracy on the single windows: 0.68. It exercises the plugin; it is not a validated classifier.
 
@@ -127,3 +127,25 @@ colcon test --packages-select ros2neuro_decoder_sklearn && colcon test-result --
 - `test/test_sklearn_model.py` (the Python side, on small models fitted in the test): `mode: all` is the feature channel-major whatever the
   order of the axes; `mode: selection` takes the pairs in their order; the probabilities follow `output.fields`, not `model.classes_`; the
   float32 bytes the plugin passes give the same result.
+
+## MATLAB replication
+
+The plugin in MATLAB, to replay offline what the node does online. It uses only native MATLAB functions: scikit-learn files cannot be read from MATLAB: `export_lda_weights.py` writes the numbers of the model (scaler, coefficients, selected features) in a yaml and checks in Python that they give the same `predict_proba`. Each function says in its header which plugin it reproduces. It is compared with the real node by `check_decoder_fbcsp` in [`ros2neuro_devel_test`](../devel-test.md), which also draws MATLAB and ros2neuro on top of each other and their difference. [Download all the functions](../../reproducibility/download.md).
+
+???+ example "r2n_sklearn_lda_read.m"
+    ```matlab
+    --8<-- "files/r2n/r2n_sklearn_lda_read.m"
+    ```
+
+???+ example "r2n_sklearn_lda_predict.m"
+    ```matlab
+    --8<-- "files/r2n/r2n_sklearn_lda_predict.m"
+    ```
+
+Use it:
+
+```matlab
+addpath('ros2neuro_devel_test/matlab');      % or the folder of the downloaded zip
+m = r2n_sklearn_lda_read('lda_weights.yaml');
+p = r2n_sklearn_lda_predict(m, fbcsp_row);
+```

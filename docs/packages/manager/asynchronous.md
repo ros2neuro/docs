@@ -30,7 +30,7 @@ Default node name: `manager` (the node of [`ros2neuro_manager`](index.md)). The 
 
 ## Example configuration
 
-The control protocol of the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md) (`data/config/protocol_control.yaml`, `/manager` part; the
+The control protocol of the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md) (`feedback/wheel/config/protocol_control.yaml`, `/manager` part; the
 `/control` part is for [`ros2neuro_control_feedback`](../control/feedback.md); the layout, with the thresholds, is in `layout.yaml`):
 
 ```yaml

@@ -1,0 +1,4 @@
+band_power:
+  ros__parameters:
+    sensor: EEG        # the block of the frame to analyse
+    window_s: 1.0      # seconds of the moving average

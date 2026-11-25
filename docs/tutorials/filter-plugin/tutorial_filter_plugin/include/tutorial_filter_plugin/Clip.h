@@ -15,6 +15,7 @@ class Clip : public Filter<T> {
       this->name_ = "clip";
     }
 
+// --8<-- [start:configure]
     // Called once, after the parameters of this filter have been loaded.
     bool configure(void) override {
       double limit = 100.0;
@@ -28,11 +29,14 @@ class Clip : public Filter<T> {
       this->limit_ = static_cast<T>(limit);
       return true;
     }
+// --8<-- [end:configure]
 
+// --8<-- [start:apply]
     // Called on every frame. Input and output are [samples x channels].
     DynamicMatrix<T> apply(const DynamicMatrix<T>& input) override {
       return input.cwiseMax(-this->limit_).cwiseMin(this->limit_);
     }
+// --8<-- [end:apply]
 
   private:
     T limit_ = static_cast<T>(100.0);

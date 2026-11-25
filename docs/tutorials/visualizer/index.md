@@ -1,11 +1,11 @@
-# Looking at the signals with the visualizer
+# View the signals in the visualizer
 
 The visualizer, `neuroviz`, is the oscilloscope of ROS2neuro: it shows the EEG that flows on a topic, lets you filter
 and select it, and shows its spectrum. It is the first thing to open when you connect an amplifier, and the quickest
 way to see whether a recording is clean.
 
-In this tutorial you open the visualizer on a recorded EEG, filter the signal between **2 and 40 Hz**, look at a few
-channels, add a **Welch power spectrum** with the `+` button, and put the signal and the spectrum side by side.
+**Goal.** Open the visualizer on a recorded EEG, filter the signal between **2 and 40 Hz**, look at a few channels, add a **Welch power spectrum** with the `+` button, and put the
+signal and the spectrum side by side. You do not write code: you learn to read the instrument you will use in every other tutorial.
 
 **You will learn**
 
@@ -14,10 +14,19 @@ channels, add a **Welch power spectrum** with the `+` button, and put the signal
 - how to add the Spectrum tab and read the Welch spectrum;
 - how to arrange several tabs, and how to look at the trigger lines.
 
-**You need** a built ROS2neuro workspace (with [`ros2neuro_visualizer`](../../packages/visualizer.md) and [`ros2neuro_devel_test`](../../packages/devel-test.md)) and a display.
+**You need** the [previous tutorial](../acquisition-recording/index.md) (it starts the same acquisition) and a built ROS2neuro workspace (with [`ros2neuro_visualizer`](../../packages/visualizer.md) and [`ros2neuro_devel_test`](../../packages/devel-test.md)) and a display.
 No hardware: the EEG comes from a recorded GDF file. About 15 minutes.
 
-## 1. Start a data source
+## 1. The plan
+
+Two nodes: an acquisition that replays a GDF file as if it were an amplifier, and the visualizer that listens to its topic.
+
+```mermaid
+flowchart LR
+    ACQ["acquisition<br/>GDF replay"] -->|"/acquisition/neurodata"| VIZ["neuroviz<br/>Time Scope, Spectrum"]
+```
+
+## 2. Start a data source
 
 The visualizer shows a `NeuroFrame` topic, so first we need something that publishes it. We replay a recorded GDF
 file as if it were a live amplifier: 16 EEG channels at 512 Hz, sent 16 times per second.
@@ -42,7 +51,7 @@ The node publishes `/acquisition/neurodata` and `/acquisition/neurodata_info`.
     topics (16 EEG channels, 8 EMG channels and a trigger). It is made of sinusoids, so the spectrum shows sharp
     peaks instead of a realistic shape.
 
-## 2. Open the visualizer
+## 3. Open the visualizer
 
 In a second terminal:
 
@@ -62,7 +71,7 @@ areas:
 | **Channels** | which block of the frame to show (the **Source**) and which of its channels |
 | the **view** area (here *Time Scope*) | the controls of the active tab: they change when you change tab |
 
-## 3. Connect and watch the EEG
+## 4. Connect and watch the EEG
 
 The **Topic** box lists the `NeuroFrame` topics found in the system. Choose `/acquisition/neurodata` (open the list with the
 arrow) and press **Start**.
@@ -83,7 +92,7 @@ Two controls of the Time Scope set the view:
 - **Scale** is the amplitude of the traces (here ±100 µV);
 - **Window (s)** is how many seconds are on screen (1, 2, 5, 10, 20 or 30).
 
-## 4. Filter the signal between 2 and 40 Hz
+## 5. Filter the signal between 2 and 40 Hz
 
 Raw EEG contains slow drifts that make the traces wander. In the **Sensor Filters** box, at the bottom of the sidebar:
 
@@ -101,9 +110,9 @@ and **Reference** subtracts a single channel that you choose.
 !!! note "The filters are only a view"
     The filters of the Time Scope change what you see in that tab. They do **not** change the data published on the
     topic: the other nodes still receive the raw frames. To filter the signal for the rest of the pipeline you use the
-    [filter chain](../../packages/filters/index.md).
+    [filter chain](../filter-chain/index.md), the next tutorial.
 
-## 5. Look at a few channels
+## 6. Look at a few channels
 
 The **Channels** list shows every channel of the source, all selected. Click one to select only that one, and
 Ctrl-click to add others. Here we keep the three central channels, C3, Cz and C4:
@@ -113,7 +122,7 @@ Ctrl-click to add others. Here we keep the three central channels, C3, Cz and C4
 With fewer channels the traces are taller and easier to read. Select them all again by clicking the first and
 Shift-clicking the last.
 
-## 6. Add the Welch spectrum
+## 7. Add the Welch spectrum
 
 The `+` next to the tab opens a menu with the kinds of tab you can add:
 
@@ -149,7 +158,7 @@ The **Channels** list works in this tab too: select a few channels to compare th
 trade responsiveness for stability: a longer buffer resolves the frequencies better, and a longer average makes the
 curve steadier but slower to follow a change.
 
-## 7. The signal and the spectrum together
+## 8. The signal and the spectrum together
 
 Each tab can be placed in a pane. The four buttons at the top right of the tab area choose the arrangement: *Single panel*,
 *Two panels left/right*, *Two panels top/bottom* and *Equalize panel sizes*.
@@ -160,7 +169,7 @@ Press *Two panels left/right*: the visualizer puts the tabs in two panes.
 On the left the Time Scope with the 2-40 Hz filter, on the right the Welch spectrum between 2 and 40 Hz. Both are
 live. You can also drag a tab from a pane to the other, rename a tab with a double click and close it with its `x`.
 
-## 8. The trigger lines
+## 9. The trigger lines
 
 A frame carries, besides the EEG, digital trigger lines. Open the **Source** list in the **Channels** area: it lists the
 blocks of the frame, here the EEG and the trigger `TRI`.
@@ -197,4 +206,4 @@ are sent on the trigger line, the edges show when each event happened.
 - one tab shows the signal in time, another computes its Welch spectrum, and they can sit side by side;
 - the same panel shows the metadata of the stream and the trigger lines.
 
-Next: [Writing a filter plugin](../filter-plugin/index.md).
+Next: [Build a filter chain](../filter-chain/index.md).

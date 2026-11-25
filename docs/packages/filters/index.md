@@ -399,6 +399,22 @@ colcon build --packages-select ros2neuro_filters ros2neuro_filters_dc ros2neuro_
 colcon test --packages-select ros2neuro_filters
 ```
 
-## Check it in MATLAB
 
-Every filter above has a MATLAB function (`r2n_car`, `r2n_dc`, `r2n_laplacian`, `r2n_window`, `r2n_butterworth`) that gives the same numbers as the node, to a few float32 ULP or exactly. Copy it and use it in your analysis: see [Reproducibility in MATLAB](../../reproducibility/matlab.md).
+## MATLAB replication
+
+A chain is the filters applied in the order of `filters.chain`, each on the output of the one before. In MATLAB it is the same loop, with the functions of each filter (see the **MATLAB replication** of each filter page); `check_filters_chains` in [`ros2neuro_devel_test`](../devel-test.md) reads the same yaml the node reads, redoes the chain and draws MATLAB and ros2neuro on top of each other, with their difference. [Download the MATLAB functions](../../reproducibility/download.md).
+
+```matlab
+addpath('ros2neuro_devel_test/matlab');
+y = single(x);                                          % x: [samples channels]
+y = r2n_dc(y, 32);                                      % dc
+y = r2n_butterworth(y, 'high', 4, 1, 512);              % hp
+y = r2n_butterworth(y, 'low', 4, 40, 512);              % lp
+y = r2n_car(y);                                         % car
+y = r2n_laplacian(y, '0 0 1 0 0; 2 3 4 5 6; 7 8 9 10 11; 12 13 14 15 16');
+y = r2n_window(y, 'hann', 32);                          % hann
+```
+
+## Tests of the whole stack
+
+[`ros2neuro_devel_test`](https://github.com/ros2neuro/ros2neuro_devel_test) (`filters/`) runs EVERY filter (dc, hp, lp, car, laplacian, hann, hamming, blackman, flattop) alone and three chains, and compares them with MATLAB (`butter` + `filter`, the native windows, `mean`) to a few ULP of float32, with one figure per filter (MATLAB and ros2neuro, and their difference). Run: `filters/single_filter/filters_single.launch.py` then `check_filters_single`; `filters/chain/filters_chain.launch.py` then `check_filters_chains`; the check is a MATLAB file you read from the top (see the README of that package).

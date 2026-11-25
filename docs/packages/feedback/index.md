@@ -145,7 +145,7 @@ Messages used:
 
 ## Example configuration
 
-The feedback of the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md) (`data/config/feedback_bars.yaml`). The `classes`, `rest_mode` and `thresholds` are in `layout.yaml`, which the launcher gives to the manager, control and the feedback alike.
+The feedback of the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md) (`feedback/bars2/config/feedback_bars.yaml`). The `classes`, `rest_mode` and `thresholds` are in `layout.yaml`, which the launcher gives to the manager, control and the feedback alike.
 
 
 ```yaml
@@ -194,3 +194,7 @@ Writing a plugin: derive from `Feedback`, register in a `plugins.xml` exported w
 `pluginlib_export_plugin_description_file(ros2neuro_feedback plugins.xml)`.
 
 Tests: `colcon test --packages-select ros2neuro_feedback`: the controller with a recording plugin (ids of the events other than the defaults, thresholds changed while running, the class a miss shows), the layout, the thresholds, the colors, the flow reader.
+
+## Tests of the whole stack
+
+[`ros2neuro_devel_test`](https://github.com/ros2neuro/ros2neuro_devel_test) (`feedback/ and pipeline/`) shows the wheel and the bars (2 and 4 classes) driven by the whole chain from a GDF. It is the test to run **on a new computer after installing**: if the window opens and moves through the trials, the install works. The `pipeline/` tests also check, in MATLAB, the flow that the window draws. Run: `feedback/wheel/feedback_wheel.launch.py` and `feedback/bars4/feedback_bars4.launch.py` (to be looked at); `pipeline/<name>/pipeline_<name>.launch.py` then `check_pipeline_<name>`; the check is a MATLAB file you read from the top (see the README of that package).

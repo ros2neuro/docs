@@ -1,12 +1,12 @@
-# Checking the EOG with frontal channels
+# Detect eye blinks (EOG)
 
 Eye blinks and eye movements produce large electrical deflections, the electro-oculogram (EOG), that the
 frontal EEG electrodes (**Fp1** and **Fp2**, just above the eyes) pick up much more strongly than anything the
 brain does. In a BCI they matter twice: they contaminate the signal, and a trial in which the subject blinked
 is often better discarded.
 
-In this tutorial you write a node that **detects blinks on Fp1 and Fp2** and publishes them as events. You also
-get a small simulator, so you can run everything without hardware and without frontal electrodes.
+**Goal.** Write a node that **detects blinks on Fp1 and Fp2** and publishes them as events (`Blink` and its end) on `/neuroevent`. You also get a small simulator,
+so you can run everything **without hardware** and without frontal electrodes, and see one event pair for every blink.
 
 **You will learn**
 
@@ -16,11 +16,9 @@ get a small simulator, so you can run everything without hardware and without fr
 - how this ties in with the stack: the blink is a `NeuroEvent` on `/neuroevent` (id `1024`, and `1024 + 32768` for its end), so the
   [recorder](../../packages/recorder/index.md) saves it next to the signal with no change.
 
-**You need** a built ROS2neuro workspace. Read the [power threshold tutorial](../power-threshold-event/index.md)
-first: this one builds on the same ideas.
+**You need** the [power threshold tutorial](../power-threshold-event/index.md): this one builds on the same ideas. About 30 minutes.
 
-The complete package is in the repository, under `docs/tutorials/eog-check/tutorial_eog_check/`, and it is
-the page includes its files, so the code below is the code that builds (with `colcon build` and `colcon test`).
+The complete package is in the repository, under `docs/tutorials/eog-check/tutorial_eog_check/`. The page includes its files, so the code below is the code that builds.
 
 ## 1. What a blink looks like
 
@@ -39,7 +37,7 @@ independent noise of the two electrodes.
     lateral channels (F7 and F8, or the dedicated EOG channels) rather than in Fp1 and Fp2. This tutorial detects
     blinks. See the exercises for the next step.
 
-## 2. The design
+## 2. The plan
 
 ```mermaid
 flowchart LR
@@ -72,49 +70,94 @@ tutorial_eog_check/
 └── launch/eog_demo.launch.xml
 ```
 
-## 4. The detector
+## 4. The detector, step by step
+
+We write `BlinkDetector`: a class that receives **one number per sample** (the mean of Fp1 and Fp2) and says when a blink starts and ends. It has no ROS in it.
+
+**The state.** The constructor turns times into samples. `baseline_tau_s` sets how slowly the baseline follows the signal, `release_s` how long the signal must stay quiet
+before the blink is over:
 
 ```cpp title="include/tutorial_eog_check/BlinkDetector.h"
---8<-- "eog-check/tutorial_eog_check/include/tutorial_eog_check/BlinkDetector.h"
+--8<-- "eog-check/tutorial_eog_check/include/tutorial_eog_check/BlinkDetector.h:constructor"
 ```
 
-Three details make it robust:
+**One sample in, one decision out.** Three details make it robust:
 
-- **Baseline.** A one-pole low-pass (`baseline_tau_s`, 2 s) follows the signal. The detector looks at the
-  *deviation* from it, so a constant offset (the test uses 5000 µV) or a slow drift is not a blink. The baseline
-  starts at the first sample to avoid a transient at startup.
-- **Frozen baseline during a blink.** While a blink is open the baseline stops moving. Otherwise it would follow
-  the blink and the deviation would shrink before the blink is over.
-- **Hysteresis and release time.** The blink starts at `threshold`, but it ends only when the deviation stays
-  under `threshold * hysteresis` for `release_s`. The waveform of a blink crosses zero and has ripples, and
-  without this rule one blink would produce several events.
+- **Baseline.** A one-pole low-pass (`baseline_tau_s`, 2 s) follows the signal. The detector looks at the *deviation* from it, so a constant offset (the test uses 5000 µV) or a slow
+  drift is not a blink. The baseline starts at the first sample to avoid a transient at startup.
+- **Frozen baseline during a blink.** While a blink is open the baseline stops moving. Otherwise it would follow the blink and the deviation would shrink before the blink is over.
+- **Hysteresis and release time.** The blink starts at `threshold`, but it ends only when the deviation stays under `threshold * hysteresis` for `release_s`. The waveform of a blink
+  crosses zero and has ripples, and without this rule one blink would produce several events.
 
 The detector uses the absolute value, because depending on the reference a blink can be positive or negative.
 
-## 5. The node
-
-```cpp title="src/eog_blink_node.cpp"
---8<-- "eog-check/tutorial_eog_check/src/eog_blink_node.cpp"
+```cpp
+--8<-- "eog-check/tutorial_eog_check/include/tutorial_eog_check/BlinkDetector.h:process"
 ```
 
-Things to notice:
+??? example "The complete header"
+    ```cpp
+    --8<-- "eog-check/tutorial_eog_check/include/tutorial_eog_check/BlinkDetector.h"
+    ```
 
-- **Sample-major access.** The value of channel `c` at sample `s` is `sensor.data[s * channels + c]`. The node
-  averages the frontal channels for every sample.
-- **Channels by label.** `channels: ["Fp1", "Fp2"]` is resolved once from `sensor.labels`. If a label is missing
-  the node says so and does nothing, instead of silently reading the wrong channel.
-- **The sampling rate comes from the frame.** The detector is created at the first frame, so the node works at
-  any rate.
-- **Sample-accurate time stamps.** Unlike the previous tutorial, the event is stamped with
-  `frame.header.stamp + s / samplerate`, the time of the sample that triggered it. A blink then lines up with
-  the signal in the recorded file.
-- **Event ids.** `1024` is the id this tutorial chooses for *Blink*: it is not an id of the stack, and its end follows the
-  *Off* convention, `1024 + 32768` ([event codes](../../concepts/protocols.md#event-codes)). No node of the stack reacts to
-  it: the recorder saves it, and a node of yours can listen to it (for example to discard a trial with a blink).
+## 5. The node, step by step
+
+The node is the thin ROS layer: it turns frames into the stream of numbers the detector wants, and the detector's answers into events.
+
+**Parameters and topics.** Everything has a default, so the node works without a YAML file. The threshold is in the unit of the signal (µV):
+
+```cpp title="src/eog_blink_node.cpp"
+--8<-- "eog-check/tutorial_eog_check/src/eog_blink_node.cpp:parameters"
+```
+
+```cpp
+--8<-- "eog-check/tutorial_eog_check/src/eog_blink_node.cpp:topics"
+```
+
+**Find the block and the frontal channels.** `channels: ["Fp1", "Fp2"]` is resolved once from `sensor.labels`. If a label is missing the node says so and does nothing, instead of silently
+reading the wrong channel. The detector is created at the first frame, because only then do we know the sampling rate, so the node works at any rate:
+
+```cpp
+--8<-- "eog-check/tutorial_eog_check/src/eog_blink_node.cpp:find"
+```
+
+```cpp
+--8<-- "eog-check/tutorial_eog_check/src/eog_blink_node.cpp:resolve"
+```
+
+**One value per sample.** The value of channel `c` at sample `s` is `sensor.data[s * channels + c]` (sample-major). The node averages the frontal channels for every sample:
+
+```cpp
+--8<-- "eog-check/tutorial_eog_check/src/eog_blink_node.cpp:average"
+```
+
+**Ask the detector, and stamp the event with the sample that caused it.** Unlike the previous tutorial, the event is stamped with `frame.header.stamp + s / samplerate`, the time of the
+sample that triggered it. A blink then lines up with the signal in the recorded file.
+
+```cpp
+--8<-- "eog-check/tutorial_eog_check/src/eog_blink_node.cpp:detect"
+```
+
+```cpp
+--8<-- "eog-check/tutorial_eog_check/src/eog_blink_node.cpp:publish"
+```
+
+**Event ids.** `1024` is the id this tutorial chooses for *Blink*: it is not an id of the stack, and its end follows the *Off* convention, `1024 + 32768`
+([event codes](../../concepts/protocols.md#event-codes)). No node of the stack reacts to it: the recorder saves it, and a node of yours can listen to it (for example to discard a trial
+with a blink).
+
+```cpp
+--8<-- "eog-check/tutorial_eog_check/src/eog_blink_node.cpp:count"
+```
+
+??? example "The complete node"
+    ```cpp
+    --8<-- "eog-check/tutorial_eog_check/src/eog_blink_node.cpp"
+    ```
 
 ## 6. The simulator
 
-Real recordings are not always at hand, and the test GDF of the workspace has no frontal electrodes. The package
+We need something to detect. Real recordings are not always at hand, and the test GDF of the workspace has no frontal electrodes. The package
 includes a small simulator:
 
 ```cpp title="src/fake_eog_node.cpp"
@@ -126,6 +169,8 @@ four seconds, large and in phase on Fp1/Fp2 and ten times smaller elsewhere. It 
 right: **a tiny publisher with known content lets you test a node without any hardware**.
 
 ## 7. The test
+
+Before running anything, check the detector on signals whose answer we know.
 
 ```cpp title="test/test_blink_detector.cpp"
 --8<-- "eog-check/tutorial_eog_check/test/test_blink_detector.cpp"
@@ -230,4 +275,11 @@ the detector is following.
 4. Combine this node with the [power threshold](../power-threshold-event/index.md) node: publish an event only
    when a blink *and* a rise of the frontal power occur together.
 
-Next: [Showing the feedback in virtual reality](../vr-feedback/index.md).
+## What you learned
+
+- a blink is a large deflection with the same polarity on Fp1 and Fp2, so their mean is a good blink signal;
+- a baseline and a hysteresis turn a noisy signal into clean start and end events;
+- an event can be stamped with the exact sample that caused it, so it lines up with the recording;
+- a tiny publisher with known content lets you test a node without any hardware.
+
+Next: [Feedback in virtual reality (WebXR and Unity)](../vr-feedback/index.md).
