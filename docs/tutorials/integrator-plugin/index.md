@@ -205,7 +205,7 @@ ros2 param set /integrator integrator.params.window 8
 ## 8. Use it in a full pipeline
 
 The same plugin works in the pipeline of the [hardware-free tutorial](../hardware-free-pipeline/index.md). In the `config/` folder of the launcher you run (for example
-`feedback/bars2/config/integrator_exponential.yaml` in [`ros2neuro_devel_test`](../../packages/devel-test.md)) replace the type and the parameter of the plugin:
+`feedback/bars2/config/integrator_exponential.yaml` in [`ros2neuro_devel_test`](../../reproducibility/packages/index.md)) replace the type and the parameter of the plugin:
 
 ```yaml
         integrator.type: tutorial::integrator::MovingAverage

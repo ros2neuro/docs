@@ -48,21 +48,6 @@ To disable the examples:
 cmake -S . -B build -DNEURODRAW_BUILD_EXAMPLES=OFF
 ```
 
-## Test
-
-```bash
-ctest --test-dir build --output-on-failure
-```
-
-The test suite currently covers:
-
-- shape geometry and transforms
-- hit testing and grouping
-- tween progression
-- text and image layout metrics
-- `neurochrono` timing utilities
-- a CMake package-consumer smoke test
-
 ## Install
 
 ```bash

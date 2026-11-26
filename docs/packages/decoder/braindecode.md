@@ -1,4 +1,4 @@
-# Braindecode decoder (plugin)
+# Braindecode decoder
 
 !!! info ""
     Package: [`ros2neuro_decoder_braindecode`](https://github.com/ros2neuro/ros2neuro_decoder_braindecode) · part of [Decoder](index.md)
@@ -85,47 +85,7 @@ Of the plugin (`decoder.params.*`):
         decoder.params.device: cpu
 ```
 
-The whole chain (GDF replay, filters 4-14 Hz, buffer of 512 samples, this plugin, integrator, control) is the test `decoder/shallow/` of [`ros2neuro_devel_test`](../devel-test.md):
-MATLAB checks the filter and the window the network reads, and `check_decoder_shallow.py` compares the probabilities with PyTorch:
-
-```bash
-cd ros2neuro_devel_test
-ros2 launch ros2neuro_devel_test decoder_shallow.launch.py   # then check_decoder_shallow in MATLAB
-```
-
 ## Dependencies
 
 - ROS 2: [`ros2neuro_decoder`](index.md), [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs), `pluginlib`, `rclcpp`; build: `pybind11-dev`, `python3-dev`.
 - Python (not Debian packages): `pip install -r requirements.txt` (torch, braindecode, numpy, PyYAML).
-
-## Tests
-
-```bash
-colcon test --packages-select ros2neuro_decoder_braindecode && colcon test-result --verbose
-```
-
-`test/test_braindecode_decoder.cpp` loads the plugin through pluginlib, as the node does:
-
-- **the probabilities of the model in plain Python**: two fixed windows (`test/reference_input_*.csv`) and the probabilities that
-  the model gives for them outside ROS 2 (`test/reference_output.csv`, about 0.78 and 0.32 for BOTH_HANDS: a channel in the wrong place
-  would change them), tolerance 1e-5; regenerate them with `python3 test/make_reference.py`;
-- channels taken by label (reversed order, an extra channel: same output);
-- a missing channel, a short window, a spectrum, no labels: an error, not a wrong number;
-- the model given as the manifest (what the node passes) or as the folder: the same model;
-- no model or a folder that does not exist: `configure` false, no exception.
-
-## Python replication
-
-A deep network cannot be redone with the MATLAB functions: it is replayed in **Python**, with braindecode / PyTorch written outside the plugin, and compared with the probabilities ROS 2 published (`check_decoder_shallow.py` and `check_pipeline_dl.py` in [`ros2neuro_devel_test`](../devel-test.md)). See [Reproducibility in Python](../../reproducibility/python.md).
-
-```python
-import importlib, torch, yaml
-manifest = yaml.safe_load(open('manifest.yaml'))
-dec = manifest['decoder']
-module, name = dec['target'].rsplit('.', 1)
-net = getattr(importlib.import_module(module), name).from_config(dec['config'])
-net.load_state_dict(torch.load('params.pt', map_location='cpu', weights_only=True))
-net.eval()
-with torch.no_grad():                      # window: [1, channels, samples], the channels of the manifest picked by label
-    p = torch.softmax(net(window).double(), dim=1)      # probabilities, one per class
-```

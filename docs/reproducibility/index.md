@@ -1,40 +1,39 @@
 # Reproducibility
 
-Everything ROS2neuro computes online can be **replayed offline**, from the same recording, and compared with what the nodes published. That is how the stack is tested, and it is what you use when you want to **check a result, reproduce a run, or write the analysis of an experiment** with the same numbers the real-time system gave.
+**Reproducibility** means being able to take a recording, run it again **offline**, step by step, and obtain the numbers ROS2neuro computed online. If you can redo every stage on your own, you can check a result, repeat a run, find where two runs diverge and write the analysis of an experiment with the same numbers the real-time system gave. It is also how the stack is tested: every stage is compared with its replica, and the comparison is repeated on the same data every time you run it.
+
+## What is reproduced
+
+The **whole chain**, from the samples of the amplifier to the value that moves the feedback window:
+
+```text
+raw EEG → filters → processing (Welch, FFT, spectrogram, FBCSP) → decoder → integrator → control (Hit / Miss / Timeout)
+```
+
+Every stage has a **test** that replays a GDF file through the real nodes and a **check** that redoes the stage offline and compares: PASS / FAIL for every line, and a figure with the replica and ros2neuro on top of each other and their difference. The figures of the integrator and of the control flow also show the threshold and every trial as a band (green Hit, red Miss, grey Timeout).
+
+## In which language
+
+The replication is written in **two languages**, with the same function names, so you can use the one you work in:
 
 | | MATLAB | Python |
 |---|---|---|
-| What | the `r2n_*` functions: one per stage (filters, Welch / FFT / spectrogram, FBCSP, decoders, integrators), built on the **native MATLAB functions** | the checks that replay the chain with scipy, numpy and **PyTorch / braindecode** (the deep-learning model) |
-| Page | [Reproducibility in MATLAB](matlab.md) | [Reproducibility in Python](python.md) |
-| Use it for | every model that is not a deep network | the deep-learning decoders, and any step you prefer to replay in Python |
+| Functions | one `r2n_*.m` per stage, built on the **native MATLAB functions** (`butter`, `pwelch`, `hann`, ...) | the same `r2n_*.py`, built on numpy and scipy |
+| Models it can open | the `.r2nd` of the decoders (LDA, QDA, SVM, Gaussian) and the numbers of a scikit-learn LDA | the `.r2nd`, **any scikit-learn model** (skops) and **any deep-learning model** (braindecode / PyTorch) |
+| Use it for | every model that is not a neural network | everything, in particular the machine-learning and deep-learning decoders |
 
-**[Download and use the functions](download.md)**: the MATLAB zip and the Python script, and how to run them on your own data.
+## What is in this menu
 
-## What is tested
+| Page | What you find |
+|---|---|
+| [Packages](packages/index.md) | the tests of every package and plugin, one page per package (acquisition, filters, processing, decoder, integrator, control, manager, feedback, visualizer), how a test is built and run, how close each stage is to its replica |
+| [Pipeline](pipeline.md) | the **complete** pipelines (QDA, LDA, FBCSP + LDA, deep learning) with the feedback window, the figure of the flow and how to replay it step by step in MATLAB and in Python |
+| [MATLAB](matlab.md) | the table of the `r2n_*.m` functions: click a name and its dropdown opens, with the explanation of what it does, how it matches the plugin and its code |
+| [Python](python.md) | the same table for `r2n_*.py`, with the loaders of the `.r2nd`, scikit-learn and braindecode models |
+| [Download](download.md) | the two zips and how to run the functions on your own data |
 
-The package [`ros2neuro_devel_test`](../packages/devel-test.md) replays a GDF file through the real nodes, saves what they publish and redoes the same computation offline:
+## Where to start
 
-* **stage by stage**: acquisition (XDF), every filter, every processing plugin, the decoders, the integrators;
-* **whole pipelines**, the ones you would run in an experiment, from the raw samples to the flow that drives the feedback window: QDA, LDA, FBCSP + LDA (MATLAB) and a deep-learning model (Python).
-
-Every check prints PASS / FAIL and draws, for every step, MATLAB (or Python) and ros2neuro on top of each other and their difference, with linked time axes. The figures of the integrator and of the control flow also show the threshold and every trial as a band (green Hit, red Miss, grey Timeout). See [how to run the tests](../packages/devel-test.md#run-a-test).
-
-## Example: the final figure of a pipeline
-
-The last step of every `pipeline/` check is the **flow that drives the feedback window**: the value of every class over time, drawn as the window draws it. This is the figure of `pipeline/qda/` (the whole chain: raw, Laplacian, band-pass, Welch, QDA, integrator, control), with MATLAB (solid) and ros2neuro (dashed) on top of each other and, below, their difference (at most 2e-7):
-
-![Control flow of the QDA pipeline: every class, its threshold and the outcome of every trial](files/img/pipeline_qda_control_flow.png)
-
-How to read it:
-
-* each **coloured band** is one trial, from CFeedback to its outcome, labelled with the outcome and the cue; the blue curve is class 773, the red one class 771, and the dash-dot line is the **threshold** (0.7) that a class has to reach;
-* **Hit** (green): the curve of the **cued class** reaches its threshold. Here "Hit (cue 773)": the blue curve climbs to 0.7 and the trial ends there;
-* **Miss** (red): the curve of the **other class** reaches its threshold first. Here "Miss (cue 773)": it is the red curve (class 771) that reaches 0.7;
-* **Timeout** (grey): **no class reaches a threshold** before the time limit (10 s): both curves stay below 0.7 until the end of the band;
-* where the flow does not exist (before CFeedback and after the outcome) the line is broken, because control sends nothing.
-
-So the figure shows, with the real numbers of the run, that the decision of every trial follows the rule of the protocol, and that ros2neuro and MATLAB agree at every point: the outcome of every trial is also recomputed from the integrated values and compared with the one control wrote (a line of the check).
-
-## Where the replication of each plugin is
-
-The page of every plugin (filters, processing, decoders, integrators, control) has a **MATLAB replication** section with the code that reproduces it.
+* To **check a plugin** you changed: [Packages](packages/index.md), the page of its package.
+* To **see the whole chain** agree with the replica, and the figure it ends with: [Pipeline](pipeline.md).
+* To **reuse a function in your own analysis**, or open a trained model offline: [MATLAB](matlab.md) or [Python](python.md), then [Download](download.md).

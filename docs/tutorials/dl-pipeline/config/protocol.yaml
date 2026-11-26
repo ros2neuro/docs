@@ -1,0 +1,47 @@
+# Evaluation protocol. Two nodes read this file; the layout (classes, rest_mode, thresholds: shared by every node) comes from layout.yaml:
+#
+#   /manager  runs the trials (random order of the classes, Start, Fixation, cue, CFeedback) and waits for the trial to be closed.
+#             Its durations are here (the ones of the continuous feedback are /control's).
+#   /control  ros2neuro_control with the plugin Feedback: it reads the integrator (NeuroPrediction), knows the thresholds, closes the
+#             continuous feedback and writes the outcome (Hit / Miss / Timeout) on the event bus (/neuroevent), and builds the flow that
+#             the feedback follows. The manager closes the outcome after the boom and starts the next trial.
+#
+# evaluation: the real classifier output drives the feedback; a trial ends on the first threshold touched (Hit / Miss) or
+# after duration.timeout ms (Timeout).
+
+/manager:
+    ros__parameters:
+        plugin: ros2neuro::manager::Synchronous
+        event_topic: /neuroevent
+        trials: [2, 2]                  # one value per class of `classes`, in the same order
+        protocol_ended_topic: /protocol_ended
+        shutdown_on_end: true
+        # durations in ms
+        duration.begin: 15000                 # wait before the first trial (the deep-learning decoder takes a while to load)
+        duration.start: 1000
+        duration.fixation: 2000
+        duration.cue: 1000
+        duration.boom: 1000                  # how long the outcome is shown: the manager closes it that much after it
+        duration.iti: 100
+        duration.end: 2000
+        # longest wait for the outcome after CFeedback: nothing -> the pipeline is broken
+        duration.outcome_wait: 60000
+
+/control:
+    ros__parameters:
+        plugin: ros2neuro::control::Feedback
+        protocol: evaluation
+        input_topic: /integrated/raw                       # NeuroPrediction of the integrator
+        # the integrator creates its reset service as the relative name "reset"
+        reset_service: /reset
+        event_topic: /neuroevent
+        control_topic: /control_feedback/probabilities    # the flow: values and thresholds for the feedback
+        # the continuous feedback (control's own parameters; the manager does not know them):
+        #   evaluation: a trial ends on the first threshold touched, or after `timeout` ms (Timeout)
+        duration.timeout: 10000
+        #   (feedback_min / feedback_max are the calibration's: kept here for when the protocol changes)
+        duration.feedback_min: 4000
+        duration.feedback_max: 5500
+        # REQUIRED when rest_mode is timeout in layout.yaml (a rest in `classes` with no classifier output): seconds the
+        # rest must last without touching a threshold to be a Hit. Independent from duration.timeout.
+        # rest_timeout: 6.0

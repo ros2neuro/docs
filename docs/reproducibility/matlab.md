@@ -20,100 +20,369 @@ ros2neuro_devel_test/
 └── acquisition/ filters/ processing/ decoder/ integrator/ pipeline/ feedback/    one folder per test: its launcher (.launch.py), its config/ and its check_*.m
 ```
 
-## What was checked, and how close it is
+## The functions
 
-| Stage | ROS 2 package | MATLAB function | Compared with | Largest difference |
-|---|---|---|---|---|
-| CAR | [`filters_car`](../packages/filters/car.md) | `r2n_car` | the node, 327 680 values | 2 ULP |
-| DC | [`filters_dc`](../packages/filters/dc.md) | `r2n_dc` | the node, 327 680 values | 4 ULP |
-| Laplacian | [`filters_laplacian`](../packages/filters/laplacian.md) | `r2n_laplacian` | the node, 92 160 values | **0** |
-| Hann, Hamming, Blackman, Flattop | [`filters_hann`](../packages/filters/hann.md) and the others | `r2n_window` | the node, 327 680 values each | **0** |
-| Butterworth low-pass 40 Hz | [`filters_butterworth`](../packages/filters/butterworth.md) | `r2n_butterworth` | the node, 327 680 values | **0** |
-| Butterworth high-pass 1 Hz | [`filters_butterworth`](../packages/filters/butterworth.md) | `r2n_butterworth` | the node, 327 680 values | 0.25 ULP |
-| Filter chain `dc > hp > lp > car > hann` | [`ros2neuro_filters`](../packages/filters/index.md) | the five above, one after the other | the node, 327 680 values | 5 ULP |
-| Welch PSD (ln) | [`processing_spectral`](../packages/processing/spectral.md) | `r2n_welch` | the processing test, on the raw frames | **0** |
-| Gaussian decoder | [`decoder_gaussian`](../packages/decoder/gaussian.md) | `r2n_gaussian_read`, `r2n_gaussian_predict` | the decoder test, 1794 predictions | 1.5e-7 |
-| Exponential integrator | [`integrator_exponential`](../packages/integrator/exponential.md) | `r2n_integrator_exponential` | the integrator test, 1794 values | **0** |
-| LDA decoder | [`decoder_lda`](../packages/decoder/lda.md) | `r2n_linear_read`, `r2n_linear_predict` | the node, 60 features, made-up model | 6e-8 |
-| SVM decoder (linear) | [`decoder_svm`](../packages/decoder/svm.md) | `r2n_linear_read`, `r2n_linear_predict` | the node, 60 features, made-up model | 6e-8 |
-| QDA decoder | [`decoder_qda`](../packages/decoder/qda.md) | `r2n_qda_read`, `r2n_qda_predict` | the node, 60 features, made-up model | 1.5e-8 |
-| Buffer integrator, hard and soft | [`integrator_buffer`](../packages/integrator/buffer.md) | `r2n_integrator_buffer` | the node, 120 predictions each | < 1 ULP |
-| FFT (amplitude) | [`processing_spectral`](../packages/processing/spectral.md) | `r2n_fft` | the plugin, 33 windows | < 1 ULP |
-| Spectrogram (dB) | [`processing_spectral`](../packages/processing/spectral.md) | `r2n_spectrogram` | the plugin, 25 buffers of 7 segments | < 1 ULP |
-| Hit / Miss / Timeout | [`control_feedback`](../packages/control/feedback.md) | `r2n_threshold_winner` | the integrator test, 8 trials | 8 of 8 equal |
-| Resets of the integrator | [`integrator`](../packages/integrator/index.md) | `r2n_integrator_exponential`, `r2n_integrator_buffer` | the integrator test: the neutral message of every reset | 8 resets, one per CFeedback |
+Every stage of the chain has its function. Click a name to read what it does, how it reproduces the plugin and its code.
 
-## Whole pipelines
+| Function | What it reproduces | Takes → gives | Plugin page |
+|---|---|---|---|
+| **Filters** | | | |
+| [`r2n_car`](#r2n_car) | CAR: common average reference | `[samples x channels]` → same shape | [filters_car](../packages/filters/car.md) |
+| [`r2n_dc`](#r2n_dc) | DC: remove the mean of each frame | `[samples x channels]`, `block` (32) → `[floor(samples/block)*block x channels]` | [filters_dc](../packages/filters/dc.md) |
+| [`r2n_laplacian`](#r2n_laplacian) | Laplacian: spatial filter | `[samples x channels]`, `layout` → same shape | [filters_laplacian](../packages/filters/laplacian.md) |
+| [`r2n_window`](#r2n_window) | Hann, Hamming, Blackman, Flattop windows | `[samples x channels]`, `name`, `block` (32) → `[.. x channels]`, window | [filters_hann, filters_hamming, filters_blackman, filters_flattop](../packages/filters/hann.md) |
+| [`r2n_butterworth`](#r2n_butterworth) | Butterworth: low-pass and high-pass | `[samples x channels]`, `type`, `order`, `fc`, `fs` → `y`, `b`, `a` | [filters_butterworth](../packages/filters/butterworth.md) |
+| **Processing** | | | |
+| [`r2n_welch`](#r2n_welch) | Welch: ln of the power spectral density | `[samples x channels]` buffer, the Welch parameters → `[frequencies x channels]` | [processing_spectral (`Welch`)](../packages/processing/spectral.md) |
+| [`r2n_fft`](#r2n_fft) | FFT: amplitude spectrum | `[window_length x channels]`, `fs`, window, `apply_log` → `[bins x channels]`, frequencies | [processing_spectral (`FFT`)](../packages/processing/spectral.md) |
+| [`r2n_spectrogram`](#r2n_spectrogram) | Spectrogram | `[analysis_length x channels]`, `fs`, `window_length`, `overlap`, window, `apply_log` → `[segments x bins x channels]`, frequencies, times | [processing_spectral (`Spectrogram`)](../packages/processing/spectral.md) |
+| [`r2n_spectral_window`](#r2n_spectral_window) | Window of FFT and spectrogram | name, `n` → window of `n` values | [processing_spectral](../packages/processing/spectral.md) |
+| [`r2n_fbcsp`](#r2n_fbcsp) | FBCSP features | one `[buffer x channels]` per band, `W` `[bands x components x channels]` → one feature vector | [processing_fbcsp](../packages/processing/fbcsp.md) |
+| [`r2n_fbcsp_weights`](#r2n_fbcsp_weights) | CSP filters as an array | flat `filters`, bands, components, channels → `[bands x components x channels]` | [processing_fbcsp](../packages/processing/fbcsp.md) |
+| **Decoders** | | | |
+| [`r2n_softmax`](#r2n_softmax) | Softmax of the scores | scores `[K]` → probabilities `[K]` | [decoder_lda, decoder_qda, decoder_svm](../packages/decoder/index.md) |
+| [`r2n_linear_read`](#r2n_linear_read) | Read the `.r2nd` of LDA and SVM | `.r2nd` file → model | [decoder_lda, decoder_svm](../packages/decoder/lda.md) |
+| [`r2n_linear_predict`](#r2n_linear_predict) | LDA and linear SVM | model, PSD feature → probabilities, scores | [decoder_lda, decoder_svm](../packages/decoder/lda.md) |
+| [`r2n_qda_read`](#r2n_qda_read) | Read the `.r2nd` of QDA | `.r2nd` file → model | [decoder_qda](../packages/decoder/qda.md) |
+| [`r2n_qda_predict`](#r2n_qda_predict) | QDA | model, PSD feature → probabilities, scores | [decoder_qda](../packages/decoder/qda.md) |
+| [`r2n_gaussian_read`](#r2n_gaussian_read) | Read the `.r2nd` of the Gaussian decoder | `.r2nd` file → model | [decoder_gaussian](../packages/decoder/gaussian.md) |
+| [`r2n_gaussian_predict`](#r2n_gaussian_predict) | Gaussian decoder | model, PSD feature → probabilities | [decoder_gaussian](../packages/decoder/gaussian.md) |
+| [`r2n_sklearn_lda_read`](#r2n_sklearn_lda_read) | Read the numbers of a scikit-learn LDA | `lda_weights.yaml` → model | [decoder_sklearn](../packages/decoder/sklearn.md) |
+| [`r2n_sklearn_lda_predict`](#r2n_sklearn_lda_predict) | scikit-learn LDA | model, feature → probabilities | [decoder_sklearn](../packages/decoder/sklearn.md) |
+| **Integrator and control** | | | |
+| [`r2n_integrator_exponential`](#r2n_integrator_exponential) | Exponential integrator | `[frames x K]` probabilities, `alpha`, reset frames → `[frames x K]` | [integrator_exponential](../packages/integrator/exponential.md) |
+| [`r2n_integrator_buffer`](#r2n_integrator_buffer) | Buffer integrator | `[frames x K]` probabilities, `buffer_size`, `increment`, reset frames, `init_val` → `[frames x K]` | [integrator_buffer](../packages/integrator/buffer.md) |
+| [`r2n_threshold_winner`](#r2n_threshold_winner) | Which class touched its threshold | thresholds, values → winning class | [control_feedback](../packages/control/feedback.md) |
+| **Helpers** | | | |
+| [`r2n_yaml_value`](#r2n_yaml_value) | Read a parameter from a yaml file | file, key → value |  |
 
-The `pipeline/` tests chain every step, from the raw samples to the flow that drives the feedback window, and compare each one with ROS 2 (largest difference over about 1 800 messages and 58 000 samples; the filters are in the units of the signal, the later steps in the units of the quantity):
+Click a name to jump to its dropdown; it opens by itself. Every dropdown starts with the explanation and ends with the code, which is the file of the zip.
 
-| Step | QDA | LDA | FBCSP + LDA | Tolerance |
-|---|---|---|---|---|
-| raw | 0 | 0 | 0 | 0 |
-| Laplacian | 0.0029 | 0.0029 | | 0.016 |
-| band-pass (hp 1 Hz, lp 60 Hz) | 0.00098 | 0.00098 | | 0.031 |
-| band chains of FBCSP (8-12 Hz, 16-20 Hz) | | | 0 and 6e-8 | 0.031 |
-| Welch PSD (ln) | 2.6e-4 | 2.6e-4 | | 1e-3 |
-| FBCSP feature | | | 1.2e-7 | 1e-3 |
-| decoder probabilities | 2.6e-5 | 2.5e-5 | 0 | 1e-3 |
-| integrator | 1e-6 | 2.5e-6 | 0 | 1e-3 |
-| control flow (what the window draws) | 2e-7 | 3e-7 | 2e-7 | 1e-3 |
+### Filters
 
-The deep-learning pipeline is checked in [Python](python.md): band-pass 5e-4, window 3e-4, network 1.4e-6, integrator 5e-7, flow 3e-7. The later steps have an absolute tolerance because the rounding of the filters is amplified by the `ln` of the power; a step fed with the ROS 2 output of the step before (the integrator alone, a decoder on the ROS PSD) agrees to a few ULP.
+<a id="r2n_car"></a>
 
-**ULP** is the distance between two neighbouring float32 numbers. The EEG in the test files is of the order of 10 000 µV, where one
-ULP is 0.001 µV: a difference of 2 ULP is the last bit of the number, not a difference of method. The differences of the decoders and
-the integrators are in the units of the quantity (probabilities and integrated values are between 0 and 1, so 1e-7 is one ULP there).
-The FFT and the spectrogram compute in double, like the node, and round to float32 only at the end: they give the same float32 number.
+??? example "r2n_car.m: CAR: common average reference"
+    **Reproduces:** [filters_car](../packages/filters/car.md)
+    **Takes → gives:** `[samples x channels]` → same shape
 
-!!! note "How the tolerance is chosen"
-    The check does not use one fixed number. It accepts a few ULP **of the largest input sample** (4 for the single-stage filters,
-    8 for the DC and the chain, where the mean and the cascaded stages add rounding). The input sets the scale because the filters add
-    values of that size even when what they output is much smaller. A fixed `1e-3` would be right for a signal around 10 000 and
-    wrong for any other.
+    Subtracts from every sample the mean of all the channels at that instant, so what the channels have in common (a drift, the reference) disappears. The plugin does it row by row on each `NeuroFrame`; the function does it on the whole signal at once, because the operation has no memory.
 
-The tests are useful as regression tests too: if you change a plugin and the numbers move, the line of that stage turns to
-**FAIL** with the largest difference and where it is.
+    **How close:** The plugin adds the channels in float32, one after the other; `mean` adds them in another order. The result can differ by 1-2 ULP of the input.
 
-## Run the checks
+    ```matlab
+    --8<-- "files/r2n/r2n_car.m"
+    ```
 
-You need MATLAB R2019b or newer with the **Signal Processing Toolbox**: the filters are written with the native functions of MATLAB
-(`butter` + `filter`, `pwelch`, `hann`, `hamming`, `blackman`, `flattopwin`, `mean`, `var`), so that the check does not depend on how ROS 2 designs
-its filters. Reading a GDF (the tests) needs [BIOSIG](https://biosig.sourceforge.net).
+<a id="r2n_dc"></a>
 
-Each stage has a test in [`ros2neuro_devel_test`](../packages/devel-test.md): `acquisition/`, `filters/` (each filter alone, and three chains), `processing/`
-(Welch, FFT, spectrogram, buffer, FBCSP), `decoder/` (QDA, LDA, Gaussian, LDA on FBCSP, ShallowNet) and `integrator/` (whole pipelines to the exponential and the buffer integrator) and `pipeline/` (the complete pipeline with the feedback window: QDA, LDA, FBCSP + LDA, and a deep-learning model checked in Python). A test replays a GDF
-file through the nodes of its stage, with the manager running a protocol so that the session ends by itself, and saves what the nodes published as CSV; its
-`check_*.m` redoes the stage in MATLAB from the samples of the same GDF and compares:
+??? example "r2n_dc.m: DC: remove the mean of each frame"
+    **Reproduces:** [filters_dc](../packages/filters/dc.md)
+    **Takes → gives:** `[samples x channels]`, `block` (32) → `[floor(samples/block)*block x channels]`
 
-```bash
-# in the container (about 2 minutes; the session ends by itself)
-ros2 launch ~/ros2neuro_ws/src/ros2neuro_devel_test/decoder/qda/decoder_qda.launch.py
-```
-```matlab
-% in MATLAB, in the folder of the test
-cd ros2neuro_devel_test/decoder/qda
-check_decoder_qda
-```
+    Cuts the signal in blocks of `block` samples (one `NeuroFrame`), and subtracts from every channel the mean of **its** block. It is a high-pass with no memory: the mean is recomputed on every frame. The samples at the end that do not fill a block are dropped, as the node never gets them.
 
-```text
-  PASS  input: the raw frames are the samples of the file 58016 samples
-  PASS  decoder qda (probabilities)     1.19e-07 (tolerance 4.77e-07)  1798 predictions, 3596 values, 1 ULP of the largest value 1
-  PASS  number of trials                8 Start events, protocol trials [4 4]
-  ...
-check_decoder_qda: 12 checks, 12 passed, 0 failed, 0 known issue(s)
-```
+    **How close:** The plugin sums the block in float32 with Eigen; `mean` sums in another order: up to 4 ULP of the input.
 
-Every stage is checked **on its own**, from what ROS 2 published for the stage before (the PSD that a decoder read, the predictions that an integrator
-integrated), so a rounding of a few ULP of an input does not grow along the chain and the line of a stage says whether *that* stage agrees. The processing plugins are
-checked on the raw frames, which are the samples of the GDF. A message carries the stamp of the last frame it was made from, which is how the check pairs it with the
-window of samples. Each check was also run with a parameter changed on the MATLAB side (a cut-off, an overlap, an alpha) and it fails, as it must.
+    ```matlab
+    --8<-- "files/r2n/r2n_dc.m"
+    ```
 
-!!! note "The reset can be one frame earlier"
-    The rule is that ROS 2 integrates the frame that contains the CFeedback event and resets after it. The events and the values travel on different
-    topics and their order is not guaranteed, so now and then the event overtakes the frame and the reset is one frame earlier. MATLAB cannot know the order, so the
-    integrator test takes the resets **as ROS 2 made them** (the neutral messages the integrator publishes, which repeat the stamp of the message before) to verify the
-    arithmetic, and checks that there is one per CFeedback event and that each is within two frames of its event.
+<a id="r2n_laplacian"></a>
+
+??? example "r2n_laplacian.m: Laplacian: spatial filter"
+    **Reproduces:** [filters_laplacian](../packages/filters/laplacian.md)
+    **Takes → gives:** `[samples x channels]`, `layout` → same shape
+
+    Builds the matrix of the filter from the layout of the electrodes (a grid of channel numbers, `0` where there is no electrode): column *c* has +1 on channel *c* and −1/n on each of its *n* neighbours (left, right, up, down). The signal is then multiplied by that matrix: every channel minus the mean of its neighbours. `layout` is the matrix or the text of the yaml parameter `"1 2 3; 4 5 6; 7 8 9"`, so you can paste the parameter of your launch file.
+
+    **How close:** One matrix product in float32; the order of the additions is not the one of Eigen: a few ULP of the input at most.
+
+    ```matlab
+    --8<-- "files/r2n/r2n_laplacian.m"
+    ```
+
+<a id="r2n_window"></a>
+
+??? example "r2n_window.m: Hann, Hamming, Blackman, Flattop windows"
+    **Reproduces:** [filters_hann, filters_hamming, filters_blackman, filters_flattop](../packages/filters/hann.md)
+    **Takes → gives:** `[samples x channels]`, `name`, `block` (32) → `[.. x channels]`, window
+
+    The four window filters are the same operation with a different window: every block of `block` samples (one `NeuroFrame`) is multiplied, sample by sample, by the same window. The windows are the **symmetric** ones (denominator N−1, the one the plugins use) and are rounded to float32 like the plugins. Returns the signal and the window.
+
+    **How close:** A product of two float32 numbers is exact in the arithmetic of both: the result is identical to the node (difference 0).
+
+    ```matlab
+    --8<-- "files/r2n/r2n_window.m"
+    ```
+
+<a id="r2n_butterworth"></a>
+
+??? example "r2n_butterworth.m: Butterworth: low-pass and high-pass"
+    **Reproduces:** [filters_butterworth](../packages/filters/butterworth.md)
+    **Takes → gives:** `[samples x channels]`, `type`, `order`, `fc`, `fs` → `y`, `b`, `a`
+
+    Designs the Butterworth filter of the given order and cut-off (normalized to the Nyquist frequency) and runs it **causally** (forward only, as it must be online) over the whole signal, keeping the state from one sample to the next. The plugin does the same frame after frame with the state kept between frames, which gives the same numbers as one pass over the whole signal. The computation is in double, the result is rounded to float32 as the plugin publishes it. A band-pass is two of them, one after the other (high-pass at the lower edge, low-pass at the upper).
+
+    **How close:** Same design, same recursion: the difference is 0 for the low-pass and 0.25 ULP for the 1 Hz high-pass.
+
+    ```matlab
+    --8<-- "files/r2n/r2n_butterworth.m"
+    ```
+
+### Processing
+
+<a id="r2n_welch"></a>
+
+??? example "r2n_welch.m: Welch: ln of the power spectral density"
+    **Reproduces:** [processing_spectral (`Welch`)](../packages/processing/spectral.md)
+    **Takes → gives:** `[samples x channels]` buffer, the Welch parameters → `[frequencies x channels]`
+
+    Splits the buffer in segments of `length` samples every `length - overlap`, multiplies each by the window, takes the power spectrum of each and averages them: that is Welch's PSD (one-sided, in power/Hz). The plugin publishes `ln(max(PSD, 1e-12))` at the bins of the frequencies you ask for (`freqs`, in Hz, multiples of `fs/length`). That is what a PSD decoder (QDA, LDA, Gaussian) reads: all the channels, all the frequencies, channel by channel.
+
+    **How close:** The window must be the symmetric one (`r2n_spectral_window`), with no detrending, `nfft = length`: with these choices the difference is 0.
+
+    ```matlab
+    --8<-- "files/r2n/r2n_welch.m"
+    ```
+
+<a id="r2n_fft"></a>
+
+??? example "r2n_fft.m: FFT: amplitude spectrum"
+    **Reproduces:** [processing_spectral (`FFT`)](../packages/processing/spectral.md)
+    **Takes → gives:** `[window_length x channels]`, `fs`, window, `apply_log` → `[bins x channels]`, frequencies
+
+    Multiplies the buffer by the window, takes the FFT and keeps the first N/2+1 bins (the one-sided spectrum). The amplitude is `|FFT| / N`, doubled on every bin but the first and the last (the energy of the negative frequencies). With `apply_log` it is expressed as `20·log10`. Computed in double like the node and rounded to float32 at the end.
+
+    **How close:** The node and the function compute the same double and round once: the float32 numbers are the same (< 1 ULP).
+
+    ```matlab
+    --8<-- "files/r2n/r2n_fft.m"
+    ```
+
+<a id="r2n_spectrogram"></a>
+
+??? example "r2n_spectrogram.m: Spectrogram"
+    **Reproduces:** [processing_spectral (`Spectrogram`)](../packages/processing/spectral.md)
+    **Takes → gives:** `[analysis_length x channels]`, `fs`, `window_length`, `overlap`, window, `apply_log` → `[segments x bins x channels]`, frequencies, times
+
+    Cuts the buffer in overlapping segments, windows each one and computes its power spectral density (`|FFT|² / (fs·Σw²)`, doubled on the inner bins). The result is a time-frequency map; in dB when `apply_log` (`10·log10`). Also returns the frequency of every bin and the time of the centre of every segment. The feature published by the node has the same shape with the channel varying fastest.
+
+    **How close:** Double precision like the node, rounded to float32 at the end: < 1 ULP.
+
+    ```matlab
+    --8<-- "files/r2n/r2n_spectrogram.m"
+    ```
+
+<a id="r2n_spectral_window"></a>
+
+??? example "r2n_spectral_window.m: Window of FFT and spectrogram"
+    **Reproduces:** [processing_spectral](../packages/processing/spectral.md)
+    **Takes → gives:** name, `n` → window of `n` values
+
+    The window used by `r2n_welch`, `r2n_fft` and `r2n_spectrogram`: rectangular, Hann, Hamming, Blackman or flat-top, **symmetric** (denominator n−1) and in double (not rounded to float32: that is `r2n_window`, for the filters).
+
+    ```matlab
+    --8<-- "files/r2n/r2n_spectral_window.m"
+    ```
+
+<a id="r2n_fbcsp"></a>
+
+??? example "r2n_fbcsp.m: FBCSP features"
+    **Reproduces:** [processing_fbcsp](../packages/processing/fbcsp.md)
+    **Takes → gives:** one `[buffer x channels]` per band, `W` `[bands x components x channels]` → one feature vector
+
+    The input is the signal of every band **already band-passed** (the node reads one filtered topic per band; here, `r2n_butterworth` high-pass then low-pass). For each band the window is projected on the CSP filters (`z = x · W'`), the variance of every component is taken and normalized by the sum of the variances of that band; the feature is its logarithm. The vector is band after band (`index = band · components + component`). `r2n_fbcsp_weights` rearranges the flat `filters` parameter of the plugin in the array this function takes.
+
+    **How close:** Double arithmetic, float32 at the end: 1e-7 against the node.
+
+    ```matlab
+    --8<-- "files/r2n/r2n_fbcsp.m"
+    ```
+
+<a id="r2n_fbcsp_weights"></a>
+
+??? example "r2n_fbcsp_weights.m: CSP filters as an array"
+    **Reproduces:** [processing_fbcsp](../packages/processing/fbcsp.md)
+    **Takes → gives:** flat `filters`, bands, components, channels → `[bands x components x channels]`
+
+    The `filters` parameter of the Fbcsp plugin is a flat list ordered `[band][component][channel]`, channel varying fastest. This reorders it in the 3-D array `r2n_fbcsp` takes.
+
+    ```matlab
+    --8<-- "files/r2n/r2n_fbcsp_weights.m"
+    ```
+
+### Decoders
+
+<a id="r2n_softmax"></a>
+
+??? example "r2n_softmax.m: Softmax of the scores"
+    **Reproduces:** [decoder_lda, decoder_qda, decoder_svm](../packages/decoder/index.md)
+    **Takes → gives:** scores `[K]` → probabilities `[K]`
+
+    How LDA, QDA and SVM turn their scores into probabilities: `exp(score − max)` (the maximum is subtracted so that nothing overflows) divided by the sum, added **in order** in float32 like the C++. If the sum is not above the float32 epsilon the values are returned as they are, as the C++ does.
+
+    ```matlab
+    --8<-- "files/r2n/r2n_softmax.m"
+    ```
+
+<a id="r2n_linear_read"></a>
+
+??? example "r2n_linear_read.m: Read the `.r2nd` of LDA and SVM"
+    **Reproduces:** [decoder_lda, decoder_svm](../packages/decoder/lda.md)
+    **Takes → gives:** `.r2nd` file → model
+
+    Reads the binary model that the decoder node loads (header `R2NDEC1`, little endian, versions 1 and 2) skipping the fields the prediction does not use. You get the selected features (the pairs channel / frequency, 0-based), the weights (one row per class), the bias, the classes and the frequencies. A linear SVM has the same file layout as the LDA.
+
+    ```matlab
+    --8<-- "files/r2n/r2n_linear_read.m"
+    ```
+
+<a id="r2n_linear_predict"></a>
+
+??? example "r2n_linear_predict.m: LDA and linear SVM"
+    **Reproduces:** [decoder_lda, decoder_svm](../packages/decoder/lda.md)
+    **Takes → gives:** model, PSD feature → probabilities, scores
+
+    Takes from the feature (all the channels × all the frequencies, channel by channel) the values the model selected, computes for every class `score = bias + Σ w·x` adding in the order of the selection, and turns the scores into probabilities with `r2n_softmax`. A model whose output is `TYPE_SCORES` publishes the scores instead: both are returned.
+
+    **How close:** Same float32 operations in the same order as the C++: 6e-8 against the node.
+
+    ```matlab
+    --8<-- "files/r2n/r2n_linear_predict.m"
+    ```
+
+<a id="r2n_qda_read"></a>
+
+??? example "r2n_qda_read.m: Read the `.r2nd` of QDA"
+    **Reproduces:** [decoder_qda](../packages/decoder/qda.md)
+    **Takes → gives:** `.r2nd` file → model
+
+    The same reader as the LDA one, for the QDA layout (version 2): besides the linear weights it reads the quadratic matrix of every class (stored row by row).
+
+    ```matlab
+    --8<-- "files/r2n/r2n_qda_read.m"
+    ```
+
+<a id="r2n_qda_predict"></a>
+
+??? example "r2n_qda_predict.m: QDA"
+    **Reproduces:** [decoder_qda](../packages/decoder/qda.md)
+    **Takes → gives:** model, PSD feature → probabilities, scores
+
+    For every class: `score = bias + Σ l·x + Σ_row Σ_col x_row · Q(row, col) · x_col`, the three sums added in this order in float32 like `QDA.cpp`; then `r2n_softmax`. The selected features are taken from the PSD exactly as for the LDA.
+
+    **How close:** Same operations in the same order: 1.5e-8 against the node.
+
+    ```matlab
+    --8<-- "files/r2n/r2n_qda_predict.m"
+    ```
+
+<a id="r2n_gaussian_read"></a>
+
+??? example "r2n_gaussian_read.m: Read the `.r2nd` of the Gaussian decoder"
+    **Reproduces:** [decoder_gaussian](../packages/decoder/gaussian.md)
+    **Takes → gives:** `.r2nd` file → model
+
+    Reads the Gaussian model (version 2) that comes from a Matlab SMR classifier: priors, selected features, and for every class and prototype the centers and the covariances (diagonal).
+
+    ```matlab
+    --8<-- "files/r2n/r2n_gaussian_read.m"
+    ```
+
+<a id="r2n_gaussian_predict"></a>
+
+??? example "r2n_gaussian_predict.m: Gaussian decoder"
+    **Reproduces:** [decoder_gaussian](../packages/decoder/gaussian.md)
+    **Takes → gives:** model, PSD feature → probabilities
+
+    For every class, every prototype *q* gives an activation `Σ_j −0.5·d_j²/v_j − 0.5·ln v_j` (`d` = feature − center, `v` = variance); the class score is the log-sum-exp of its prototypes plus `ln(prior)`. The probabilities are `exp(score − max)` divided by the sum. All in float32, in the order of `Gaussian.cpp`.
+
+    **How close:** 1.5e-7 against the node (one ULP of a probability).
+
+    ```matlab
+    --8<-- "files/r2n/r2n_gaussian_predict.m"
+    ```
+
+<a id="r2n_sklearn_lda_read"></a>
+
+??? example "r2n_sklearn_lda_read.m: Read the numbers of a scikit-learn LDA"
+    **Reproduces:** [decoder_sklearn](../packages/decoder/sklearn.md)
+    **Takes → gives:** `lda_weights.yaml` → model
+
+    MATLAB cannot open a scikit-learn file. `data/models/export_lda_weights.py` writes the numbers of the `StandardScaler` + `LinearDiscriminantAnalysis` pipeline (mean, scale, coefficients, intercept, classes, selected features) in a yaml, after checking in Python that they give the same `predict_proba`; this function reads them. Python needs no such step: `r2n_sklearn_load` opens the model directly.
+
+    ```matlab
+    --8<-- "files/r2n/r2n_sklearn_lda_read.m"
+    ```
+
+<a id="r2n_sklearn_lda_predict"></a>
+
+??? example "r2n_sklearn_lda_predict.m: scikit-learn LDA"
+    **Reproduces:** [decoder_sklearn](../packages/decoder/sklearn.md)
+    **Takes → gives:** model, feature → probabilities
+
+    `z = (x − mean) / scale`, `d = coef·z + intercept`; with two classes `p = 1/(1 + e^{−d})` for the second class of scikit-learn and its complement for the first; with more classes a softmax. In double, as scikit-learn does, rounded to float32 like the published prediction, in the order of the decoder's output fields.
+
+    ```matlab
+    --8<-- "files/r2n/r2n_sklearn_lda_predict.m"
+    ```
+
+### Integrator and control
+
+<a id="r2n_integrator_exponential"></a>
+
+??? example "r2n_integrator_exponential.m: Exponential integrator"
+    **Reproduces:** [integrator_exponential](../packages/integrator/exponential.md)
+    **Takes → gives:** `[frames x K]` probabilities, `alpha`, reset frames → `[frames x K]`
+
+    The recursion `state = alpha·state + (1−alpha)·prediction`, in float32. The first prediction of the run becomes the state. At the frames of `reset_frames` the state goes back to 1/K **before** that frame is integrated (the node integrates the frame that contains the CFeedback event and resets after it: the caller passes the frame after). It also returns the time of every reset.
+
+    **How close:** Same recursion: difference 0.
+
+    ```matlab
+    --8<-- "files/r2n/r2n_integrator_exponential.m"
+    ```
+
+<a id="r2n_integrator_buffer"></a>
+
+??? example "r2n_integrator_buffer.m: Buffer integrator"
+    **Reproduces:** [integrator_buffer](../packages/integrator/buffer.md)
+    **Takes → gives:** `[frames x K]` probabilities, `buffer_size`, `increment`, reset frames, `init_val` → `[frames x K]`
+
+    A bar that moves: at every frame the class with the highest probability (the first on a tie) goes up by one step and the others go down by the same total, in equal shares (a class that reaches 0 stops and the rest goes to the others). The step is `1/buffer_size` (hard, `increment = 0`) or the winning probability over `buffer_size` (soft, `increment = 1`). At a reset the buffer returns to `init_val` (default 1/K).
+
+    **How close:** Same operations in float32: < 1 ULP.
+
+    ```matlab
+    --8<-- "files/r2n/r2n_integrator_buffer.m"
+    ```
+
+<a id="r2n_threshold_winner"></a>
+
+??? example "r2n_threshold_winner.m: Which class touched its threshold"
+    **Reproduces:** [control_feedback](../packages/control/feedback.md)
+    **Takes → gives:** thresholds, values → winning class
+
+    The test `control_feedback` uses to decide a trial: a class is over its own threshold when `value + 1e-6 >= threshold` (in float32). When several are over, the highest wins. It is used to recompute Hit / Miss / Timeout from the integrated values.
+
+    ```matlab
+    --8<-- "files/r2n/r2n_threshold_winner.m"
+    ```
+
+### Helpers
+
+<a id="r2n_yaml_value"></a>
+
+??? example "r2n_yaml_value.m: Read a parameter from a yaml file"
+    **Reproduces:** the checks of the tests
+    **Takes → gives:** file, key → value
+
+    Reads `key: value` from a yaml parameter file of ros2neuro (flat keys such as `processing.params.wlength`): a number, a list `[a, b, c]`, `true`/`false` or text. The checks use it to read every parameter from the **same file** the launcher gives to the node, so no number is typed twice. (In Python use `yaml.safe_load`.)
+
+    ```matlab
+    --8<-- "files/r2n/r2n_yaml_value.m"
+    ```
 
 ## Use a function in your own analysis
 
@@ -138,132 +407,6 @@ the checks of the tests per stage read every parameter from the same yaml the la
     The ROS 2 plugins compute in float32 with Eigen, which adds the values one after the other in float32. MATLAB's `mean` and its matrix product add in
     another order, so the DC, the CAR and the Laplacian can differ from the node by a few ULP of the input (the largest difference measured is 2 ULP). That is why
     the tolerances are written in ULP of the largest input sample and not as a fixed number.
-
-## The code of every function
-
-One block per function; each starts with what it reproduces. They are also in the zip.
-
-??? example "r2n_car.m: CAR"
-    ```matlab
-    --8<-- "files/r2n/r2n_car.m"
-    ```
-
-??? example "r2n_dc.m: DC"
-    ```matlab
-    --8<-- "files/r2n/r2n_dc.m"
-    ```
-
-??? example "r2n_laplacian.m: Laplacian"
-    ```matlab
-    --8<-- "files/r2n/r2n_laplacian.m"
-    ```
-
-??? example "r2n_window.m: Hann, Hamming, Blackman, Flattop"
-    ```matlab
-    --8<-- "files/r2n/r2n_window.m"
-    ```
-
-??? example "r2n_butterworth.m: Butterworth"
-    ```matlab
-    --8<-- "files/r2n/r2n_butterworth.m"
-    ```
-
-??? example "r2n_welch.m: Welch PSD"
-    ```matlab
-    --8<-- "files/r2n/r2n_welch.m"
-    ```
-
-??? example "r2n_fft.m: FFT (amplitude spectrum)"
-    ```matlab
-    --8<-- "files/r2n/r2n_fft.m"
-    ```
-
-??? example "r2n_spectrogram.m: spectrogram"
-    ```matlab
-    --8<-- "files/r2n/r2n_spectrogram.m"
-    ```
-
-??? example "r2n_spectral_window.m: the window of FFT and spectrogram"
-    ```matlab
-    --8<-- "files/r2n/r2n_spectral_window.m"
-    ```
-
-??? example "r2n_gaussian_read.m: reads the `.r2nd` of the Gaussian decoder"
-    ```matlab
-    --8<-- "files/r2n/r2n_gaussian_read.m"
-    ```
-
-??? example "r2n_gaussian_predict.m: Gaussian decoder"
-    ```matlab
-    --8<-- "files/r2n/r2n_gaussian_predict.m"
-    ```
-
-??? example "r2n_linear_read.m: reads the `.r2nd` of the LDA and SVM decoders"
-    ```matlab
-    --8<-- "files/r2n/r2n_linear_read.m"
-    ```
-
-??? example "r2n_linear_predict.m: LDA and SVM decoders"
-    ```matlab
-    --8<-- "files/r2n/r2n_linear_predict.m"
-    ```
-
-??? example "r2n_qda_read.m: reads the `.r2nd` of the QDA decoder"
-    ```matlab
-    --8<-- "files/r2n/r2n_qda_read.m"
-    ```
-
-??? example "r2n_qda_predict.m: QDA decoder"
-    ```matlab
-    --8<-- "files/r2n/r2n_qda_predict.m"
-    ```
-
-??? example "r2n_softmax.m: scores to probabilities (LDA, QDA, SVM)"
-    ```matlab
-    --8<-- "files/r2n/r2n_softmax.m"
-    ```
-
-??? example "r2n_integrator_exponential.m: exponential integrator"
-    ```matlab
-    --8<-- "files/r2n/r2n_integrator_exponential.m"
-    ```
-
-??? example "r2n_integrator_buffer.m: buffer integrator"
-    ```matlab
-    --8<-- "files/r2n/r2n_integrator_buffer.m"
-    ```
-
-??? example "r2n_threshold_winner.m: which class touched its threshold"
-    ```matlab
-    --8<-- "files/r2n/r2n_threshold_winner.m"
-    ```
-
-??? example "r2n_yaml_value.m: reads a parameter of a yaml file"
-    ```matlab
-    --8<-- "files/r2n/r2n_yaml_value.m"
-    ```
-
-??? example "r2n_fbcsp.m: FBCSP features"
-    ```matlab
-    --8<-- "files/r2n/r2n_fbcsp.m"
-    ```
-
-??? example "r2n_fbcsp_weights.m: the CSP filters of the Fbcsp plugin as an array"
-    ```matlab
-    --8<-- "files/r2n/r2n_fbcsp_weights.m"
-    ```
-
-??? example "r2n_sklearn_lda_read.m: reads the numbers of a scikit-learn LDA"
-    ```matlab
-    --8<-- "files/r2n/r2n_sklearn_lda_read.m"
-    ```
-
-??? example "r2n_sklearn_lda_predict.m: scikit-learn LDA"
-    ```matlab
-    --8<-- "files/r2n/r2n_sklearn_lda_predict.m"
-    ```
-
-Every `check_*.m` of the repository is one self-contained file (no helper functions): read it from the top to see what is read, what is recomputed and how it is compared.
 
 ## What is not covered yet
 

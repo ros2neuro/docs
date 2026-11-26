@@ -253,7 +253,7 @@ filters**: `/acquisition/neurodata` and `/processing/filtered`. To see the **spe
 - the source is started a few seconds after the listeners (`TimerAction`), so that nobody loses the first data;
 - every stage is checked on its own topic, with the same few commands.
 
-You now know what the ready-made launchers of [`ros2neuro_devel_test`](../../packages/devel-test.md) do. The [hardware-free pipeline](../hardware-free-pipeline/index.md) runs the same chain with the
+You now know what the ready-made launchers of [`ros2neuro_devel_test`](../../reproducibility/packages/index.md) do. The [hardware-free pipeline](../hardware-free-pipeline/index.md) runs the same chain with the
 manager, the control and the feedback on top.
 
 Next: [Run the complete pipeline without hardware](../hardware-free-pipeline/index.md).

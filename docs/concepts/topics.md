@@ -3,7 +3,7 @@
 The names below are the **defaults** of each node. Launch files remap them, so the real names depend on the
 node name you give: a node called `acquisition` publishes `~/neurodata` as `/acquisition/neurodata`.
 
-The chain they connect is the one of the [architecture figure](architecture.md#the-loop-in-one-figure): every solid arrow there is one of the topics below. The tables use the topic names of the [`ros2neuro_devel_test`](../packages/devel-test.md) launchers. Click a message type to read its description.
+The chain they connect is the one of the [architecture figure](architecture.md#the-loop-in-one-figure): every solid arrow there is one of the topics below. The tables use the topic names of the [`ros2neuro_devel_test`](../reproducibility/packages/index.md) launchers. Click a message type to read its description.
 
 ## Topics
 
@@ -60,3 +60,7 @@ ros2 topic echo /neuroevent             # watch the events
 ros2 node info /control                 # publishers, subscribers, services of a node
 ros2 param list /filters                # parameters of a node
 ```
+
+---
+
+**Next:** [Protocols: control, manager and feedback](protocols.md) · [back to the Concepts menu](index.md)

@@ -131,6 +131,18 @@ All parameters are declared under the prefix that `NeuroAcquisitionNode` passes 
 
 > **Channel count resolution.** If any enabled block has explicit `labels`, the plugin maps those exact counts from the LSL stream, in order (EEG first, then EXG, then triggers) — YAML always overrides the stream. Otherwise, if the LSL stream fully describes its own channels (a `<channels><channel><label/><type/></channel>…` block for every channel), each channel is classified by its declared `<type>`: `EEG` → EEG block, trigger/marker types → trigger block, anything else → EXG. Only if neither source is available are all LSL channels assigned to the EEG block. See "Channel layout resolution" above for the full precedence rules.
 
+> **Never write `labels: []` in a parameter file** (not for `sensors.eeg.labels` nor for `triggers.trigger.labels`): an empty list has no type in ROS 2 and the node stops with
+> `parameter_value_from failed for parameter '...labels': No parameter value set`. To take the channels from what the LSL stream declares about itself (or all of them), leave the key
+> out; to choose them, write their names. The configuration shipped with the package (`config/lsl_configuration.yaml`) leaves the labels out.
+
+### Labels or stream metadata: which one wins
+
+* **Labels written in the configuration win** over what the stream declares. They are assigned **by position**, not by name: the plugin takes the channels of the LSL stream in order (the EEG block first, then EXG, then the trigger) and gives them your labels. The plugin does **not** look for those names in the stream: **make sure that the order of your labels is the order of the channels of the EEG stream**, otherwise the names are wrong and nothing tells you.
+* **No labels:** if the stream declares its channels (`<channels><channel><label/><type/>`, with the type of every channel: EEG, EXG, trigger) the layout is taken from it (the log says `LSL channel layout derived from stream metadata: 16 EEG, 0 EXG, 1 trigger`).
+* **Neither labels nor complete metadata:** every channel of the stream goes into the EEG block with generic labels `CH1`, `CH2`, ... (`LSL setup complete: 17 channels`), the trigger channel of the stream included: write the labels (EEG and trigger) to separate them.
+
+Tried with a simulated outlet (`pylsl`, 16 EEG + 1 trigger, 512 Hz): 16 frames per second in the three cases.
+
 ### Example configuration
 
 ```yaml
@@ -155,98 +167,3 @@ All parameters are declared under the prefix that `NeuroAcquisitionNode` passes 
 ```
 
 ---
-
-## Testing the Plugin
-
-### Test files in `test/`
-
-| File | Role |
-|---|---|
-| `rawdata.csv` | Ground-truth input: a multi-channel recording saved as comma-separated `float32` rows (no header). Each row is one sample; columns are EEG channels followed by the trigger channel. |
-| `test_config.yaml` | Parameter file for the acquisition node: plugin `LSLDevice`, stream name `TestStream`, 31 EEG channels + 1 trigger channel, framerate 16 Hz. |
-| `lsl_csv_streamer.py` | ROS2 node that reads `rawdata.csv` and publishes it block-by-block as a real LSL Outlet (type `EEG`, name `TestStream`, 512 Hz, 32 samples/block at 16 Hz) to emulate a real EEG device. Prints `Finished streaming CSV data via LSL.` when the file ends. |
-| `topic_saver.py` | ROS2 node that subscribes to `/acquisition/neurodata`, unpacks each `NeuroFrame` sample by sample, and appends every row (EEG channels then trigger channel) to a CSV file. |
-| `test_lsl_device.cpp` | gtest. Besides the configuration/state tests it opens a real in-process LSL outlet and checks that frames are read continuously and that `read()` fails (`is_stream_lost()`) once the outlet disappears; also checks that destroying a never-configured device does not crash. |
-| `test_config_yaml.py` | pytest: the shipped `config/lsl_configuration.yaml` contains no unresolved launch substitutions and has a numeric `framerate`. |
-| `compare_acquisition.m` | MATLAB script for visual and numerical verification (see below). |
-| `test_acquisition_lsl.launch.py` | Launch file (in `test/`, installed to the package `launch/` directory) that starts the full test pipeline (see below). |
-
----
-
-### End-to-end test with MATLAB
-
-The test verifies that the plugin acquires data without any loss or alteration. `rawdata.csv` is used as a known reference: it is replayed as a real LSL stream, the acquisition node receives it and publishes it on ROS2, the received data is saved to `acquired_data.csv`, and the two files are compared in MATLAB. If the plugin is correct, the two signals are numerically identical.
-
-#### Step 1 — build and source
-
-```bash
-cd ~/ros2neuro_ws
-colcon build --packages-select ros2neuro_acquisition_lsl
-source install/setup.bash
-```
-
-#### Step 2 — run the test launcher
-
-```bash
-ros2 launch ros2neuro_acquisition_lsl test_acquisition_lsl.launch.py
-```
-
-This starts four processes simultaneously:
-
-1. **`lsl_csv_streamer.py`** — reads `rawdata.csv` and streams it as a 512 Hz LSL Outlet named `TestStream`, pushing 32 samples per tick at 16 Hz to emulate a real device.
-2. **`acquisition` node** — loads the `LSLDevice` plugin, discovers `TestStream` by name, and publishes the acquired data on `/acquisition/neurodata` at 16 Hz (32 samples/frame, 31 EEG channels + 1 trigger).
-3. **`neuroviz`** — real-time visualizer of the incoming `NeuroFrame` stream.
-4. **`topic_saver.py`** — subscribes to `/acquisition/neurodata` and saves every received sample row by row to `acquired_data.csv` in the installed `test/` directory.
-
-Wait until the terminal prints `Finished streaming CSV data via LSL.`, then stop with **CTRL+C**.
-
-#### Step 3 — verify in MATLAB
-
-Open MATLAB and run `compare_acquisition` from anywhere inside the package (source or install tree — the script finds `acquired_data.csv` automatically):
-
-```matlab
-compare_acquisition
-```
-
-**What the script does:**
-
-1. Loads `rawdata.csv` (LSL input, 32 columns: 31 EEG + 1 trigger) and `acquired_data.csv` (ROS2 output).
-2. Finds the temporal alignment offset by scanning `rawdata.csv` for the first row of `acquired_data.csv`. A few samples at the start of `rawdata.csv` are always dropped during LSL connection startup — the script skips them automatically.
-3. Computes the error separately for EEG channels and the trigger channel.
-4. Prints a report in the MATLAB console:
-
-```
-Raw data   : .../test/rawdata.csv
-Acquired   : .../test/acquired_data.csv
-Raw      : 10240 samples x 32 channels
-Acquired : 10240 samples x 32 channels
-Alignment offset : N samples dropped at LSL connection startup
-
---- Results ---
-Samples compared              : 10240
-EEG  max absolute error       : 5.0022e-12
-EEG  mean absolute error      : ~0
-Trigger cast error (vs int32) : 0          (expected 0)
-Verdict: PERFECT MATCH
-```
-
-5. Opens three figures:
-
-**Figure 1 — EEG signal comparison**
-
-The first 6 EEG channels of `rawdata.csv` (blue) and `acquired_data.csv` (red dashed) overlaid. The two traces must be perfectly superimposed.
-
-**Figure 2 — EEG absolute error**
-
-The pointwise `|raw − acquired|` for the same 6 EEG channels. A flat black line at 0 means perfect acquisition. The figure title shows the max error and the verdict.
-
-**Figure 3 — Trigger channel**
-
-Two subplots:
-- *Top*: raw float32 trigger (blue stairs), expected `int32(raw)` truncation (green stairs), and acquired trigger (red dashed stairs). All three must overlap.
-- *Bottom*: `|int32(raw) − acquired|` per sample. Must be a flat line at 0.
-
-The comparison is against `fix(raw)` (MATLAB) which replicates C++ `static_cast<int32_t>` — both truncate toward zero. Note: MATLAB's `int32()` would be wrong here because it rounds to nearest (`int32(0.9999) = 1`) while the plugin truncates (`static_cast<int32_t>(0.9999f) = 0`). A raw float like `0.9999` becomes `0` in the acquired data, so raw-vs-acquired differs by up to 1.0 — which is expected. What matters is that `acquired == fix(raw)` exactly (cast error = 0).
-
-> **EEG error ~5e-12** — normal float32 rounding, counts as **PERFECT MATCH**.
-> **Trigger cast error 0** — the int32 truncation was applied correctly.

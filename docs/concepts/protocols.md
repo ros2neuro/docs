@@ -207,4 +207,8 @@ behaviour of the rest.
 - [Manager](../packages/manager/index.md) and its plugins
   [synchronous](../packages/manager/synchronous.md) and [asynchronous](../packages/manager/asynchronous.md)
 - [Feedback](../packages/feedback/index.md), [wheel](../packages/feedback/wheel.md), [bar](../packages/feedback/bar.md)
-- [`ros2neuro_devel_test`](../packages/devel-test.md): ready launchers for calibration, evaluation and control
+- [`ros2neuro_devel_test`](../reproducibility/packages/index.md): ready launchers for calibration, evaluation and control
+
+---
+
+**Next:** [Shared parameters](shared-parameters.md) · [back to the Concepts menu](index.md)

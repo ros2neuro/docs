@@ -291,32 +291,6 @@ colcon build --packages-select ros2neuro_acquisition_eegdev
 
 The package requires `libeegdev` development files to be installed.
 
-## Tests
-
-The package currently includes:
-
-- unit tests for `EGDOpenOptions`
-- a pluginlib loading test for `EGDDevice`
-- a file-based integration test using `test/test_short.gdf` (skipped when the `libeegdev` datafile backend cannot
-  open it)
-
-Run them with:
-
-```bash
-colcon test --packages-select ros2neuro_acquisition_eegdev
-```
-
-The automated `.gdf` integration tests use the 60-second fixture
-`test/test_short.gdf`. The longer `test/test.gdf` file remains available for
-manual and exploratory checks.
-
-The end-to-end round-trip test that validates `eegdev -> recorder_xdf -> gdf`
-lives in the [`ros2neuro_recorder_xdf`](../recorder/xdf.md) package, because it exercises recorder
-behavior in addition to acquisition.
-
-The `.gdf` integration tests use a short temporary path under `/tmp` before
-opening the file, because some `libeegdev` setups are sensitive to long file paths.
-
 ## Notes
 
 - `libeegdev` can expose richer metadata than the current [`ros2neuro_data`](../msgs-data.md#ros2neuro_data)

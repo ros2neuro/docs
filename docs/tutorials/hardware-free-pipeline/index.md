@@ -11,7 +11,7 @@ It takes about 10 minutes and needs no code. It is also the quickest way to chec
 - how to follow one piece of data from the acquisition to the feedback with `ros2 topic`;
 - which YAML file configures what, and how to change a parameter and see the effect.
 
-**You need** ROS2neuro [installed](../../installation.md) (from apt, or built in a workspace) with the package [`ros2neuro_devel_test`](../../packages/devel-test.md), and a display for the
+**You need** ROS2neuro [installed](../../installation/index.md) (from apt, or built in a workspace) with the package [`ros2neuro_devel_test`](../../reproducibility/packages/index.md), and a display for the
 feedback window.
 
 ## 1. The plan: what will run
@@ -189,7 +189,7 @@ source install/setup.bash
 | `feedback_bars4.launch.py` | four bars with different thresholds (a fictitious 4-class Gaussian model) |
 
 The tests of every stage (the same nodes one stage at a time, each checked against MATLAB) and the rules for the layout are in
-[`ros2neuro_devel_test`](../../packages/devel-test.md): `ros2 launch ros2neuro_devel_test decoder_qda.launch.py` runs a stage, `check_decoder_qda` (MATLAB) checks it.
+[`ros2neuro_devel_test`](../../reproducibility/packages/index.md): `ros2 launch ros2neuro_devel_test decoder_qda.launch.py` runs a stage, `check_decoder_qda` (MATLAB) checks it.
 
 ## What you learned
 

@@ -6,10 +6,10 @@ every command works in the same terminal you will use for the rest of the tutori
 
 **Goal.** Start two nodes, see that they talk through a topic, call a service, read a parameter, and know which command to use for each.
 
-**You need** ROS 2 Jazzy and ROS2neuro [installed](../../installation.md). No hardware, no code.
+**You need** ROS 2 Jazzy and ROS2neuro [installed](../../installation/index.md). No hardware, no code.
 
 !!! note "Where do I type the commands?"
-    In a terminal where ROS 2 is *sourced*. If you use the container of the [installation](../../installation.md) (Distrobox), enter it first:
+    In a terminal where ROS 2 is *sourced*. If you use the container of the [installation](../../installation/index.md) (Distrobox), enter it first:
 
     ```bash
     distrobox enter ros2neuro

@@ -169,22 +169,6 @@ To source the workspace after build:
 source install/setup.bash
 ```
 
-## Tests
-
-The package includes unit tests covering:
-
-- parameter-driven configuration
-- frame info generation
-- runtime read behavior
-- trigger generation
-- invalid parameter rejection
-
-Run them with:
-
-```bash
-colcon test --packages-select ros2neuro_acquisition_dummy
-```
-
 ## Notes
 
 - This package is not meant to model a specific real device.

@@ -32,7 +32,7 @@ Messages used:
 
 ## Example configuration
 
-An example of the parameters of the recorder (the Gaussian launchers of [`ros2neuro_devel_test`](../devel-test.md) used it before 2026-11-16; its tests now record the topics as CSV instead). `$(var ...)` are launch substitutions (`allow_substs="true"`); replace them with values when the node is not started by a launch file:
+An example of the parameters of the recorder (the Gaussian launchers of [`ros2neuro_devel_test`](../../reproducibility/packages/index.md) used it before 2026-11-16; its tests now record the topics as CSV instead). `$(var ...)` are launch substitutions (`allow_substs="true"`); replace them with values when the node is not started by a launch file:
 
 ```yaml
 /recorder:

@@ -46,7 +46,7 @@ Messages used:
 
 ## Example configuration
 
-The evaluation protocol of the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md) (`pipeline/qda/config/protocol_evaluation.yaml`, `/manager` part; the
+The evaluation protocol of the Gaussian pipeline of [`ros2neuro_devel_test`](../../reproducibility/packages/index.md) (`pipeline/qda/config/protocol_evaluation.yaml`, `/manager` part; the
 `/control` part is for [`ros2neuro_control_feedback`](../control/feedback.md); the layout is in `layout.yaml`):
 
 ```yaml
@@ -122,21 +122,12 @@ ros2 launch ros2neuro_control_feedback control_feedback.launch.xml protocol:=eva
 ```
 
 The launch declares `classes/rest_mode` for the manager: pass the same values to `control_feedback.launch.xml`. The
-launchers of [`ros2neuro_devel_test`](../devel-test.md) start the whole chain with one layout file (a `/**` section that every node loads).
+launchers of [`ros2neuro_devel_test`](../../reproducibility/packages/index.md) start the whole chain with one layout file (a `/**` section that every node loads).
 
 ## Differences from the old controller
 
 * Thresholds are per class (`[0.8, 0.8]`), not positions of one scalar (`[0.8, 0.2]`), and they belong to [`ros2neuro_control_feedback`](../control/feedback.md).
 * `protocol_ended` and the summary are also produced in calibration; the process exits when the protocol ends (`shutdown_on_end`).
-
-## Tests
-
-`colcon test --packages-select ros2neuro_manager_synchronous`: the trial sequence (counts, shuffle, any code), and
-`test_synchronous_plugin`, the plugin loaded by the node of [`ros2neuro_manager`](index.md) with a helper node that plays
-[`ros2neuro_control_feedback`](../control/feedback.md) (it answers CFeedback with the close of the feedback and Hit / Miss / Timeout): the ten events of
-every trial in order, the manager writes the phases and the end of the outcome, the outcome is closed after the boom, the next trial waits for the outcome, every class
-the requested number of times, `protocol_ended`, the wait of `duration.begin`, wrong `trials` / durations. `test_synchronous_no_outcome` (its own executable, the node shuts the process down):
-the trial is never closed -> the manager stops with an error.
 
 ## Cueing paradigm
 

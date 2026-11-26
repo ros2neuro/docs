@@ -58,6 +58,15 @@ ros2 launch ros2neuro_acquisition_antneuro eego_acquisition.launch.xml
 Launch arguments: `samplerate` (default `512`), `framerate` (default `16.0`), `config` (default: the installed
 `config/eego_configuration.yaml`, read with `allow_substs`), `visualizer` (default `false`: start `neuroviz`).
 
+## Verified on a real amplifier
+
+Tried on 2026-11-26 in a clean Docker container (Ubuntu 24.04, ROS 2 Jazzy, the package installed from the `.deb`, no library of the host visible):
+
+* **without the SDK**: the plugin loads and opening fails with `Cannot load eego SDK: libeego-SDK.so: cannot open shared object file` (the node tries again because `acquisition.reopen` is true);
+* **with the SDK** (`libeego-sdk` 1.3.19 installed in the image) and an eego plugged in: the SDK is initialized, the amplifier is opened and the visualizer shows the signal of all the **64 EEG channels** of the cap `200` (every label of the cap listed in the configuration).
+
+To use the amplifier from Docker pass the device (`--device /dev/bus/usb`, with the amplifier plugged in **before** the container starts) and, to change the channels, a configuration file of yours with `config:=` (mounted in the container).
+
 ## Parameters
 
 Device parameters are read under the prefix passed by the acquisition runtime.
@@ -119,6 +128,10 @@ the EEG channels in the same order as the label list. In this mode
 When `acquisition.sensors.eeg.labels` is empty, `acquisition.eeg_mask` is used
 directly. If both labels and mask are empty, all reference EEG channels for the
 configured cap are requested.
+
+> **To take every channel of the cap, leave the `acquisition.sensors.eeg.labels` key out of the yaml.** Do not write `labels: []`: an empty list has no type in a ROS 2 parameter
+> file and the node stops with `parameter_value_from failed for parameter 'acquisition.sensors.eeg.labels': No parameter value set`. To take only some channels, write their names
+> (they are published in that order).
 
 ## EXG Selection
 

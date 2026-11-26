@@ -22,7 +22,7 @@ others, so the same file can be given to the manager, to control and to the feed
     thresholds: [0.7, 0.7]
 ```
 
-The launchers of [`ros2neuro_devel_test`](../packages/devel-test.md) do this with `config/layout.yaml` of each test folder, which the manager, control and the
+The launchers of [`ros2neuro_devel_test`](../reproducibility/packages/index.md) do this with `config/layout.yaml` of each test folder, which the manager, control and the
 feedback all load.
 
 | Parameter | Read by | Notes |
@@ -93,3 +93,7 @@ Suggested order, from the most useful:
 !!! note
     A global parameter (`/**`) is still a copy per node: it moves the place where you write it, it does not remove the copies. That is
     the price of having no node that asks another one.
+
+---
+
+[Back to the Concepts menu](index.md) · next, the [Packages](../packages/index.md)

@@ -67,23 +67,3 @@ In the YAML of the integrator node (the plugin parameters live under `integrator
 ```bash
 ros2 param set /integrator integrator.params.alpha 0.9
 ```
-
-## Tests
-
-`colcon test --packages-select ros2neuro_integrator_exponential`
-
-## MATLAB replication
-
-The plugin in MATLAB, to replay offline what the node does online. It uses only native MATLAB functions: the recursion `state = alpha * state + (1 - alpha) * p`, with the resets where the integrator reset. Each function says in its header which plugin it reproduces. It is compared with the real node by `check_integrator_exponential` in [`ros2neuro_devel_test`](../devel-test.md), which also draws MATLAB and ros2neuro on top of each other and their difference. [Download all the functions](../../reproducibility/download.md).
-
-???+ example "r2n_integrator_exponential.m"
-    ```matlab
-    --8<-- "files/r2n/r2n_integrator_exponential.m"
-    ```
-
-Use it:
-
-```matlab
-addpath('ros2neuro_devel_test/matlab');      % or the folder of the downloaded zip
-y = r2n_integrator_exponential(p, 0.98, reset_frames, 1, 1, 1);   % p: [frames classes]
-```

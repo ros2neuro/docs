@@ -1,0 +1,8 @@
+# The acquisition of the tests that replay data/test_mi.gdf (17 EEG channels, labels read from the file, + the trigger channel, 512 Hz): 32 samples per frame, 16 frames/s. The GDF (acquisition.filename) and the start come from the launch file.
+# loop: a GDF lasts 250 s; a test that lasts longer starts again from the beginning.
+/acquisition:
+    ros__parameters:
+        acquisition.plugin: ros2neuro::acquisition::XDFDevice
+        acquisition.reopen: true
+        acquisition.framerate: 16.0
+        acquisition.loop: true

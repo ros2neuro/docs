@@ -184,7 +184,7 @@ negative value, `rest_timeout` present when it is needed).
 
 `launch/control_feedback.launch.xml` starts the control node with this plugin and the feedback node, and gives them the shared values
 (`classes`, `rest_mode`, `thresholds`) and the durations. The manager is started separately ([`ros2neuro_manager_synchronous`](../manager/synchronous.md),
-[`ros2neuro_manager_asynchronous`](../manager/asynchronous.md)) with the same `classes` and `rest_mode`, or by the launchers of [`ros2neuro_devel_test`](../devel-test.md), which start the
+[`ros2neuro_manager_asynchronous`](../manager/asynchronous.md)) with the same `classes` and `rest_mode`, or by the launchers of [`ros2neuro_devel_test`](../../reproducibility/packages/index.md), which start the
 whole chain with one `layout.yaml`.
 
 ```bash
@@ -197,28 +197,3 @@ ros2 launch ros2neuro_manager_synchronous synchronous.launch.xml          # the 
 The layout, the catalog of the class names, the mapping of the integrator fields, the flow builder, the autopilot and the evaluation of a trial
 (`trial_logic.hpp`) are this package's own. The manager and the feedback have what they need (their own, smaller): what is the manager's
 (the protocol, the ids of the events) is the same **parameter** in each node, not shared in code.
-
-## Tests
-
-`colcon test --packages-select ros2neuro_control_feedback`
-
-- logic without ROS: `layout`, `fields_map`, `flow` (header, values, thresholds), `reset_wait`, `trial_logic` (the outcome of a trial), `autopilot`, `asynchronous_logic` (the threshold that triggers a reset);
-- `test_feedback_core`: the plugin writes only the end of the feedback and the outcome on the bus and refuses the rest (the end of the outcome is the manager's);
-- `test_feedback_plugin`: the plugin loaded by the node of [`ros2neuro_control`](index.md), with a helper node that plays the integrator, the manager (events) and the feedback: the three protocols (autopilot with and without the rest, Hit / Miss / Timeout, the rest in timeout, no trial without a cue, the classes and the ids of the events as parameters, the thresholds changed while running), the flow (the header of the prediction, the thresholds in force, no phase in it, neutral first) and the configuration that is refused (a rest without `rest_mode`, wrong durations, `rest_timeout` missing);
-- `test_feedback_reset_timeout`: no value after a reset -> the node stops with an error (in its own executable, because the node shuts the process down).
-
-## MATLAB replication
-
-The plugin in MATLAB, to replay offline what the node does online. It uses only native MATLAB functions: the first class over its threshold decides Hit or Miss (what control writes on the event bus). Each function says in its header which plugin it reproduces. It is compared with the real node by `check_integrator_exponential` in [`ros2neuro_devel_test`](../devel-test.md), which also draws MATLAB and ros2neuro on top of each other and their difference. [Download all the functions](../../reproducibility/download.md).
-
-???+ example "r2n_threshold_winner.m"
-    ```matlab
-    --8<-- "files/r2n/r2n_threshold_winner.m"
-    ```
-
-Use it:
-
-```matlab
-addpath('ros2neuro_devel_test/matlab');      % or the folder of the downloaded zip
-w = r2n_threshold_winner([0.7 0.7], integrated_row);   % 0 if no class is over its threshold
-```

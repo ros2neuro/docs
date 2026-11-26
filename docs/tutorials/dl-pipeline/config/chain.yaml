@@ -1,0 +1,24 @@
+# ShallowNet: the filters of the model (Butterworth 4-14 Hz, order 2, as the model was trained) and the Buffer plugin (512 samples, sensor EEG).
+/filters:
+    ros__parameters:
+        filters.chain: [hp, lp]
+        filters.hp.class: ros2neuro_filters_butterworth/ButterworthFloat
+        filters.hp.order: 2
+        filters.hp.samplerate: 512
+        filters.hp.cutoff: 4.0
+        filters.hp.type: highpass
+        filters.lp.class: ros2neuro_filters_butterworth/ButterworthFloat
+        filters.lp.order: 2
+        filters.lp.samplerate: 512
+        filters.lp.cutoff: 14.0
+        filters.lp.type: lowpass
+
+/buffer:
+    ros__parameters:
+        processing.plugin: ros2neuro::processing::Buffer
+        processing.params.sensor: EEG
+        processing.params.buffer: 512
+
+/decoder:
+    ros__parameters:
+        decoder.params.device: cpu

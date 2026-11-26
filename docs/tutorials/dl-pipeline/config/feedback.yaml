@@ -1,0 +1,12 @@
+# Feedback (wheel). It reads the event bus (the phases the manager writes, the outcome control writes) and the flow of control (values and
+# thresholds). The classes, rest_mode and the initial thresholds are the same for every node: they come from layout.yaml (loaded by the launcher).
+/feedback:
+    ros__parameters:
+        plugin: ros2neuro::feedback::Wheel
+        control_topic: /control_feedback/probabilities    # the flow: values and thresholds (the phases come from event_topic)
+        event_topic: /neuroevent                         # the phases of the trials and the outcome; also publish_display_events
+        fps: 60.0
+        window_title: "ShallowNet pipeline"
+        publish_display_events: false
+        latency_log_period_s: 0.0                        # seconds between the "Latency stamp->draw" log lines; 0 = off
+        angle_range: 180.0                               # wheel only

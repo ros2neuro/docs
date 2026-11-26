@@ -47,7 +47,7 @@ Topic names are the defaults; each node can change them with a parameter, see [T
 | [`NeuroFrame`](#neuroframe) | `acquisition` → `/acquisition/neurodata`; `filter_chain` → `/filter_chain/filtered` | `filter_chain` ← `/neurodata`; `processing_node` (the `FFT`, `Welch`, `Spectrogram`, `Buffer` and `Fbcsp` plugins) ← `/neurodata` (remapped to the filter output in the launchers); `recorder` ← `/neurodata`; `neuroviz` ← `/acquisition/neurodata` |
 | [`NeuroFrameInfo`](#neuroframeinfo) | `acquisition` → `/acquisition/neurodata_info` (`transient_local`) | `recorder` ← `/neurodata_info`; `neuroviz` ← `/acquisition/neurodata_info` |
 | [`NeuroFeature`](#neurofeature) | `processing_node` → `/features` (every processing plugin); remapped to `/processing/psd`, `/processing/buffered_features`... in the launchers | `decoder` ← `/features` |
-| [`NeuroPrediction`](#neuroprediction) | `decoder` → `~/prediction`; `integrator` → `~/control` (the [`ros2neuro_devel_test`](../packages/devel-test.md) configuration sets `output_topic: /integrated/raw`) | `integrator` ← `/prediction`; `control` ← `/integrated/raw` |
+| [`NeuroPrediction`](#neuroprediction) | `decoder` → `~/prediction`; `integrator` → `~/control` (the [`ros2neuro_devel_test`](../reproducibility/packages/index.md) configuration sets `output_topic: /integrated/raw`) | `integrator` ← `/prediction`; `control` ← `/integrated/raw` |
 | [`NeuroControl`](#neurocontrol) | `control` → `/control_feedback/probabilities` | `feedback` ← `/control_feedback/probabilities` (the values and the thresholds) |
 | [`NeuroEvent`](#neuroevent) | `manager` → `/neuroevent` (the phases of the trials and the end of the outcome); `control` → `/neuroevent` (the end of the continuous feedback, Hit / Miss / Timeout); `feedback` → `/neuroevent` (only with `publish_display_events: true`) | `recorder` ← `/neuroevent`; `integrator` ← `/neuroevent` (only for `integrator.reset_event`); `manager` ← `/neuroevent` (the end of the outcome); `control` ← `/neuroevent` (cue, CFeedback); `feedback` ← `/neuroevent` (the phases and the outcome: fixation, cue, boom) |
 
@@ -283,3 +283,7 @@ messages (`NeuroFrame`, `NeuroSensor`, `NeuroTrigger`, `NeuroFeature`, `NeuroAxi
 `NeuroSignal<T>` shared by sensors and triggers), plus validation (`NeuroDataValidate.h`) and conversion
 (`NeuroDataConvert.h`) helpers. A device fills a `ros2neuro::data::NeuroFrame`, the frame is validated and
 converted to the ROS message, then published. See [Messages and data library](../packages/msgs-data.md).
+
+---
+
+**Next:** [Topics and services](topics.md) · [back to the Concepts menu](index.md)

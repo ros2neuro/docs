@@ -1,4 +1,4 @@
-# scikit-learn decoder (plugin)
+# scikit-learn decoder
 
 !!! info ""
     Package: [`ros2neuro_decoder_sklearn`](https://github.com/ros2neuro/ros2neuro_decoder_sklearn) · part of [Decoder](index.md)
@@ -66,7 +66,7 @@ To make your own: fit the model on the features **as ROS 2 computes them** (same
 ## The example model
 
 `extra/sklearn_lda_test_gdf/`: `StandardScaler` + `LinearDiscriminantAnalysis(solver='lsqr', shrinkage='auto')` on the PSD of
-`ros2neuro_devel_test/data/test.gdf` computed as the chain of [`ros2neuro_devel_test`](../devel-test.md) (`pipeline/qda/config/psd_pipeline.yaml`: Laplacian, Welch Hamming 256 / overlap
+`ros2neuro_devel_test/data/test.gdf` computed as the chain of [`ros2neuro_devel_test`](../../reproducibility/packages/index.md) (`pipeline/qda/config/psd_pipeline.yaml`: Laplacian, Welch Hamming 256 / overlap
 128 on a buffer of 512, ln, 4:2:48 Hz), one feature per frame of the continuous feedback of the 20 trials 773 / 771 (1486 features).
 Leave-one-trial-out accuracy on the single windows: 0.68. It exercises the plugin; it is not a validated classifier.
 
@@ -97,55 +97,8 @@ Of the plugin (`decoder.params.*`):
         decoder.manifest: /path/to/sklearn_lda_test_gdf/manifest.yaml
 ```
 
-The package [`ros2neuro_devel_test`](../devel-test.md) tests the plugin on a real chain: `decoder/fbcsp_lda/` replays a GDF through four band filter chains, the `Fbcsp` plugin,
-this decoder (a test LDA on FBCSP features, `data/models/fbcsp_lda/`, a `TYPE_MATRIX` input), the integrator and the control, and its `check_decoder_fbcsp.m` redoes the
-LDA in MATLAB from the numbers in `lda_weights.yaml`:
-
-```bash
-cd ros2neuro_devel_test
-ros2 launch ros2neuro_devel_test decoder_fbcsp_lda.launch.py   # then check_decoder_fbcsp in MATLAB
-```
-
-The model of `lda_psd` (`data/models/lda_psd/sklearn/`) is the same LDA on the PSD as a scikit-learn file; the example model of this package is the one of the tests.
-
 ## Dependencies
 
 - ROS 2: [`ros2neuro_decoder`](index.md), [`ros2neuro_msgs`](../msgs-data.md#ros2neuro_msgs), `pluginlib`, `rclcpp`; build: `pybind11-dev`, `python3-dev`.
 - Python: scikit-learn, skops, numpy, PyYAML: `pip install -r requirements.txt` (skops is not a Debian package; load a model with the
   scikit-learn version it was saved with). The training script also needs `mne`.
-
-## Tests
-
-```bash
-colcon test --packages-select ros2neuro_decoder_sklearn && colcon test-result --verbose
-```
-
-- `test/test_sklearn_decoder.cpp` (the plugin, loaded through pluginlib as the node does): the probabilities of `predict_proba` on two
-  reference features of test.gdf (`test/reference_*`, written by the training script), tolerance 1e-6; the model given as the manifest or the
-  folder; channels and frequencies reversed or with an extra one (same output); a missing channel or frequency, a time series, a 1-D
-  feature (an error); no model, a missing manifest, an `output.fields` class the model does not have (`configure` false, no exception).
-- `test/test_sklearn_model.py` (the Python side, on small models fitted in the test): `mode: all` is the feature channel-major whatever the
-  order of the axes; `mode: selection` takes the pairs in their order; the probabilities follow `output.fields`, not `model.classes_`; the
-  float32 bytes the plugin passes give the same result.
-
-## MATLAB replication
-
-The plugin in MATLAB, to replay offline what the node does online. It uses only native MATLAB functions: scikit-learn files cannot be read from MATLAB: `export_lda_weights.py` writes the numbers of the model (scaler, coefficients, selected features) in a yaml and checks in Python that they give the same `predict_proba`. Each function says in its header which plugin it reproduces. It is compared with the real node by `check_decoder_fbcsp` in [`ros2neuro_devel_test`](../devel-test.md), which also draws MATLAB and ros2neuro on top of each other and their difference. [Download all the functions](../../reproducibility/download.md).
-
-???+ example "r2n_sklearn_lda_read.m"
-    ```matlab
-    --8<-- "files/r2n/r2n_sklearn_lda_read.m"
-    ```
-
-???+ example "r2n_sklearn_lda_predict.m"
-    ```matlab
-    --8<-- "files/r2n/r2n_sklearn_lda_predict.m"
-    ```
-
-Use it:
-
-```matlab
-addpath('ros2neuro_devel_test/matlab');      % or the folder of the downloaded zip
-m = r2n_sklearn_lda_read('lda_weights.yaml');
-p = r2n_sklearn_lda_predict(m, fbcsp_row);
-```

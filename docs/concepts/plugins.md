@@ -140,7 +140,11 @@ Each family uses its own base package name in this call ([`ros2neuro_acquisition
   loader prints a warning. The control, manager and feedback nodes call `release_plugin()` for this.
 - If a plugin class is not found, check that its package is installed, that the workspace is sourced
   (`source install/setup.bash`) and that the class name in the parameter matches `plugins.xml` exactly.
-- [`ros2neuro_devel_test`](../packages/devel-test.md) shows complete parameter files that select a plugin for every node.
+- [`ros2neuro_devel_test`](../reproducibility/packages/index.md) shows complete parameter files that select a plugin for every node.
 
 See the tutorials [Writing a filter plugin](../tutorials/filter-plugin/index.md) and
 [Writing an integrator plugin](../tutorials/integrator-plugin/index.md) for a complete, compilable example.
+
+---
+
+**Next:** [Messages and data types](messages.md) · [back to the Concepts menu](index.md)

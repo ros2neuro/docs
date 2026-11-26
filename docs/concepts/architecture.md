@@ -99,6 +99,10 @@ stores next to the signal, and control can ask the integrator to **reset** throu
 
 Replacing the amplifier with a GDF file ([`ros2neuro::acquisition::XDFDevice`](../packages/acquisition/xdf.md)) or the dummy generator
 ([`ros2neuro::acquisition::DummyDevice`](../packages/acquisition/dummy.md)) leaves the rest of the chain untouched. The
-[`ros2neuro_devel_test`](../packages/devel-test.md) launchers use this to start a full pipeline, from the
+[`ros2neuro_devel_test`](../reproducibility/packages/index.md) launchers use this to start a full pipeline, from the
 file to the wheel or the bars, on a laptop. The first tutorial,
 [Hardware-free pipeline](../tutorials/hardware-free-pipeline/index.md), walks through it.
+
+---
+
+**Next:** [Plugins](plugins.md) · [back to the Concepts menu](index.md)

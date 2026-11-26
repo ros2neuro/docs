@@ -14,7 +14,7 @@ signal and the spectrum side by side. You do not write code: you learn to read t
 - how to add the Spectrum tab and read the Welch spectrum;
 - how to arrange several tabs, and how to look at the trigger lines.
 
-**You need** the [previous tutorial](../acquisition-recording/index.md) (it starts the same acquisition) and a built ROS2neuro workspace (with [`ros2neuro_visualizer`](../../packages/visualizer.md) and [`ros2neuro_devel_test`](../../packages/devel-test.md)) and a display.
+**You need** the [previous tutorial](../acquisition-recording/index.md) (it starts the same acquisition) and a built ROS2neuro workspace (with [`ros2neuro_visualizer`](../../packages/visualizer.md) and [`ros2neuro_devel_test`](../../reproducibility/packages/index.md)) and a display.
 No hardware: the EEG comes from a recorded GDF file. About 15 minutes.
 
 ## 1. The plan
@@ -36,7 +36,7 @@ file as if it were a live amplifier: 16 EEG channels at 512 Hz, sent 16 times pe
 ```
 
 The file `acquisition_gdf.yaml` is in this tutorial's folder. Start the acquisition node with it, giving the GDF that
-comes with [`ros2neuro_devel_test`](../../packages/devel-test.md):
+comes with [`ros2neuro_devel_test`](../../reproducibility/packages/index.md):
 
 ```bash
 ros2 run ros2neuro_acquisition acquisition --ros-args \

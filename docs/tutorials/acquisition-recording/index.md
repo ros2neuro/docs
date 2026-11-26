@@ -13,7 +13,7 @@ them, one node at a time, and check each step.
 - how to record a session in a GDF file, and why the recorder needs the names of the topics;
 - how a launch file starts several nodes together.
 
-**You need** ROS2neuro [installed](../../installation.md) with `ros2neuro_devel_test` (it has the recorded EEG), the
+**You need** ROS2neuro [installed](../../installation/index.md) with `ros2neuro_devel_test` (it has the recorded EEG), the
 package `tutorial_signal_chain` of this tutorial (build it as in the [pub/sub tutorial](../publisher-subscriber/index.md#6-build-and-run): `colcon build --paths docs/docs/tutorials/signal-chain/tutorial_signal_chain`)
 and a display for the visualizer. No amplifier. About 20 minutes.
 

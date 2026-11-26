@@ -93,7 +93,7 @@ It prints `Rosbridge WebSocket server started on port 9090`. Port 9090 is where 
 
 ## 3. Start a pipeline that produces a feedback flow
 
-Any launcher of `feedback/` in [`ros2neuro_devel_test`](../../packages/devel-test.md) will do. A calibration shows every phase of a trial and drives the bars by itself, so we use it.
+Any launcher of `feedback/` in [`ros2neuro_devel_test`](../../reproducibility/packages/index.md) will do. A calibration shows every phase of a trial and drives the bars by itself, so we use it.
 The launcher has no command-line arguments: the protocol is the constant `PROTOCOL` at the top of the file (as delivered, `protocol_evaluation.yaml`). Change the word after
 `protocol_` to `calibration` in `feedback/bars2/feedback_bars2.launch.py`, rebuild and launch (see [the hardware-free tutorial](../hardware-free-pipeline/index.md)):
 

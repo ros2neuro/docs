@@ -34,25 +34,35 @@ is written in its header; see [Plugins](concepts/plugins.md) for the classes and
 
 !!! info "Tested on ROS 2 Jazzy"
     All of ROS2neuro was built and tested on **ROS 2 Jazzy** (Ubuntu 24.04), and the Debian packages are built for it:
-    see [Installation](installation.md). The commands in this documentation use `jazzy`; other releases have not been tested.
+    see [Installation](installation/index.md). The commands in this documentation use `jazzy`; other releases have not been tested.
 
 ## Where to start
 
 <div class="grid cards" markdown>
 
--   **[Concepts](concepts/architecture.md)**
+-   **[Installation](installation/index.md)**
 
-    How ROS2neuro is organised: the architecture, the messages and their data types, the topics, the plugin
-    mechanism and the protocol layer (control, manager and feedback).
+    Three ways to get ROS2neuro: the apt packages, a container (Docker, Podman, Distrobox) or a build from source.
+
+-   **[Concepts](concepts/index.md)**
+
+    How ROS2neuro is organised: the architecture, the plugins, the messages, the topics, the protocol layer (control, manager, feedback) and the shared parameters.
 
 -   **[Packages](packages/index.md)**
 
-    One page per package and per plugin: what it does, which topics and parameters it has and how to use it.
+    One page per family of packages (what it does and its base class) and one per plugin: topics, parameters and how to use it.
 
 -   **[Tutorials](tutorials/index.md)**
 
-    Step-by-step guides with code that compiles: run a pipeline without hardware, write a filter or an
-    integrator plugin, raise an event when a channel power crosses a threshold, check the EOG.
+    Step-by-step guides, in order: from the ROS 2 you need to a complete pipeline, your first BCI programs, and how to extend the stack.
+
+-   **[BCI decoders training](training/index.md)**
+
+    How to make the models the decoders load: motor imagery with `mi_training` (P300 and SSVEP to come).
+
+-   **[Reproducibility](reproducibility/index.md)**
+
+    The tests of every package and of the whole pipeline, and the MATLAB and Python functions that redo each stage offline and match the nodes.
 
 </div>
 
@@ -68,5 +78,5 @@ runs the trials of a calibration or an evaluation and writes their events. A **r
 
 - Package names are written as in the workspace ([`ros2neuro_filters`](packages/filters/index.md)), plugin classes with their full
   pluginlib name ([`ros2neuro::acquisition::XDFDevice`](packages/acquisition/xdf.md)).
-- Commands assume a sourced ROS 2 environment (`source /opt/ros/jazzy/setup.bash`) and ROS2neuro installed, from apt or from a workspace (`source install/setup.bash`): see [Installation](installation.md).
+- Commands assume a sourced ROS 2 environment (`source /opt/ros/jazzy/setup.bash`) and ROS2neuro installed, from apt or from a workspace (`source install/setup.bash`): see [Installation](installation/index.md).
 - Parameters are shown in YAML (`ros__parameters`), the way they are normally passed to a node.

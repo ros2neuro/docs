@@ -1,0 +1,13 @@
+# Exponential smoothing of the probabilities (alpha: memory; rejection: below it the previous output is held, -1 disables it).
+# reset_event 781 = CFeedback: the integrator resets at the start of every trial of a calibration/evaluation. In a control
+# nobody emits it and control (ros2neuro_control_feedback) resets through the /reset service.
+/integrator:
+    ros__parameters:
+        input_topic: /classification/prediction
+        output_topic: /integrated/raw
+        event_topic: /neuroevent
+        integrator.name: mi_exponential_integrator
+        integrator.type: ros2neuro::integrator::Exponential
+        integrator.params.alpha: 0.98
+        integrator.rejection: -1.0
+        integrator.reset_event: 781

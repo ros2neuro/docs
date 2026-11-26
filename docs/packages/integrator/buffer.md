@@ -37,7 +37,7 @@ Messages used:
 
 ## Example configuration
 
-From the Gaussian pipeline of [`ros2neuro_devel_test`](../devel-test.md) (`integrator:=buffer`): at 16 predictions per second, `buffer_size: 48` means that, with two classes, 24 unanimous predictions (1.5 seconds) take a buffer from `1/K` = 0.5 to 1 (in general `(1 - 1/K) * buffer_size` predictions):
+From the Gaussian pipeline of [`ros2neuro_devel_test`](../../reproducibility/packages/index.md) (`integrator:=buffer`): at 16 predictions per second, `buffer_size: 48` means that, with two classes, 24 unanimous predictions (1.5 seconds) take a buffer from `1/K` = 0.5 to 1 (in general `(1 - 1/K) * buffer_size` predictions):
 
 ```yaml
 /integrator:
@@ -140,34 +140,3 @@ file or `-p`) and passes all of them to the plugin, so `buffer_size`, `increment
 `set_runtime_parameter`, so `ros2 param set /integrator integrator.params.buffer_size 32` works, but only
 for a parameter that was given at start (ROS refuses an undeclared parameter). A parameter that is not
 given keeps its code default (`buffer_size=48`, `increment=HARD`, uniform `init_val`).
-
-## Testing
-
-```bash
-colcon build --packages-select ros2neuro_integrator_buffer
-colcon test --packages-select ros2neuro_integrator_buffer
-```
-
-`test/test_buffer.cpp` loads the plugin through `pluginlib::ClassLoader`
-(the same path [`ros2neuro_integrator`](index.md) uses in production) and covers HARD
-and SOFT increment, `[0, 1]` clipping, `init_val` handling (both matching
-and mismatched sizes), invalid `configure()` parameters, and
-`set_runtime_parameter` validation.
-`test/test_buffer_node.cpp` runs the integrator node with this plugin (parameters given as
-`integrator.params.*`) and checks the published `NeuroPrediction` (`TYPE_SCORES`, the buffer values).
-
-## MATLAB replication
-
-The plugin in MATLAB, to replay offline what the node does online. It uses only native MATLAB functions: the buffer of the winner, hard or soft. Each function says in its header which plugin it reproduces. It is compared with the real node by `check_integrator_buffer` in [`ros2neuro_devel_test`](../devel-test.md), which also draws MATLAB and ros2neuro on top of each other and their difference. [Download all the functions](../../reproducibility/download.md).
-
-???+ example "r2n_integrator_buffer.m"
-    ```matlab
-    --8<-- "files/r2n/r2n_integrator_buffer.m"
-    ```
-
-Use it:
-
-```matlab
-addpath('ros2neuro_devel_test/matlab');      % or the folder of the downloaded zip
-y = r2n_integrator_buffer(p, 48, 0, reset_frames);   % buffer_size 48, increment 0 (hard)
-```

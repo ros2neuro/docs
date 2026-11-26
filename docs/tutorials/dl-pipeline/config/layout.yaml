@@ -1,0 +1,32 @@
+# The LAYOUT, the same for every node that needs it. The `/**` section holds what several nodes share (the manager, control and the
+# feedback each read it from their own parameters: nobody asks anybody), written ONCE and loaded by all of them:
+#   classes, rest_mode   the manager runs the trials with them, control decides with them, the feedback draws them
+#   thresholds           control decides with them, the feedback draws the markers at the start. They can be changed while running:
+#                        ros2 param set /control thresholds "[0.8, 0.8]"   (control puts the ones in force in the flow: the markers follow).
+# The `/control` section is control's own (input_fields).
+# The ids of the events (event.start, event.hit, ...) have the same defaults everywhere: add them to the `/**` section to change them.
+#
+#   classes     class codes, in the order of the feedback layout (which bar is which, which class is on the left of the wheel):
+#               769 LEFT_HAND, 770 RIGHT_HAND, 771 BOTH_FEET, 773 BOTH_HANDS, 783 REST
+#   rest_mode   none | timeout | class. none: nothing said (what a calibration needs). With 783 in `classes` an evaluation
+#               and a control need timeout (no output, no threshold) or class (one more output, with its threshold).
+#               timeout also needs `rest_timeout` in protocol_evaluation.yaml.
+#   thresholds  one per class WITH a classifier output, in the order of `classes` (a rest in timeout has none)
+#
+# This classifier has 2 outputs, so the rest can only be a timeout here. Example with a rest trial:
+#   classes: [773, 771, 783]    rest_mode: timeout    thresholds: [0.7, 0.7]
+#
+# CLASS CODES ARE FREE: 773/771/769/770 are only the codes the project uses; any code works (e.g. 501, 502) as long as it is not
+# the id of an event (1, 781, 786, 897, 898, 899) and is in 1..16383. Colors never depend on the code: the wheel and the bars
+# color a class by its POSITION in `classes` (the rest, 783, is the only exception: always yellow). Names (BOTH_FEET ...) are just
+# a convenience for the logs.
+#   - calibration: nothing else to do (the autopilot needs no classifier).
+#   - evaluation / control: the model publishes its own codes. If they are not the ones of `classes`, say which model code is which
+#     class, in the same order as `classes` (a rest in timeout has no output and is not listed):
+#         input_fields: [773, 771]      # the model publishes 773 for the first class and 771 for the second
+#     Used by control (ros2neuro_control_feedback) only.
+/**:
+    ros__parameters:
+        classes: [773, 771]
+        rest_mode: none
+        thresholds: [0.7, 0.7]

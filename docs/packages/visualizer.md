@@ -235,16 +235,6 @@ This keeps tab-specific controls and rendering isolated while the main window co
 - expose more launch/config parameters
 - add more tests around GUI state transitions and docking behavior
 
-## Tests
-
-```bash
-colcon test --packages-select ros2neuro_visualizer
-```
-
-Three gtests cover the non-GUI helpers: `test_signal_buffer` (ring buffer order, zero padding, chunks larger than the
-window), `test_filter_pipeline` (CAR and single-channel reference) and `test_spectrum_averager` (off, rolling and
-cumulative averaging).
-
 <!-- interfaces -->
 ## Dependencies
 

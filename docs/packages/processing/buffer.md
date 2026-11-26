@@ -12,7 +12,7 @@ A sliding-window buffer: a plugin of [`ros2neuro_processing`](index.md) (`ros2ne
 | **Reads** | `NeuroFrame` (`/neurodata`, parameter `input_topic`; remap or set it to the filter output), through the processing node |
 | **Publishes** | `NeuroFeature` (`/features`, parameter `output_topic`; `TYPE_TIME_SERIES`, shape `[samples, channels]`, name `buffered_<sensor>`) through the processing node |
 | **Run** | in the YAML of the processing node: `processing.plugin: ros2neuro::processing::Buffer`, `processing.params.sensor: EEG`, `processing.params.buffer: 512` |
-| **Used by** | the tests of [`ros2neuro_devel_test`](../devel-test.md) (`processing/buffer`, and `decoder/shallow` in front of [`ros2neuro_decoder_braindecode`](../decoder/braindecode.md)) |
+| **Used by** | the tests of [`ros2neuro_devel_test`](../../reproducibility/packages/index.md) (`processing/buffer`, and `decoder/shallow` in front of [`ros2neuro_decoder_braindecode`](../decoder/braindecode.md)) |
 
 <!-- interfaces -->
 ## Dependencies
@@ -35,7 +35,7 @@ Messages used:
 
 ## Example configuration
 
-From the ShallowNet test of [`ros2neuro_devel_test`](../devel-test.md) (`decoder/shallow/decoder_shallow.launch.py`):
+From the ShallowNet test of [`ros2neuro_devel_test`](../../reproducibility/packages/index.md) (`decoder/shallow/decoder_shallow.launch.py`):
 
 ```yaml
 /buffer:
@@ -92,7 +92,7 @@ Set by the processing node: `input_topic` (default `/neurodata`) and `output_top
 
 ## Example
 
-From the ShallowNet (deep-learning) test of [`ros2neuro_devel_test`](../devel-test.md): a 512-sample window, one second at 512 Hz, between the
+From the ShallowNet (deep-learning) test of [`ros2neuro_devel_test`](../../reproducibility/packages/index.md): a 512-sample window, one second at 512 Hz, between the
 filter chain and the `Braindecode` decoder.
 
 ```xml
@@ -111,15 +111,3 @@ Processing is the stage between the filters and the decoder, and what runs there
 decoders** (LDA, QDA, SVM, Gaussian) read a power spectrum, produced by the `Welch` plugin of [`ros2neuro_processing_spectral`](spectral.md); the **deep-learning
 decoders** read a window of the filtered signal, produced by this package. All of them are plugins of the same host,
 [`ros2neuro_processing`](index.md), and publish a `NeuroFeature`.
-
-## MATLAB replication
-
-The Buffer plugin copies the last `buffer` samples of the signal into one message, channel by channel; before the first frame the window holds zeros. In MATLAB it is a copy, so it needs no toolbox and the comparison with the node is **exact** (`check_processing_buffer` in [`ros2neuro_devel_test`](../devel-test.md)).
-
-```matlab
-% x: [samples channels] single, hop: samples per NeuroFrame, k: the frame (1-based) a message ends at
-padded = [zeros(buffer - 1, size(x, 2), 'single'); x];       % zeros before the first frame
-window = padded(k * hop:k * hop + buffer - 1, :);            % the last `buffer` samples
-msg    = reshape(window.', 1, []);                           % the plugin publishes them sample after sample, channel by channel
-```
-[Download the MATLAB functions](../../reproducibility/download.md).
