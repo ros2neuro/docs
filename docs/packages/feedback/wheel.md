@@ -3,7 +3,7 @@
 !!! info ""
     Package: [`ros2neuro_feedback_wheel`](https://github.com/ros2neuro/ros2neuro_feedback_wheel) · pluginlib class: `ros2neuro::feedback::Wheel` · part of [Feedback](index.md)
 
-A feedback drawing for exactly two classes: a ring with a moving line that shows which class the classifier favours, threshold markers, a cross, a cue circle and a coloured arc for the outcome. It is drawn with [`neurodraw`](neurodraw.md).
+A feedback drawing for exactly two classes: a ring with a moving line that shows which class the classifier favours, threshold markers (any number), a cross, a cue circle and a coloured arc for the outcome. It is drawn with [`neurodraw`](neurodraw.md).
 
 | | |
 |---|---|
@@ -56,9 +56,22 @@ The build needs the [`neurodraw`](neurodraw.md) library: see the README of [`ros
 * Two active classes (`K == 2`): `output_classes[0]` on the left, `[1]` on the right; the position is the normalized
   value of the first. A rest next to two classes needs `rest_mode=timeout` (or `none`): with `rest_mode=class` it is one more output
   (K=3) and the layout is rejected; with `rest_mode=class` the rest can only be one of the two sides (see below).
-* Threshold markers (they follow the thresholds while running: `set_thresholds`): first class at `th0`, second at `1 - th1` (with `[0.8, 0.8]`: 0.8 and 0.2); the one closest to 0 is
-  red, the one closest to 1 blue.
+* **Threshold markers: any number** (they follow the thresholds while running: `set_thresholds`, the number may change too). Values in (0, 1]:
+  * as many as classes (2): written one per class as for the other feedbacks, both above 0.5 (`[0.7, 0.7]`: markers at 0.7 and 0.3,
+    first class at `th0`, second at `1 - th1`); or already positions on the 0-1 axis, one above and one below 0.5 (`[0.3, 0.7]`).
+    Both at or below 0.5 is refused;
+  * any other number: positions on the 0-1 axis, as given (`[0.2, 0.3, 0.6, 0.7]`: four markers; 1 = fully left).
+
+  The **outer** markers (the smallest and the largest position, the ones that can trigger something) have the color of the class of
+  their side (above 0.5 the first class, blue; below it the second, red; exactly 0.5 grey); the **inner** ones are black. With two
+  thresholds both are outer.
+  The wheel only draws them: what they do (reset, outcome, a change of state) is decided by control. The flow carries them as
+  `threshold:*` fields in the order of the list (`free_thresholds()` of the plugin: the core neither asks for K thresholds nor for K
+  `threshold:<code>` fields).
 * Colors as in the existing wheel: first class blue, second red; **the rest is always yellow**; timeout boom neutral grey.
+  **The arc at the end of a trial** does not use the thresholds, only what the wheel knows: **Hit** = the color of the cue (the rest: yellow),
+  **Miss** = the color of the other class (a rest has no other class: the side where the indicator is), **Timeout** = neutral grey.
+  This holds with any number of thresholds, and only for the wheel (two classes): the bars, with more classes, do not work this way.
   **Rest** (yellow): with `rest_mode=timeout` it has a cue (yellow circle) and nothing else on the wheel; when it ends as a Hit
   (no threshold touched for `rest_timeout` seconds) the **arc turns yellow**, like the arc takes the color of the class
   reached on any hit (no extra dots). With `rest_mode=class` the rest is a normal class, one of the two sides (e.g.

@@ -13,7 +13,7 @@ builds the layout from its parameters, loads the plugin and runs the drawing loo
 | Parameter | Default | Meaning |
 |---|---|---|
 | `plugin` | (required) | pluginlib class of the drawing, [`ros2neuro::feedback::Wheel`](wheel.md) or [`ros2neuro::feedback::Bar`](bar.md) |
-| `classes`, `rest_mode`, `thresholds` | `classes`, `thresholds`: required (no default); `rest_mode`: `none` | the same as the manager and control: the layout of the drawing and the initial markers |
+| `classes`, `rest_mode`, `thresholds` | `classes`, `thresholds`: required (no default); `rest_mode`: `none` | the same as the manager and control: the layout of the drawing and the initial markers. `thresholds`: one per class, except for a plugin that takes any number (the wheel draws any number of them as positions on its axis, see [Wheel](wheel.md)) |
 | `event.start` ... `event.shown` | the defaults of the stack | the ids of the events (the same as the manager and control) |
 | `control_topic` | `/control_feedback/probabilities` | the flow: values and thresholds |
 | `event_topic` | `/neuroevent` | the phases of the trials and the outcome; also where `publish_display_events` writes |
@@ -123,7 +123,7 @@ Alternatively, put the [`neurodraw`](neurodraw.md) folder in the `src/` of the w
   (class code), the boom (the id of Hit / Miss / Timeout) and the matching `+Off` (`event.shown` and `event.off`, the same as the manager and control), stamped after the drawing.
 * Parameters: `plugin`, `control_topic`, `event_topic`, `fps` (60), `publish_display_events`, `latency_log_period_s` (5), `window_title`,
   `classes`, `rest_mode` (`none`), `thresholds` (initial) and `event.*` (the same as the manager and control; `classes` and `thresholds` have no default here and must be given). ESC in the window ends the node.
-* The plugin API: `configure(node, layout, options)`, `set_values`, `set_thresholds` (the markers move), `show_fixation` / `hide_fixation`,
+* The plugin API: `free_thresholds()` (false by default: one threshold per class, as the bars; true: any number of them, as the wheel, which draws them as positions on its axis; asked before `configure`), `configure(node, layout, options)`, `set_values`, `set_thresholds` (the markers move), `show_fixation` / `hide_fixation`,
   `show_cue` / `hide_cue`, `show_boom(Outcome, target, reached)` / `hide_boom`. A plugin knows nothing about the ids of the events: the
   controller translates them into the `Outcome` enum (`Hit`, `Miss`, `Timeout`).
 

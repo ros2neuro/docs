@@ -14,6 +14,8 @@ drawn with the [neurodraw](neurodraw.md) library.
 
 Every parameter is its own: the `classes`, the `rest_mode`, the ids of the events (`event.*`) and the initial `thresholds` are the same
 values that the manager and control use, written once for every node (see [Shared parameters](../../concepts/shared-parameters.md)).
+The thresholds are one per class (the bars); the [wheel](wheel.md) accepts any number of them, drawn as positions on its axis, and what they do is decided by control.
+
 **Nobody is asked for anything.** When the thresholds are changed while running (`ros2 param set /control thresholds ...`) control puts the
 new ones in the flow and the markers follow. A control has no trials, so no events: only the values are drawn.
 

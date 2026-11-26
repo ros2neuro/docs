@@ -195,7 +195,7 @@ The feedback core builds the same layout from its own parameters and delegates t
 thresholds of the flow of control, and the fixation, the cue and the boom when the manager and control write them on the event bus: in a
 control there are no trials, no events, and only the values are drawn.
 
-- **Wheel**: exactly two classes with an output. A line moves on a ring; threshold markers show the targets.
+- **Wheel**: exactly two classes with an output. A line moves on a ring; threshold markers show the targets. It can draw any number of thresholds (as positions on its 0-1 axis: the outer ones colored, the inner ones black); what they do is decided by control.
 - **Bar**: one bar per classifier output, each with its own color and a white threshold line.
 
 Both are drawn with [neurodraw](../packages/feedback/neurodraw.md). See the package pages for the colors and the
